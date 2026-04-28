@@ -9,13 +9,21 @@ import styles from "@/app/auth-flow.module.css"
 
 type Intent = "shop" | "sell" | "both"
 
+function splitName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  const first = parts.shift() || ""
+  const last = parts.join(" ")
+  return { first, last }
+}
+
 export default function OnboardingPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const [userId, setUserId] = useState("")
   const [email, setEmail] = useState("")
-  const [fullName, setFullName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [phone, setPhone] = useState("")
   const [zipCode, setZipCode] = useState("")
   const [intent, setIntent] = useState<Intent>("shop")
@@ -45,13 +53,15 @@ export default function OnboardingPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, phone, zip_code, can_sell")
+        .select("first_name, last_name, full_name, phone, zip_code, can_sell")
         .eq("id", user.id)
         .single()
 
       if (!mounted) return
 
-      setFullName(profile?.full_name || "")
+      const fallbackName = splitName(profile?.full_name || "")
+      setFirstName(profile?.first_name || fallbackName.first)
+      setLastName(profile?.last_name || fallbackName.last)
       setPhone(profile?.phone || "")
       setZipCode(profile?.zip_code || "")
       setIntent(profile?.can_sell ? "both" : "shop")
@@ -73,12 +83,17 @@ export default function OnboardingPage() {
     setSaving(true)
     setError("")
 
+    const cleanFirstName = firstName.trim()
+    const cleanLastName = lastName.trim()
+    const fullName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ")
     const canSell = intent === "sell" || intent === "both"
 
     const { error: updateError } = await supabase.from("profiles").upsert({
       id: userId,
       email,
-      full_name: fullName.trim(),
+      first_name: cleanFirstName,
+      last_name: cleanLastName,
+      full_name: fullName,
       phone: phone.trim(),
       zip_code: zipCode.trim(),
       can_sell: canSell,
@@ -144,16 +159,29 @@ export default function OnboardingPage() {
           </div>
 
           <form className={styles.authForm} onSubmit={handleSubmit}>
-            <label className={styles.field}>
-              <span>Name</span>
-              <input
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                placeholder="Full name"
-                autoComplete="name"
-                required
-              />
-            </label>
+            <div className={styles.nameGrid}>
+              <label className={styles.field}>
+                <span>First</span>
+                <input
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  placeholder="First name"
+                  autoComplete="given-name"
+                  required
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span>Last</span>
+                <input
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                  placeholder="Last name"
+                  autoComplete="family-name"
+                  required
+                />
+              </label>
+            </div>
 
             <label className={styles.field}>
               <span>Phone</span>
@@ -181,36 +209,56 @@ export default function OnboardingPage() {
             <div className={styles.intentGroup}>
               <span className={styles.intentLabel}>I want to</span>
 
-              <div className={styles.intentGrid}>
+              <div
+                className={styles.intentSwitch}
+                role="tablist"
+                aria-label="Choose account intent"
+              >
                 <button
                   type="button"
-                  className={`${styles.intentButton} ${
-                    intent === "shop" ? styles.intentActive : ""
+                  className={`${styles.intentSwitchOption} ${
+                    intent === "shop" ? styles.isActive : ""
                   }`}
                   onClick={() => setIntent("shop")}
+                  role="tab"
+                  aria-selected={intent === "shop"}
                 >
                   Shop
                 </button>
 
                 <button
                   type="button"
-                  className={`${styles.intentButton} ${
-                    intent === "sell" ? styles.intentActive : ""
+                  className={`${styles.intentSwitchOption} ${
+                    intent === "sell" ? styles.isActive : ""
                   }`}
                   onClick={() => setIntent("sell")}
+                  role="tab"
+                  aria-selected={intent === "sell"}
                 >
                   Sell
                 </button>
 
                 <button
                   type="button"
-                  className={`${styles.intentButton} ${
-                    intent === "both" ? styles.intentActive : ""
+                  className={`${styles.intentSwitchOption} ${
+                    intent === "both" ? styles.isActive : ""
                   }`}
                   onClick={() => setIntent("both")}
+                  role="tab"
+                  aria-selected={intent === "both"}
                 >
                   Both
                 </button>
+
+                <span
+                  className={`${styles.intentSwitchSlider} ${
+                    intent === "shop"
+                      ? styles.intentOne
+                      : intent === "sell"
+                        ? styles.intentTwo
+                        : styles.intentThree
+                  }`}
+                />
               </div>
             </div>
 

@@ -19,6 +19,29 @@ type Listing = {
   isSaved?: boolean
 }
 
+function FilterIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M4 7h16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4 17h16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle cx="9" cy="7" r="2.25" fill="currentColor" />
+      <circle cx="15" cy="17" r="2.25" fill="currentColor" />
+    </svg>
+  )
+}
+
 const listings: Listing[] = [
   {
     id: "1",
@@ -164,8 +187,13 @@ export default function MarketplacePage() {
             aria-label="Search marketplace"
           />
 
-          <button type="button" className="mk-filter-button">
-            Filter
+          <button
+            type="button"
+            className="mk-filter-button"
+            aria-label="Open filters"
+            title="Open filters"
+          >
+            <FilterIcon />
           </button>
         </div>
 
@@ -176,9 +204,7 @@ export default function MarketplacePage() {
         >
           <button
             type="button"
-            className={`mk-view-option ${
-              view === "for-you" ? "is-active" : ""
-            }`}
+            className={`mk-view-option ${view === "for-you" ? "is-active" : ""}`}
             onClick={() => setView("for-you")}
             role="tab"
             aria-selected={view === "for-you"}
@@ -188,9 +214,7 @@ export default function MarketplacePage() {
 
           <button
             type="button"
-            className={`mk-view-option ${
-              view === "nearby" ? "is-active" : ""
-            }`}
+            className={`mk-view-option ${view === "nearby" ? "is-active" : ""}`}
             onClick={() => setView("nearby")}
             role="tab"
             aria-selected={view === "nearby"}
@@ -200,9 +224,7 @@ export default function MarketplacePage() {
 
           <button
             type="button"
-            className={`mk-view-option ${
-              view === "bundles" ? "is-active" : ""
-            }`}
+            className={`mk-view-option ${view === "bundles" ? "is-active" : ""}`}
             onClick={() => setView("bundles")}
             role="tab"
             aria-selected={view === "bundles"}
@@ -212,9 +234,7 @@ export default function MarketplacePage() {
 
           <button
             type="button"
-            className={`mk-view-option ${
-              view === "saved" ? "is-active" : ""
-            }`}
+            className={`mk-view-option ${view === "saved" ? "is-active" : ""}`}
             onClick={() => setView("saved")}
             role="tab"
             aria-selected={view === "saved"}
@@ -284,9 +304,7 @@ export default function MarketplacePage() {
 
               <button
                 type="button"
-                className={`mk-save-button ${
-                  listing.isSaved ? "is-saved" : ""
-                }`}
+                className={`mk-save-button ${listing.isSaved ? "is-saved" : ""}`}
                 onClick={() => toggleSaved(listing.id)}
                 aria-label={listing.isSaved ? "Remove favorite" : "Save listing"}
               >

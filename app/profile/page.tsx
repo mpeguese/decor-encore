@@ -7,13 +7,21 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "@/app/auth-flow.module.css"
 
+function splitName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  const first = parts.shift() || ""
+  const last = parts.join(" ")
+  return { first, last }
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const [userId, setUserId] = useState("")
   const [email, setEmail] = useState("")
-  const [fullName, setFullName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [phone, setPhone] = useState("")
   const [zipCode, setZipCode] = useState("")
   const [canSell, setCanSell] = useState(false)
@@ -21,6 +29,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
+
+  const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
 
   useEffect(() => {
     let mounted = true
@@ -44,13 +54,15 @@ export default function ProfilePage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, phone, zip_code, can_sell")
+        .select("first_name, last_name, full_name, phone, zip_code, can_sell")
         .eq("id", user.id)
         .single()
 
       if (!mounted) return
 
-      setFullName(profile?.full_name || "")
+      const fallbackName = splitName(profile?.full_name || "")
+      setFirstName(profile?.first_name || fallbackName.first)
+      setLastName(profile?.last_name || fallbackName.last)
       setPhone(profile?.phone || "")
       setZipCode(profile?.zip_code || "")
       setCanSell(Boolean(profile?.can_sell))
@@ -73,10 +85,16 @@ export default function ProfilePage() {
     setError("")
     setMessage("")
 
+    const cleanFirstName = firstName.trim()
+    const cleanLastName = lastName.trim()
+    const cleanFullName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ")
+
     const { error: updateError } = await supabase.from("profiles").upsert({
       id: userId,
       email,
-      full_name: fullName.trim(),
+      first_name: cleanFirstName,
+      last_name: cleanLastName,
+      full_name: cleanFullName,
       phone: phone.trim(),
       zip_code: zipCode.trim(),
       can_sell: canSell,
@@ -123,7 +141,7 @@ export default function ProfilePage() {
 
       <section className={styles.profileHero}>
         <div className={styles.profileAvatar}>
-          {fullName.trim() ? fullName.trim().charAt(0).toUpperCase() : "M"}
+          {fullName ? fullName.charAt(0).toUpperCase() : "M"}
         </div>
 
         <div>
@@ -148,14 +166,25 @@ export default function ProfilePage() {
       </section>
 
       <form className={styles.profileCard} onSubmit={handleSave}>
-        <label className={styles.field}>
-          <span>Name</span>
-          <input
-            value={fullName}
-            onChange={(event) => setFullName(event.target.value)}
-            placeholder="Full name"
-          />
-        </label>
+        <div className={styles.nameGrid}>
+          <label className={styles.field}>
+            <span>First</span>
+            <input
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              placeholder="First name"
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span>Last</span>
+            <input
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+              placeholder="Last name"
+            />
+          </label>
+        </div>
 
         <label className={styles.field}>
           <span>Email</span>

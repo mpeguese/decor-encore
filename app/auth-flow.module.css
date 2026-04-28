@@ -201,6 +201,12 @@
   gap: 10px;
 }
 
+.nameGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -247,7 +253,7 @@
 }
 
 .passwordShell input {
-  padding-right: 78px;
+  padding-right: 54px;
 }
 
 .eyeButton {
@@ -255,15 +261,21 @@
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
-  min-width: 58px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border: 0;
   border-radius: 999px;
+  display: grid;
+  place-items: center;
   color: var(--plum);
-  background: rgba(255, 233, 243, 0.76);
-  font-size: 12px;
-  font-weight: 950;
+  background: transparent;
   cursor: pointer;
+}
+
+.eyeButton svg {
+  width: 21px;
+  height: 21px;
+  display: block;
 }
 
 .primaryButton {
@@ -316,25 +328,58 @@
   font-weight: 950;
 }
 
-.intentGrid {
+.intentSwitch {
+  position: relative;
+  height: 48px;
+  padding: 4px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  border-radius: 999px;
+  background: rgba(81, 45, 56, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  overflow: hidden;
 }
 
-.intentButton {
-  min-height: 48px;
-  border: 1px solid rgba(255, 255, 255, 0.46);
-  border-radius: 18px;
-  color: var(--plum);
-  background: rgba(255, 255, 255, 0.6);
+.intentSwitchOption {
+  position: relative;
+  z-index: 2;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
   font-weight: 950;
+  border-radius: 999px;
   cursor: pointer;
 }
 
-.intentActive {
-  color: #fff;
-  background: var(--mauve);
+.intentSwitchOption.isActive {
+  color: var(--plum);
+}
+
+.intentSwitchSlider {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  left: 4px;
+  bottom: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: 999px;
+  background: rgba(255, 233, 243, 0.92);
+  box-shadow: 0 12px 30px rgba(81, 45, 56, 0.18);
+  transition: transform 240ms ease;
+}
+
+.intentOne {
+  transform: translateX(0);
+}
+
+.intentTwo {
+  transform: translateX(100%);
+}
+
+.intentThree {
+  transform: translateX(200%);
 }
 
 .loadingCard {
@@ -604,20 +649,24 @@
     border-color: rgba(255, 255, 255, 0.72);
   }
 
-  .authSegment {
+  .authSegment,
+  .intentSwitch {
     background: rgba(81, 45, 56, 0.08);
     border-color: rgba(81, 45, 56, 0.1);
   }
 
-  .authSegmentOption {
+  .authSegmentOption,
+  .intentSwitchOption {
     color: rgba(81, 45, 56, 0.56);
   }
 
-  .authSegmentOption.isActive {
+  .authSegmentOption.isActive,
+  .intentSwitchOption.isActive {
     color: #fff;
   }
 
-  .authSegmentSlider {
+  .authSegmentSlider,
+  .intentSwitchSlider {
     background: var(--mauve);
   }
 
@@ -642,12 +691,8 @@
     font-size: 42px;
   }
 
-  .intentGrid {
-    gap: 6px;
-  }
-
-  .intentButton {
-    font-size: 13px;
+  .nameGrid {
+    gap: 8px;
   }
 
   .quickGrid {
@@ -672,7 +717,8 @@
     display: none;
   }
 
-  .authSegmentSlider {
+  .authSegmentSlider,
+  .intentSwitchSlider {
     transition: none;
   }
 }
