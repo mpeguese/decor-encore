@@ -1,65 +1,160 @@
-import Image from "next/image";
+// app/page.tsx
+"use client"
 
-export default function Home() {
+import Link from "next/link"
+import { useMemo, useState } from "react"
+
+type Intent = "shop" | "sell"
+
+const featuredSearches = ["Backdrops", "Florals", "Table decor", "Bundles"]
+
+export default function HomePage() {
+  const [intent, setIntent] = useState<Intent>("shop")
+
+  const continueHref = useMemo(() => {
+    return intent === "shop" ? "/marketplace" : "/seller/listings/new"
+  }, [intent])
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="de-page">
+      <section className="de-hero">
+        <div className="de-video-shell" aria-hidden="true">
+          <video
+            className="de-hero-video"
+            src="/videos/decor-hero.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+          <div className="de-video-wash" />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <header className="de-topbar">
+          <Link href="/" className="de-brand" aria-label="Decor Encore home">
+            <span className="de-brand-mark">D</span>
+            <span className="de-brand-name">Decor Encore</span>
+          </Link>
+
+          <Link href="/login" className="de-signin">
+            Sign in
+          </Link>
+        </header>
+
+        <div className="de-hero-content">
+          <div className="de-copy">
+            <p className="de-kicker">Once-loved decor</p>
+
+            <h1>Ready for its next celebration.</h1>
+
+            <p className="de-subtitle">
+              Buy and sell event decor for weddings, showers, quinceañeras,
+              birthdays, graduations, holidays, and more.
+            </p>
+          </div>
+
+          <div className="de-action-panel">
+            <div className="de-segment" role="tablist" aria-label="Choose intent">
+              <button
+                type="button"
+                className={`de-segment-option ${intent === "shop" ? "is-active" : ""}`}
+                onClick={() => setIntent("shop")}
+                role="tab"
+                aria-selected={intent === "shop"}
+              >
+                Shop
+              </button>
+
+              <button
+                type="button"
+                className={`de-segment-option ${intent === "sell" ? "is-active" : ""}`}
+                onClick={() => setIntent("sell")}
+                role="tab"
+                aria-selected={intent === "sell"}
+              >
+                Sell
+              </button>
+
+              <span
+                className={`de-segment-slider ${
+                  intent === "sell" ? "is-right" : "is-left"
+                }`}
+              />
+            </div>
+
+            <Link href={continueHref} className="de-primary-action">
+              {intent === "shop" ? "Start shopping" : "List decor"}
+            </Link>
+
+            <div className="de-search-row" aria-label="Popular searches">
+              {featuredSearches.map((item) => (
+                <Link
+                  key={item}
+                  href={`/marketplace?search=${encodeURIComponent(item)}`}
+                  className="de-mini-link"
+                >
+                  {item}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
-  );
+
+        <nav className="de-bottom-nav" aria-label="Primary navigation">
+          <Link href="/marketplace" className="de-bottom-link">
+            <span>Shop</span>
+          </Link>
+
+          <Link href="/marketplace?view=nearby" className="de-bottom-link">
+            <span>Nearby</span>
+          </Link>
+
+          <Link href="/seller/listings/new" className="de-bottom-link de-sell-link">
+            <span>Sell</span>
+          </Link>
+
+          <Link href="/messages" className="de-bottom-link">
+            <span>Messages</span>
+          </Link>
+
+          <Link href="/profile" className="de-bottom-link">
+            <span>Profile</span>
+          </Link>
+        </nav>
+      </section>
+
+      <section className="de-preview">
+        <div className="de-preview-header">
+          <p className="de-kicker">Marketplace preview</p>
+          <h2>Find the pieces that finish the look.</h2>
+        </div>
+
+        <div className="de-feed">
+          <Link href="/marketplace?category=backdrops-walls" className="de-feed-card de-feed-card-large">
+            <div className="de-card-media de-media-one" />
+            <div className="de-card-info">
+              <span>Backdrops & Walls</span>
+              <strong>Statement pieces for the photo moment.</strong>
+            </div>
+          </Link>
+
+          <Link href="/marketplace?category=table-decor" className="de-feed-card">
+            <div className="de-card-media de-media-two" />
+            <div className="de-card-info">
+              <span>Table Decor</span>
+              <strong>Centerpieces, runners, candles, chargers.</strong>
+            </div>
+          </Link>
+
+          <Link href="/marketplace?category=bundles" className="de-feed-card">
+            <div className="de-card-media de-media-three" />
+            <div className="de-card-info">
+              <span>Bundles</span>
+              <strong>One theme. One pickup. One clean package.</strong>
+            </div>
+          </Link>
+        </div>
+      </section>
+    </main>
+  )
 }
