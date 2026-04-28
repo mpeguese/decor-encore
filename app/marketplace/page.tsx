@@ -171,6 +171,7 @@ export default function MarketplacePage() {
   const [listings, setListings] = useState<ListingRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [userId, setUserId] = useState("")
 
   useEffect(() => {
     let mounted = true
@@ -178,6 +179,38 @@ export default function MarketplacePage() {
     async function loadListings() {
       setLoading(true)
       setError("")
+
+      const params = new URLSearchParams(window.location.search)
+      const initialView = params.get("view")
+
+      if (
+        initialView === "saved" ||
+        initialView === "nearby" ||
+        initialView === "bundles"
+      ) {
+        setView(initialView)
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (mounted && user) {
+        setUserId(user.id)
+
+        const { data: favoriteRows } = await supabase
+          .from("favorites")
+          .select("listing_id")
+          .eq("user_id", user.id)
+
+        const favoriteMap: Record<string, boolean> = {}
+
+        ;(favoriteRows || []).forEach((row) => {
+          favoriteMap[row.listing_id] = true
+        })
+
+        setSaved(favoriteMap)
+      }
 
       const { data, error: listingsError } = await supabase
         .from("listings")
@@ -274,11 +307,49 @@ export default function MarketplacePage() {
     return next
   }, [marketplaceListings, query, selectedEventType, view])
 
-  function toggleSaved(id: string) {
+  async function toggleSaved(id: string) {
+    if (!userId) {
+      window.location.href = `/login?next=${encodeURIComponent(
+        "/marketplace"
+      )}&reason=favorite`
+      return
+    }
+
+    const currentlySaved = Boolean(saved[id])
+
     setSaved((current) => ({
       ...current,
-      [id]: !current[id],
+      [id]: !currentlySaved,
     }))
+
+    if (currentlySaved) {
+      const { error } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", userId)
+        .eq("listing_id", id)
+
+      if (error) {
+        setSaved((current) => ({
+          ...current,
+          [id]: true,
+        }))
+      }
+
+      return
+    }
+
+    const { error } = await supabase.from("favorites").insert({
+      user_id: userId,
+      listing_id: id,
+    })
+
+    if (error) {
+      setSaved((current) => ({
+        ...current,
+        [id]: false,
+      }))
+    }
   }
 
   return (

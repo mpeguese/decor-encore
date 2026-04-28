@@ -145,6 +145,26 @@
   font-weight: 950;
 }
 
+.authNotice {
+  margin: 14px auto 0;
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 15px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(81, 45, 56, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  font-size: 13px;
+  font-weight: 950;
+  text-align: center;
+  text-shadow: none;
+  box-shadow: 0 14px 34px rgba(81, 45, 56, 0.22);
+}
+
 .authSegment {
   position: relative;
   height: 48px;

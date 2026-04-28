@@ -184,6 +184,8 @@ export default function ListingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  const [userId, setUserId] = useState("")
+
   useEffect(() => {
     let mounted = true
 
@@ -249,6 +251,19 @@ export default function ListingDetailPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
+      if (user && mounted) {
+        setUserId(user.id)
+
+        const { data: favoriteRow } = await supabase
+            .from("favorites")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("listing_id", normalizedListing.id)
+            .maybeSingle()
+
+        setSaved(Boolean(favoriteRow))
+      }
+
       if (user) {
         const { data: profile } = await supabase
           .from("profiles")
@@ -276,6 +291,43 @@ export default function ListingDetailPage() {
   }, [listing])
 
   const selectedImage = images[selectedImageIndex]?.image_url || ""
+
+  async function toggleFavorite() {
+    if (!listing) return
+
+    if (!userId) {
+      router.push(
+          `/login?next=${encodeURIComponent(`/listing/${listing.id}`)}&reason=favorite`
+      )
+      return
+    }
+
+    const currentlySaved = saved
+    setSaved(!currentlySaved)
+
+    if (currentlySaved) {
+        const { error } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", userId)
+        .eq("listing_id", listing.id)
+
+        if (error) {
+        setSaved(true)
+        }
+
+        return
+    }
+
+    const { error } = await supabase.from("favorites").insert({
+        user_id: userId,
+        listing_id: listing.id,
+    })
+
+    if (error) {
+        setSaved(false)
+    }
+    }
 
   if (loading) {
     return (
@@ -324,7 +376,7 @@ export default function ListingDetailPage() {
         <button
           type="button"
           className={`${styles.saveTopButton} ${saved ? styles.isSaved : ""}`}
-          onClick={() => setSaved((current) => !current)}
+          onClick={toggleFavorite}
           aria-label={saved ? "Remove favorite" : "Save listing"}
         >
           <HeartIcon filled={saved} />
@@ -379,7 +431,7 @@ export default function ListingDetailPage() {
             <button
               type="button"
               className={`${styles.favoriteButton} ${saved ? styles.isSaved : ""}`}
-              onClick={() => setSaved((current) => !current)}
+              onClick={toggleFavorite}
             >
               <HeartIcon filled={saved} />
               <span>{saved ? "Saved" : "Save"}</span>

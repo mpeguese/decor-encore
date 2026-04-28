@@ -73,6 +73,7 @@ export default function LoginClient() {
   const supabase = useMemo(() => createClient(), [])
 
   const next = searchParams.get("next") || "/marketplace"
+  const reason = searchParams.get("reason")
 
   const [mode, setMode] = useState<AuthMode>("signin")
   const [firstName, setFirstName] = useState("")
@@ -204,6 +205,12 @@ export default function LoginClient() {
           <div className={styles.authCopy}>
             <p>Decor Encore</p>
             <h1>{mode === "signin" ? "Welcome back." : "Start your encore."}</h1>
+
+            {reason === "favorite" ? (
+              <span className={styles.authNotice}>
+                Please log in to save favorites!
+              </span>
+            ) : null}
           </div>
 
           <div className={styles.authSegment}>
