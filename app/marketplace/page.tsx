@@ -1,22 +1,57 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { createClient } from "@/app/lib/supabase/client"
 
 type FeedView = "for-you" | "nearby" | "bundles" | "saved"
 
-type Listing = {
+type CategoryRecord = {
+  name: string
+  slug: string
+}
+
+type ListingImageRecord = {
+  image_url: string
+  is_primary: boolean
+  sort_order: number
+}
+
+type ListingRow = {
+  id: string
+  title: string
+  description: string | null
+  price: number
+  condition: string
+  quantity: number
+  event_type: string
+  style: string | null
+  primary_color: string | null
+  secondary_color: string | null
+  fulfillment_type: string
+  pickup_city: string | null
+  pickup_state: string | null
+  is_bundle: boolean
+  created_at: string
+  categories: CategoryRecord[] | CategoryRecord | null
+  listing_images: ListingImageRecord[]
+}
+
+type MarketplaceListing = {
   id: string
   title: string
   price: number
   location: string
   condition: string
   category: string
-  badge?: string
+  eventType: string
+  style: string
+  primaryColor: string
+  badge: string
   imageUrl: string
-  isBundle?: boolean
-  isSaved?: boolean
+  isBundle: boolean
+  isSaved: boolean
+  createdAt: string
 }
 
 function FilterIcon() {
@@ -42,91 +77,166 @@ function FilterIcon() {
   )
 }
 
-const listings: Listing[] = [
-  {
-    id: "1",
-    title: "Blush floral arch with matching aisle pieces",
-    price: 420,
-    location: "Tampa, FL",
-    condition: "Used once",
-    category: "Ceremony Decor",
-    badge: "Pickup",
-    imageUrl: "/mock-listings/floral-arch.jpg",
-  },
-  {
-    id: "2",
-    title: "Gold charger plates — set of 120",
-    price: 185,
-    location: "St. Petersburg, FL",
-    condition: "Like new",
-    category: "Table Decor",
-    badge: "Ships",
-    imageUrl: "/mock-listings/gold-chargers.jpg",
-  },
-  {
-    id: "3",
-    title: "Sage and ivory shower decor bundle",
-    price: 275,
-    location: "Orlando, FL",
-    condition: "Used once",
-    category: "Bundles",
-    badge: "Bundle",
-    imageUrl: "/mock-listings/sage-bundle.jpg",
-    isBundle: true,
-  },
-  {
-    id: "4",
-    title: "Acrylic welcome sign with stand",
-    price: 95,
-    location: "Clearwater, FL",
-    condition: "Good",
-    category: "Signs",
-    badge: "Pickup",
-    imageUrl: "/mock-listings/welcome-sign.jpg",
-  },
-  {
-    id: "5",
-    title: "Pink balloon frame and party props",
-    price: 130,
-    location: "Tampa, FL",
-    condition: "Used once",
-    category: "Balloons & Party Decor",
-    badge: "Nearby",
-    imageUrl: "/mock-listings/balloon-frame.jpg",
-  },
-  {
-    id: "6",
-    title: "Dessert table stands and trays",
-    price: 160,
-    location: "Lakeland, FL",
-    condition: "Like new",
-    category: "Cake & Dessert Displays",
-    badge: "Ships",
-    imageUrl: "/mock-listings/dessert-stands.jpg",
-  },
-]
-
 const eventTypes = [
-  "Wedding",
-  "Quinceañera",
-  "Baby shower",
-  "Birthday",
-  "Graduation",
-  "Holiday",
+  { label: "Wedding", value: "wedding" },
+  { label: "Quinceañera", value: "quinceanera" },
+  { label: "Baby shower", value: "baby_shower" },
+  { label: "Birthday", value: "birthday" },
+  { label: "Graduation", value: "graduation" },
+  { label: "Holiday", value: "holiday" },
 ]
 
-export default function MarketplacePage() {
-  const [view, setView] = useState<FeedView>("for-you")
-  const [query, setQuery] = useState("")
-  const [saved, setSaved] = useState<Record<string, boolean>>({
-    "2": true,
+function formatCondition(value: string) {
+  const labels: Record<string, string> = {
+    new: "New",
+    like_new: "Like new",
+    used_once: "Used once",
+    good: "Good",
+    fair: "Fair",
+  }
+
+  return labels[value] || value
+}
+
+function formatBadge(value: string, isBundle: boolean) {
+  if (isBundle) return "Bundle"
+
+  const labels: Record<string, string> = {
+    pickup: "Pickup",
+    shipping: "Ships",
+    pickup_or_shipping: "Pickup or ships",
+  }
+
+  return labels[value] || "Available"
+}
+
+function formatLocation(city: string | null, state: string | null) {
+  if (city && state) return `${city}, ${state}`
+  if (city) return city
+  if (state) return state
+  return "Location available"
+}
+
+function getPrimaryImage(images: ListingImageRecord[]) {
+  if (!images || images.length === 0) return ""
+
+  const sorted = [...images].sort((a, b) => {
+    if (a.is_primary && !b.is_primary) return -1
+    if (!a.is_primary && b.is_primary) return 1
+    return a.sort_order - b.sort_order
   })
 
+  return sorted[0]?.image_url || ""
+}
+
+function getCategoryName(category: CategoryRecord[] | CategoryRecord | null) {
+  if (!category) return "Event Decor"
+
+  if (Array.isArray(category)) {
+    return category[0]?.name || "Event Decor"
+  }
+
+  return category.name || "Event Decor"
+}
+
+function toMarketplaceListing(
+  listing: ListingRow,
+  saved: Record<string, boolean>
+): MarketplaceListing {
+  return {
+    id: listing.id,
+    title: listing.title,
+    price: Number(listing.price || 0),
+    location: formatLocation(listing.pickup_city, listing.pickup_state),
+    condition: formatCondition(listing.condition),
+    category: getCategoryName(listing.categories),
+    eventType: listing.event_type,
+    style: listing.style || "",
+    primaryColor: listing.primary_color || "",
+    badge: formatBadge(listing.fulfillment_type, listing.is_bundle),
+    imageUrl: getPrimaryImage(listing.listing_images || []),
+    isBundle: listing.is_bundle,
+    isSaved: Boolean(saved[listing.id]),
+    createdAt: listing.created_at,
+  }
+}
+
+export default function MarketplacePage() {
+  const supabase = useMemo(() => createClient(), [])
+
+  const [view, setView] = useState<FeedView>("for-you")
+  const [query, setQuery] = useState("")
+  const [selectedEventType, setSelectedEventType] = useState("")
+  const [saved, setSaved] = useState<Record<string, boolean>>({})
+  const [listings, setListings] = useState<ListingRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadListings() {
+      setLoading(true)
+      setError("")
+
+      const { data, error: listingsError } = await supabase
+        .from("listings")
+        .select(
+          `
+          id,
+          title,
+          description,
+          price,
+          condition,
+          quantity,
+          event_type,
+          style,
+          primary_color,
+          secondary_color,
+          fulfillment_type,
+          pickup_city,
+          pickup_state,
+          is_bundle,
+          created_at,
+          categories (
+            name,
+            slug
+          ),
+          listing_images (
+            image_url,
+            is_primary,
+            sort_order
+          )
+        `
+        )
+        .eq("status", "published")
+        .order("created_at", { ascending: false })
+
+      if (!mounted) return
+
+      if (listingsError) {
+        setError(listingsError.message)
+        setListings([])
+      } else {
+        setListings((data || []) as unknown as ListingRow[])
+      }
+
+      setLoading(false)
+    }
+
+    loadListings()
+
+    return () => {
+      mounted = false
+    }
+  }, [supabase])
+
+  const marketplaceListings = useMemo(() => {
+    return listings.map((listing) => toMarketplaceListing(listing, saved))
+  }, [listings, saved])
+
   const filteredListings = useMemo(() => {
-    let next = listings.map((listing) => ({
-      ...listing,
-      isSaved: Boolean(saved[listing.id]),
-    }))
+    let next = marketplaceListings
 
     if (view === "bundles") {
       next = next.filter((listing) => listing.isBundle)
@@ -142,6 +252,10 @@ export default function MarketplacePage() {
       )
     }
 
+    if (selectedEventType) {
+      next = next.filter((listing) => listing.eventType === selectedEventType)
+    }
+
     const cleanQuery = query.trim().toLowerCase()
 
     if (cleanQuery) {
@@ -149,13 +263,16 @@ export default function MarketplacePage() {
         return (
           listing.title.toLowerCase().includes(cleanQuery) ||
           listing.category.toLowerCase().includes(cleanQuery) ||
-          listing.location.toLowerCase().includes(cleanQuery)
+          listing.location.toLowerCase().includes(cleanQuery) ||
+          listing.condition.toLowerCase().includes(cleanQuery) ||
+          listing.style.toLowerCase().includes(cleanQuery) ||
+          listing.primaryColor.toLowerCase().includes(cleanQuery)
         )
       })
     }
 
     return next
-  }, [query, saved, view])
+  }, [marketplaceListings, query, selectedEventType, view])
 
   function toggleSaved(id: string) {
     setSaved((current) => ({
@@ -258,33 +375,57 @@ export default function MarketplacePage() {
       </section>
 
       <section className="mk-event-scroller" aria-label="Event types">
+        <button
+          type="button"
+          className={`mk-event-chip ${selectedEventType === "" ? "is-active" : ""}`}
+          onClick={() => setSelectedEventType("")}
+        >
+          All
+        </button>
+
         {eventTypes.map((type) => (
-          <button key={type} type="button" className="mk-event-chip">
-            {type}
+          <button
+            key={type.value}
+            type="button"
+            className={`mk-event-chip ${
+              selectedEventType === type.value ? "is-active" : ""
+            }`}
+            onClick={() => setSelectedEventType(type.value)}
+          >
+            {type.label}
           </button>
         ))}
       </section>
 
       <section className="mk-feed" aria-label="Marketplace listings">
-        {filteredListings.length > 0 ? (
+        {loading ? (
+          <div className="mk-empty">
+            <h2>Loading listings</h2>
+            <p>Finding the latest decor.</p>
+          </div>
+        ) : error ? (
+          <div className="mk-empty">
+            <h2>Unable to load listings</h2>
+            <p>{error}</p>
+          </div>
+        ) : filteredListings.length > 0 ? (
           filteredListings.map((listing) => (
             <article key={listing.id} className="mk-card">
               <Link href={`/listing/${listing.id}`} className="mk-card-link">
                 <div className="mk-card-media">
-                  <Image
-                    src={listing.imageUrl}
-                    alt={listing.title}
-                    fill
-                    sizes="(max-width: 760px) 100vw, 33vw"
-                    className="mk-card-image"
-                    priority={listing.id === "1"}
-                  />
+                  {listing.imageUrl ? (
+                    <img
+                      src={listing.imageUrl}
+                      alt={listing.title}
+                      className="mk-card-image"
+                    />
+                  ) : (
+                    <div className="mk-card-image-fallback" />
+                  )}
 
                   <div className="mk-card-image-wash" />
 
-                  {listing.badge ? (
-                    <span className="mk-card-badge">{listing.badge}</span>
-                  ) : null}
+                  <span className="mk-card-badge">{listing.badge}</span>
                 </div>
 
                 <div className="mk-card-body">
@@ -294,7 +435,7 @@ export default function MarketplacePage() {
                   </div>
 
                   <div className="mk-card-meta">
-                    <strong>${listing.price}</strong>
+                    <strong>${listing.price.toFixed(0)}</strong>
                     <span>
                       {listing.location} · {listing.condition}
                     </span>

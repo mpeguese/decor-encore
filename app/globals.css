@@ -713,6 +713,11 @@ a {
   -webkit-backdrop-filter: blur(16px);
 }
 
+.mk-event-chip.is-active {
+  color: #fff;
+  background: var(--plum);
+}
+
 .mk-feed {
   margin-top: 16px;
   display: grid;
@@ -745,7 +750,20 @@ a {
 }
 
 .mk-card-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   object-fit: cover;
+}
+
+.mk-card-image-fallback {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(255, 233, 243, 0.76), transparent 32%),
+    linear-gradient(135deg, #512d38 0%, #b27092 52%, #87baab 100%);
 }
 
 .mk-card-image-wash {
