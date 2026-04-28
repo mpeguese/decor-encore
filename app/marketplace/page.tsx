@@ -172,6 +172,7 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [userId, setUserId] = useState("")
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -194,6 +195,43 @@ export default function MarketplacePage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      if (mounted && user) {
+        setUserId(user.id)
+
+        const { data: favoriteRows } = await supabase
+          .from("favorites")
+          .select("listing_id")
+          .eq("user_id", user.id)
+
+        const favoriteMap: Record<string, boolean> = {}
+
+        ;(favoriteRows || []).forEach((row) => {
+          favoriteMap[row.listing_id] = true
+        })
+
+        setSaved(favoriteMap)
+
+        const { data: conversationRows } = await supabase
+          .from("conversations")
+          .select("id")
+          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+
+        const conversationIds = (conversationRows || []).map((row) => row.id)
+
+        if (conversationIds.length > 0) {
+          const { count } = await supabase
+            .from("messages")
+            .select("id", { count: "exact", head: true })
+            .in("conversation_id", conversationIds)
+            .neq("sender_id", user.id)
+            .is("read_at", null)
+
+          setHasUnreadMessages(Boolean(count && count > 0))
+        } else {
+          setHasUnreadMessages(false)
+        }
+      }
 
       if (mounted && user) {
         setUserId(user.id)
@@ -548,8 +586,14 @@ export default function MarketplacePage() {
           Sell
         </Link>
 
-        <Link href="/messages" className="mk-bottom-link">
-          Messages
+        <Link
+          href="/messages"
+          className={`mk-bottom-link ${hasUnreadMessages ? "has-unread" : ""}`}
+        >
+          <span className="nav-label-with-dot">
+            Messages
+            {hasUnreadMessages ? <span className="nav-unread-dot" /> : null}
+          </span>
         </Link>
 
         <Link href="/profile" className="mk-bottom-link">

@@ -916,6 +916,26 @@ a {
   border-radius: 999px;
 }
 
+.nav-label-with-dot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-unread-dot {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d92d5c;
+  box-shadow:
+    0 0 0 3px rgba(255, 233, 243, 0.95),
+    0 6px 14px rgba(81, 45, 56, 0.18);
+}
+
 .mk-bottom-link.is-active {
   color: var(--plum);
   background: rgba(255, 255, 255, 0.52);

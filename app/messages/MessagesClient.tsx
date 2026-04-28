@@ -139,6 +139,19 @@ function formatShortDate(value: string) {
   })
 }
 
+function formatMessageTime(value: string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) return ""
+
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+}
+
 export default function MessagesClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -291,6 +304,17 @@ export default function MessagesClient() {
       } else {
         setMessages((data || []) as MessageRow[])
       }
+
+      if (userId && selectedConversationId) {
+        await supabase
+            .from("messages")
+            .update({
+            read_at: new Date().toISOString(),
+            })
+            .eq("conversation_id", selectedConversationId)
+            .neq("sender_id", userId)
+            .is("read_at", null)
+        }
 
       setThreadLoading(false)
     }
@@ -495,7 +519,7 @@ export default function MessagesClient() {
                         }`}
                       >
                         <p>{message.body}</p>
-                        <span>{formatShortDate(message.created_at)}</span>
+                        <span>{formatMessageTime(message.created_at)}</span>
                       </article>
                     )
                   })
