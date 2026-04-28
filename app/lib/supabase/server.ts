@@ -23,8 +23,8 @@ export async function createClient() {
             cookieStore.set(name, value, options)
           })
         } catch {
-          // This can happen when called from a Server Component.
-          // Middleware will refresh auth sessions when added later.
+          // Server Components cannot always write cookies.
+          // Auth callback and client auth flows will handle session updates.
         }
       },
     },
