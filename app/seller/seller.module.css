@@ -1,0 +1,816 @@
+.sellerPage {
+  min-height: 100dvh;
+  padding: 16px 16px calc(var(--nav-height) + 34px);
+  color: var(--plum);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(244, 191, 219, 0.64), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(135, 186, 171, 0.42), transparent 30%),
+    linear-gradient(180deg, #ffe9f3 0%, #fff8fb 54%, #ffe9f3 100%);
+}
+
+.loadingCard {
+  width: calc(100% - 32px);
+  max-width: 420px;
+  margin: 40dvh auto 0;
+  padding: 22px;
+  border-radius: 28px;
+  color: var(--plum);
+  text-align: center;
+  font-weight: 950;
+  background: rgba(255, 233, 243, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: 0 24px 70px rgba(81, 45, 56, 0.16);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.sellerTopbar {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sellerBrand {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  padding: 8px 12px 8px 8px;
+  border-radius: 999px;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 16px 44px rgba(81, 45, 56, 0.1);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.sellerBrand span {
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--plum);
+  font-weight: 950;
+  letter-spacing: -0.06em;
+}
+
+.sellerBrand strong {
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.sellerProfile,
+.createButton {
+  min-height: 42px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 0 15px;
+  border-radius: 999px;
+  color: var(--plum);
+  background: rgba(255, 233, 243, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  font-size: 14px;
+  font-weight: 950;
+  box-shadow: 0 16px 42px rgba(81, 45, 56, 0.12);
+  cursor: pointer;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.createButton {
+  color: #fff;
+  background: var(--plum);
+}
+
+.sellerHero,
+.createHero {
+  max-width: 980px;
+  margin: 24px auto 0;
+}
+
+.sellerHero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.sellerHero p,
+.createHero p {
+  margin: 0;
+  color: var(--mauve);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.sellerHero h1,
+.createHero h1 {
+  margin: 6px 0 0;
+  max-width: 11ch;
+  font-size: clamp(38px, 10vw, 62px);
+  line-height: 0.94;
+  letter-spacing: -0.08em;
+  font-weight: 950;
+}
+
+.statsGrid {
+  max-width: 980px;
+  margin: 20px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.statsGrid article {
+  min-height: 86px;
+  padding: 14px;
+  display: grid;
+  align-content: center;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 16px 44px rgba(81, 45, 56, 0.1);
+}
+
+.statsGrid span {
+  font-size: 28px;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.statsGrid p {
+  margin: 6px 0 0;
+  color: rgba(81, 45, 56, 0.58);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sellerPanel,
+.payoutCard,
+.formPanel {
+  max-width: 980px;
+  margin: 14px auto 0;
+  padding: 14px;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 24px 70px rgba(81, 45, 56, 0.13);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.formPanel > * + * {
+  margin-top: 14px;
+}
+
+.formPanel > .twoColumn {
+  margin-top: 14px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelHeader h2,
+.payoutCard h2 {
+  margin: 0;
+  font-size: 23px;
+  letter-spacing: -0.055em;
+}
+
+.panelHeader a {
+  text-decoration: none;
+  color: #fff;
+  background: var(--plum);
+  border-radius: 999px;
+  padding: 9px 13px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.listingStack {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.listingRow {
+  min-height: 74px;
+  padding: 12px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 233, 243, 0.64);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+}
+
+.listingRow h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.listingRow p {
+  margin: 5px 0 0;
+  color: rgba(81, 45, 56, 0.58);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.statusBadge {
+  flex: 0 0 auto;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: capitalize;
+}
+
+.emptyState {
+  margin-top: 12px;
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 18px;
+  border-radius: 26px;
+  background: rgba(255, 233, 243, 0.56);
+}
+
+.emptyState h3 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.06em;
+}
+
+.emptyState p {
+  margin: 8px 0 0;
+  color: rgba(81, 45, 56, 0.58);
+  font-weight: 800;
+}
+
+.emptyState a {
+  margin-top: 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: #fff;
+  background: var(--plum);
+  border-radius: 999px;
+  padding: 0 16px;
+  font-weight: 950;
+}
+
+.payoutCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.payoutCard p {
+  margin: 7px 0 0;
+  color: rgba(81, 45, 56, 0.58);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.payoutCard span {
+  flex: 0 0 auto;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--plum);
+  background: var(--sage);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+/* =========================================================
+   Create Listing
+   ========================================================= */
+
+.createForm {
+  max-width: 980px;
+  margin: 18px auto 0;
+  display: grid;
+  gap: 14px;
+}
+
+.photoSection {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.photoGrid {
+  width: min(100%, 430px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.photoGridEmpty {
+  grid-template-columns: minmax(0, min(74vw, 260px));
+  justify-content: center;
+}
+
+/*
+  IMPORTANT:
+  These two classes intentionally share the same sizing.
+  Empty add-photo tile = uploaded photo tile.
+*/
+.addPhotoBox,
+.photoPreview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  box-shadow: 0 16px 44px rgba(81, 45, 56, 0.1);
+}
+
+.addPhotoBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(81, 45, 56, 0.84);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.addPhotoBox input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.addPhotoBox svg {
+  width: clamp(54px, 14vw, 82px);
+  height: clamp(54px, 14vw, 82px);
+  display: block;
+  flex: 0 0 auto;
+}
+
+.photoPreviewOpen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.photoPreviewOpen img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.photoRemoveButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(81, 45, 56, 0.76);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kindSwitch,
+.fulfillmentSwitch {
+  position: relative;
+  height: 48px;
+  padding: 4px;
+  display: grid;
+  border-radius: 999px;
+  background: rgba(81, 45, 56, 0.08);
+  border: 1px solid rgba(81, 45, 56, 0.1);
+  overflow: hidden;
+}
+
+.kindSwitch {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fulfillmentSwitch {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.kindSwitch button,
+.fulfillmentSwitch button {
+  position: relative;
+  z-index: 2;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(81, 45, 56, 0.56);
+  font-size: 14px;
+  font-weight: 950;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.kindSwitch .switchActive,
+.fulfillmentSwitch .switchActive {
+  color: #fff;
+}
+
+.kindSlider,
+.fulfillmentSlider {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  left: 4px;
+  bottom: 4px;
+  border-radius: 999px;
+  background: var(--mauve);
+  box-shadow: 0 12px 30px rgba(81, 45, 56, 0.16);
+  transition: transform 240ms ease;
+}
+
+.kindSlider {
+  width: calc((100% - 8px) / 2);
+}
+
+.fulfillmentSlider {
+  width: calc((100% - 8px) / 3);
+}
+
+.sliderLeft,
+.fulfillmentOne {
+  transform: translateX(0);
+}
+
+.sliderRight,
+.fulfillmentTwo {
+  transform: translateX(100%);
+}
+
+.fulfillmentThree {
+  transform: translateX(200%);
+}
+
+.sellerField {
+  display: grid;
+  gap: 6px;
+}
+
+.sellerField span {
+  padding-left: 4px;
+  color: rgba(81, 45, 56, 0.72);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+}
+
+.sellerField input,
+.sellerField select,
+.sellerField textarea {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  outline: none;
+  border-radius: 20px;
+  padding: 0 15px;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 14px 34px rgba(81, 45, 56, 0.07);
+}
+
+.sellerField textarea {
+  min-height: 132px;
+  padding: 14px 15px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.sellerField select {
+  appearance: none;
+}
+
+.sellerField input::placeholder,
+.sellerField textarea::placeholder {
+  color: rgba(81, 45, 56, 0.42);
+  font-weight: 650;
+}
+
+.sellerField input:focus,
+.sellerField select:focus,
+.sellerField textarea:focus {
+  border-color: rgba(178, 112, 146, 0.58);
+  box-shadow:
+    0 14px 34px rgba(81, 45, 56, 0.08),
+    0 0 0 4px rgba(244, 191, 219, 0.34);
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.shippingField {
+  width: 100%;
+}
+
+.shippingField input {
+  min-height: 52px;
+}
+
+.sellerError {
+  margin: 0;
+  max-width: 980px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  color: #fff;
+  background: rgba(81, 45, 56, 0.72);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.publishBar {
+  position: sticky;
+  z-index: 20;
+  bottom: calc(var(--nav-height) + 8px);
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 999px;
+  background: rgba(255, 233, 243, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 20px 70px rgba(81, 45, 56, 0.2);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+.draftButton,
+.publishButton {
+  min-height: 50px;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.draftButton {
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.publishButton {
+  color: #fff;
+  background: var(--plum);
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.22);
+}
+
+.publishButton:disabled,
+.draftButton:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.photoModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(24, 14, 18, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.photoModal {
+  position: relative;
+  width: min(92vw, 760px);
+  max-height: 86vh;
+  padding: 14px;
+  border-radius: 30px;
+  background: rgba(255, 245, 249, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 26px 80px rgba(24, 14, 18, 0.28);
+}
+
+.photoModalFrame {
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.photoModalImage {
+  width: 100%;
+  max-height: calc(86vh - 64px);
+  display: block;
+  object-fit: contain;
+}
+
+.photoModalClose {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(81, 45, 56, 0.86);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sellerBottomNav {
+  position: fixed;
+  z-index: 40;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  height: 66px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(255, 233, 243, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 20px 70px rgba(81, 45, 56, 0.2);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+.sellerBottomNav a {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: rgba(81, 45, 56, 0.62);
+  font-size: 11px;
+  font-weight: 950;
+  border-radius: 999px;
+}
+
+.sellerBottomNav .bottomSell {
+  color: #fff;
+  background: var(--plum);
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.22);
+}
+
+@media (min-width: 760px) {
+  .sellerPage {
+    padding: 22px 22px calc(var(--nav-height) + 34px);
+  }
+
+  .createForm {
+    grid-template-columns: 0.85fr 1.15fr;
+    align-items: start;
+  }
+
+  .photoSection {
+    position: sticky;
+    top: 22px;
+    grid-row: span 2;
+    width: 100%;
+    max-width: none;
+  }
+
+  .photoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .photoGridEmpty {
+  grid-template-columns: minmax(0, min(72vw, 230px));
+  justify-content: center;
+}
+
+  .formPanel {
+    margin-top: 0;
+  }
+
+  .publishBar {
+    grid-column: 2;
+    bottom: 18px;
+  }
+}
+
+@media (max-width: 390px) {
+  .sellerPage {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .sellerBrand strong {
+    display: none;
+  }
+
+  .sellerHero h1,
+  .createHero h1 {
+    font-size: 34px;
+  }
+
+  .statsGrid {
+    gap: 8px;
+  }
+
+  .statsGrid article {
+    padding: 12px;
+  }
+
+  .photoGrid {
+    gap: 10px;
+  }
+
+  .addPhotoBox,
+  .photoPreview {
+    border-radius: 26px;
+  }
+
+  .addPhotoBox svg {
+    width: clamp(48px, 14vw, 68px);
+    height: clamp(48px, 14vw, 68px);
+  }
+
+  .twoColumn {
+    gap: 8px;
+  }
+
+  .sellerField input,
+  .sellerField select,
+  .sellerField textarea {
+    font-size: 14px;
+  }
+
+  .sellerBottomNav {
+    height: 62px;
+  }
+
+  .sellerBottomNav a {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kindSlider,
+  .fulfillmentSlider {
+    transition: none;
+  }
+}
+
+@media (min-width: 760px) {
+  .photoGridEmpty {
+    grid-template-columns: minmax(0, 280px);
+    justify-content: center;
+  }
+}
