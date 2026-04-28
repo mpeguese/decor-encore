@@ -329,6 +329,50 @@ export default function ListingDetailPage() {
     }
     }
 
+  async function handleContactSeller() {
+  if (!listing) return
+
+  if (!userId) {
+    router.push(
+      `/login?next=${encodeURIComponent(`/listing/${listing.id}`)}&reason=message`
+    )
+    return
+  }
+
+  if (userId === listing.seller_id) {
+    router.push("/seller")
+    return
+  }
+
+  const { data: existingConversation } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("listing_id", listing.id)
+    .eq("buyer_id", userId)
+    .maybeSingle()
+
+  if (existingConversation?.id) {
+    router.push(`/messages?conversationId=${existingConversation.id}`)
+    return
+  }
+
+  const { data: conversation, error: conversationError } = await supabase
+    .from("conversations")
+    .insert({
+      listing_id: listing.id,
+      buyer_id: userId,
+      seller_id: listing.seller_id,
+    })
+    .select("id")
+    .single()
+
+  if (conversationError || !conversation?.id) {
+    return
+  }
+
+  router.push(`/messages?conversationId=${conversation.id}`)
+}
+
   if (loading) {
     return (
       <main className={styles.detailPage}>
@@ -437,13 +481,14 @@ export default function ListingDetailPage() {
               <span>{saved ? "Saved" : "Save"}</span>
             </button>
 
-            <Link
-              href={`/messages?listingId=${listing.id}`}
-              className={styles.messageButton}
-            >
-              <MessageIcon />
-              <span>Contact seller</span>
-            </Link>
+            <button
+                type="button"
+                className={styles.messageButton}
+                onClick={handleContactSeller}
+                >
+                <MessageIcon />
+                <span>Contact seller</span>
+            </button>
           </div>
 
           <section className={styles.infoGrid}>
@@ -560,10 +605,10 @@ export default function ListingDetailPage() {
           <strong>${Number(listing.price || 0).toFixed(0)}</strong>
         </div>
 
-        <Link href={`/messages?listingId=${listing.id}`}>
-          <MessageIcon />
-          Contact seller
-        </Link>
+        <button type="button" onClick={handleContactSeller}>
+            <MessageIcon />
+            Contact seller
+        </button>
       </nav>
     </main>
   )

@@ -208,7 +208,11 @@ export default function LoginClient() {
 
             {reason === "favorite" ? (
               <span className={styles.authNotice}>
-                Please log in to save favorites!
+                Please log in to save favorites.
+              </span>
+            ) : reason === "message" ? (
+              <span className={styles.authNotice}>
+                Please log in to contact sellers.
               </span>
             ) : null}
           </div>
