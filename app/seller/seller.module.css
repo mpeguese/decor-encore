@@ -1,6 +1,6 @@
 .sellerPage {
   min-height: 100dvh;
-  padding: 16px 16px 120px;
+  padding: 16px 16px calc(var(--nav-height) + 34px);
   color: var(--plum);
   background:
     radial-gradient(circle at 16% 0%, rgba(244, 191, 219, 0.64), transparent 34%),
@@ -576,13 +576,11 @@
 }
 
 .publishBar {
-  position: fixed;
-  z-index: 50;
-  left: max(12px, env(safe-area-inset-left));
-  right: max(12px, env(safe-area-inset-right));
-  bottom: max(12px, env(safe-area-inset-bottom));
-  max-width: 520px;
-  margin: 0 auto;
+  position: static;
+  z-index: 1;
+  width: 100%;
+  max-width: 980px;
+  margin: 4px auto 0;
   display: grid;
   grid-template-columns: 0.75fr 1.25fr;
   gap: 10px;
@@ -590,7 +588,7 @@
   border-radius: 999px;
   background: rgba(255, 233, 243, 0.76);
   border: 1px solid rgba(255, 255, 255, 0.66);
-  box-shadow: 0 20px 70px rgba(81, 45, 56, 0.2);
+  box-shadow: 0 20px 70px rgba(81, 45, 56, 0.16);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
 }
@@ -744,7 +742,7 @@
   }
 
   .publishBar {
-    max-width: 520px;
+    grid-column: 2;
   }
 }
 
