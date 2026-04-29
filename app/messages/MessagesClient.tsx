@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "./messages.module.css"
+import AppBottomNav from "@/app/components/AppBottomNav"
 
 type ConversationRow = {
   id: string
@@ -551,6 +552,7 @@ export default function MessagesClient() {
           )}
         </section>
       </section>
+        <AppBottomNav active="messages" />
     </main>
   )
 }

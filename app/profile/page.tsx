@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "@/app/auth-flow.module.css"
+import AppBottomNav from "@/app/components/AppBottomNav"
 
 function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/).filter(Boolean)
@@ -232,17 +233,7 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      <nav className={styles.appBottomNav} aria-label="Primary navigation">
-        <Link href="/marketplace">Shop</Link>
-        <Link href="/marketplace?view=nearby">Nearby</Link>
-        <Link href="/seller/listings/new" className={styles.bottomSell}>
-          Sell
-        </Link>
-        <Link href="/messages">Messages</Link>
-        <Link href="/profile" className={styles.bottomActive}>
-          Profile
-        </Link>
-      </nav>
+      <AppBottomNav active="profile" />
     </main>
   )
 }

@@ -1,0 +1,79 @@
+.appBottomNav {
+  position: fixed;
+  z-index: 60;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  height: 66px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(255, 233, 243, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 20px 70px rgba(81, 45, 56, 0.2);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+.navLink {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: rgba(81, 45, 56, 0.62);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.active {
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.sellLink {
+  color: #fff;
+  background: var(--plum);
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.22);
+}
+
+.sellActive {
+  color: #fff;
+  background: var(--plum);
+}
+
+.labelWithDot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unreadDot {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d92d5c;
+  box-shadow:
+    0 0 0 3px rgba(255, 233, 243, 0.95),
+    0 6px 14px rgba(81, 45, 56, 0.18);
+}
+
+@media (max-width: 390px) {
+  .appBottomNav {
+    height: 62px;
+  }
+
+  .navLink {
+    font-size: 10px;
+  }
+}

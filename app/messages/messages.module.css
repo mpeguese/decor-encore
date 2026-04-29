@@ -1,6 +1,6 @@
 .messagesPage {
   min-height: 100dvh;
-  padding: 16px 16px calc(var(--nav-height) + 34px);
+  padding: 16px 16px calc(var(--nav-height) + 46px);
   color: var(--plum);
   background:
     radial-gradient(circle at 16% 0%, rgba(244, 191, 219, 0.64), transparent 34%),

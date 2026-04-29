@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "./seller.module.css"
+import AppBottomNav from "@/app/components/AppBottomNav"
 
 type ListingStatus = "draft" | "published" | "paused" | "sold" | "removed"
 
@@ -169,15 +170,7 @@ export default function SellerDashboardPage() {
         <span>Later</span>
       </section>
 
-      <nav className={styles.sellerBottomNav} aria-label="Primary navigation">
-        <Link href="/marketplace">Shop</Link>
-        <Link href="/marketplace?view=nearby">Nearby</Link>
-        <Link href="/seller/listings/new" className={styles.bottomSell}>
-          Sell
-        </Link>
-        <Link href="/messages">Messages</Link>
-        <Link href="/profile">Profile</Link>
-      </nav>
+      <AppBottomNav active="sell" />
     </main>
   )
 }

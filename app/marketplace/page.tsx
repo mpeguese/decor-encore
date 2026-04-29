@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/app/lib/supabase/client"
+import AppBottomNav from "@/app/components/AppBottomNav"
 
 type FeedView = "for-you" | "nearby" | "bundles" | "saved"
 
@@ -172,7 +173,7 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [userId, setUserId] = useState("")
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
+  //const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -212,25 +213,6 @@ export default function MarketplacePage() {
 
         setSaved(favoriteMap)
 
-        const { data: conversationRows } = await supabase
-          .from("conversations")
-          .select("id")
-          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-
-        const conversationIds = (conversationRows || []).map((row) => row.id)
-
-        if (conversationIds.length > 0) {
-          const { count } = await supabase
-            .from("messages")
-            .select("id", { count: "exact", head: true })
-            .in("conversation_id", conversationIds)
-            .neq("sender_id", user.id)
-            .is("read_at", null)
-
-          setHasUnreadMessages(Boolean(count && count > 0))
-        } else {
-          setHasUnreadMessages(false)
-        }
       }
 
       if (mounted && user) {
@@ -570,36 +552,8 @@ export default function MarketplacePage() {
         )}
       </section>
 
-      <nav className="mk-bottom-nav" aria-label="Primary navigation">
-        <Link href="/marketplace" className="mk-bottom-link is-active">
-          Shop
-        </Link>
+      <AppBottomNav active={view === "nearby" ? "nearby" : "shop"} />
 
-        <Link href="/marketplace?view=nearby" className="mk-bottom-link">
-          Nearby
-        </Link>
-
-        <Link
-          href="/seller/listings/new"
-          className="mk-bottom-link mk-bottom-sell"
-        >
-          Sell
-        </Link>
-
-        <Link
-          href="/messages"
-          className={`mk-bottom-link ${hasUnreadMessages ? "has-unread" : ""}`}
-        >
-          <span className="nav-label-with-dot">
-            Messages
-            {hasUnreadMessages ? <span className="nav-unread-dot" /> : null}
-          </span>
-        </Link>
-
-        <Link href="/profile" className="mk-bottom-link">
-          Profile
-        </Link>
-      </nav>
     </main>
   )
 }
