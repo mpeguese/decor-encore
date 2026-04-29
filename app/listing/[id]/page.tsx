@@ -179,6 +179,7 @@ export default function ListingDetailPage() {
 
   const [listing, setListing] = useState<ListingRow | null>(null)
   const [seller, setSeller] = useState<SellerProfile | null>(null)
+  const [fromSeller, setFromSeller] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -191,6 +192,9 @@ export default function ListingDetailPage() {
 
     async function loadListing() {
       if (!listingId) return
+
+      const queryParams = new URLSearchParams(window.location.search)
+      setFromSeller(queryParams.get("from") === "seller")
 
       setLoading(true)
       setError("")
@@ -388,9 +392,17 @@ export default function ListingDetailPage() {
     return (
       <main className={styles.detailPage}>
         <section className={styles.stateCard}>
-          <h1>Listing not found</h1>
-          <p>This listing may have been removed or sold.</p>
-          <Link href="/marketplace">Back to marketplace</Link>
+          <h1>{fromSeller ? "Listing is not public yet" : "Listing not found"}</h1>
+
+          <p>
+            {fromSeller
+              ? "Draft, paused, or removed listings do not appear in the public marketplace."
+              : "This listing may have been removed, sold, or is no longer public."}
+          </p>
+
+          <Link href={fromSeller ? "/seller" : "/marketplace"}>
+            {fromSeller ? "Back to your listings" : "Back to marketplace"}
+          </Link>
         </section>
       </main>
     )

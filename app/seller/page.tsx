@@ -149,7 +149,10 @@ export default function SellerDashboardPage() {
                   <p>${Number(listing.price).toFixed(2)}</p>
                 </div>
 
-                <span className={styles.statusBadge}>{listing.status}</span>
+                <div className={styles.listingRowActions}>
+                  <span className={styles.statusBadge}>{listing.status}</span>
+                  <Link href={`/seller/listings/${listing.id}/edit`}>Edit</Link>
+                </div>
               </article>
             ))}
           </div>

@@ -809,9 +809,219 @@
   }
 }
 
+/* =========================================================
+   Seller listing edit + dashboard actions
+   ========================================================= */
+
+.editStatusPanel {
+  margin-top: 14px;
+}
+
+.editStatusHeader {
+  display: grid;
+  gap: 12px;
+}
+
+.editStatusHeader span {
+  color: rgba(81, 45, 56, 0.54);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.editStatusHeader strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 22px;
+  text-transform: capitalize;
+  letter-spacing: -0.05em;
+}
+
+.editStatusActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.editStatusActions a,
+.editStatusActions button {
+  min-height: 44px;
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 950;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.08);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.editStatusActions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.editStatusActions .removeListingButton,
+.removeListingButton {
+  color: #fff;
+  background: rgba(150, 42, 66, 0.9);
+}
+
+.primaryPhotoButton {
+  position: absolute;
+  z-index: 3;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  min-height: 30px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--plum);
+  background: rgba(255, 233, 243, 0.86);
+  font-size: 10px;
+  font-weight: 950;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.primaryPhotoActive {
+  color: #fff;
+  background: var(--plum);
+}
+
+.sellerSuccess {
+  margin: 0;
+  max-width: 980px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  color: var(--plum);
+  background: rgba(135, 186, 171, 0.74);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.listingRowActions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.listingRowActions a {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #fff;
+  background: var(--plum);
+  font-size: 11px;
+  font-weight: 950;
+}
+
 @media (min-width: 760px) {
   .photoGridEmpty {
     grid-template-columns: minmax(0, 280px);
     justify-content: center;
   }
+
+  .editStatusHeader {
+    grid-template-columns: 1fr 330px;
+    align-items: center;
+  }
+}
+
+.editStatusSwitch {
+  position: relative;
+  height: 48px;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-radius: 999px;
+  background: rgba(81, 45, 56, 0.08);
+  border: 1px solid rgba(81, 45, 56, 0.1);
+  overflow: hidden;
+}
+
+.editStatusSwitchOption {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: rgba(81, 45, 56, 0.62);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 950;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.editStatusSwitchOption:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+
+.editStatusDanger {
+  color: rgba(150, 42, 66, 0.95);
+}
+
+.editStatusSwitchSlider {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  left: 4px;
+  bottom: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: 999px;
+  background: var(--mauve);
+  box-shadow: 0 12px 30px rgba(81, 45, 56, 0.16);
+  transition: transform 240ms ease;
+}
+
+.editStatusSliderLeft {
+  transform: translateX(0);
+}
+
+.editStatusSliderMiddle {
+  transform: translateX(100%);
+}
+
+.editStatusSliderRight {
+  transform: translateX(200%);
+}
+
+.editSaveBar {
+  grid-template-columns: 1fr;
+}
+
+.editSaveBar .publishButton {
+  width: 100%;
 }
