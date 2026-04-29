@@ -457,7 +457,8 @@ export default function MarketplacePage() {
       <section className="mk-hero-strip">
         <div>
           <p>Marketplace</p>
-          <h1>Find once-loved pieces for your next event.</h1>
+          {/* <h1>Find once-loved pieces for your next event.</h1> */}
+          <h2>A Story in Every Piece.</h2>
         </div>
 
         <Link href="/seller/listings/new" className="mk-sell-cta">

@@ -41,14 +41,22 @@ export default function HomePage() {
           </Link>
         </header>
 
+        <div className="de-copy de-logo-image-wrap">
+          <img
+            src="/images/decor-encore-logo.png"
+            alt="Decor Encore - A Story in Every Piece"
+            className="de-hero-logo-image"
+          />
+        </div>
+
         <div className="de-hero-content">
           <div className="de-copy">
             <p className="de-kicker">Once-loved decor</p>
 
-            <h1>Ready for its next celebration.</h1>
+            {/* <h1>The next moment starts here.</h1> */}
 
             <p className="de-subtitle">
-              Buy and sell event decor for weddings, showers, quinceañeras,
+              Buy and sell event decor for weddings, baby showers, quinceañeras,
               birthdays, graduations, holidays, and more.
             </p>
           </div>
@@ -99,31 +107,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-
-        <nav className="de-bottom-nav" aria-label="Primary navigation">
-          <Link href="/marketplace" className="de-bottom-link">
-            <span>Shop</span>
-          </Link>
-
-          <Link href="/marketplace?view=nearby" className="de-bottom-link">
-            <span>Nearby</span>
-          </Link>
-
-          <Link href="/seller/listings/new" className="de-bottom-link de-sell-link">
-            <span>Sell</span>
-          </Link>
-
-          <Link href="/messages" className="de-bottom-link">
-            <span>Messages</span>
-          </Link>
-
-          <Link href="/profile" className="de-bottom-link">
-            <span>Profile</span>
-          </Link>
-        </nav>
       </section>
 
-      <section className="de-preview">
+      {/* <section className="de-preview">
         <div className="de-preview-header">
           <p className="de-kicker">Marketplace preview</p>
           <h2>Find the pieces that finish the look.</h2>
@@ -153,6 +139,29 @@ export default function HomePage() {
               <strong>One theme. One pickup. One clean package.</strong>
             </div>
           </Link>
+        </div>
+      </section> */}
+      <section className="de-story-section">
+        <p className="de-section-kicker">How it works</p>
+
+        <div className="de-story-grid">
+          <div className="de-story-card">
+            <span>01</span>
+            <h2>Find your pieces</h2>
+            <p>Browse once-loved decor curated for another celebration.</p>
+          </div>
+
+          <div className="de-story-card">
+            <span>02</span>
+            <h2>Build the look</h2>
+            <p>Mix, match, and create a cohesive style for your event without starting from scratch.</p>
+          </div>
+
+          <div className="de-story-card">
+            <span>03</span>
+            <h2>Pass it on</h2>
+            <p>Resell your decor after the event and let it live again.</p>
+          </div>
         </div>
       </section>
     </main>
