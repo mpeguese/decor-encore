@@ -321,6 +321,12 @@ export default function LoginClient() {
             {error ? <p className={styles.errorText}>{error}</p> : null}
             {message ? <p className={styles.messageText}>{message}</p> : null}
 
+              <p className={styles.legalText}>
+                By continuing, you agree to Decor Encore’s{" "}
+                <Link href="/terms" style={{ color: "#fff" }}>T&Cs</Link>{" "}
+                and{" "}
+                <Link href="/privacy" style={{ color: "#fff" }}>Privacy Policy.</Link>
+              </p>
             <button
               type="submit"
               className={styles.primaryButton}

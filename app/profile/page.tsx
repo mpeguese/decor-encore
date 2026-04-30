@@ -5,6 +5,7 @@ import Link from "next/link"
 import { FormEvent, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
+import { getZipCoordinates, normalizeZip } from "@/app/lib/zipCoordinates"
 import styles from "@/app/auth-flow.module.css"
 import AppBottomNav from "@/app/components/AppBottomNav"
 
@@ -89,6 +90,8 @@ export default function ProfilePage() {
     const cleanFirstName = firstName.trim()
     const cleanLastName = lastName.trim()
     const cleanFullName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ")
+    const cleanZip = normalizeZip(zipCode)
+    const zipCoordinates = cleanZip ? getZipCoordinates(cleanZip) : null
 
     const { error: updateError } = await supabase.from("profiles").upsert({
       id: userId,
@@ -97,7 +100,9 @@ export default function ProfilePage() {
       last_name: cleanLastName,
       full_name: cleanFullName,
       phone: phone.trim(),
-      zip_code: zipCode.trim(),
+      zip_code: cleanZip,
+      zip_lat: zipCoordinates?.lat ?? null,
+      zip_lng: zipCoordinates?.lng ?? null,
       can_sell: canSell,
       onboarding_complete: true,
       updated_at: new Date().toISOString(),
@@ -110,7 +115,12 @@ export default function ProfilePage() {
       return
     }
 
-    setMessage("Profile updated.")
+    setZipCode(cleanZip)
+    setMessage(
+      cleanZip && !zipCoordinates
+        ? "Profile updated. ZIP saved, but nearby radius is not available for this ZIP yet."
+        : "Profile updated."
+    )
   }
 
   async function handleLogout() {
@@ -209,6 +219,7 @@ export default function ProfilePage() {
             onChange={(event) => setZipCode(event.target.value)}
             placeholder="ZIP code"
             inputMode="numeric"
+            maxLength={10}
           />
         </label>
 

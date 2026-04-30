@@ -1,9 +1,11 @@
+// app/seller/listings/new/page.tsx
 "use client"
 
 import Link from "next/link"
 import { FormEvent, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
+import { getZipCoordinates, normalizeZip } from "@/app/lib/zipCoordinates"
 import styles from "../../seller.module.css"
 
 type ListingKind = "item" | "bundle"
@@ -268,6 +270,10 @@ export default function NewListingPage() {
 
     try {
       const listingTitle = title.trim() || "Untitled listing"
+      const cleanPickupZip = isPickup ? normalizeZip(pickupZip) : ""
+      const pickupCoordinates = cleanPickupZip
+        ? getZipCoordinates(cleanPickupZip)
+        : null
 
       const { data: listing, error: listingError } = await supabase
         .from("listings")
@@ -285,7 +291,9 @@ export default function NewListingPage() {
           secondary_color: secondaryColor.trim() || null,
           fulfillment_type: fulfillmentType,
           shipping_price: isShipping ? Number(shippingPrice || 0) : null,
-          pickup_zip: isPickup ? pickupZip.trim() || null : null,
+          pickup_zip: isPickup ? cleanPickupZip || null : null,
+          pickup_lat: isPickup ? pickupCoordinates?.lat ?? null : null,
+          pickup_lng: isPickup ? pickupCoordinates?.lng ?? null : null,
           pickup_city: isPickup ? pickupCity.trim() || null : null,
           pickup_state: isPickup ? pickupState.trim() || null : null,
           is_bundle: listingKind === "bundle",
@@ -668,6 +676,7 @@ export default function NewListingPage() {
                   onChange={(event) => setPickupZip(event.target.value)}
                   placeholder="33602"
                   inputMode="numeric"
+                  maxLength={10}
                   required={isPickup}
                 />
               </label>

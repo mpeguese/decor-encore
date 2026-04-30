@@ -1,8 +1,13 @@
+// app/marketplace/page.tsx
 "use client"
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/app/lib/supabase/client"
+import {
+  Coordinates,
+  getDistanceMiles,
+} from "@/app/lib/zipCoordinates"
 import AppBottomNav from "@/app/components/AppBottomNav"
 
 type FeedView = "for-you" | "nearby" | "bundles" | "saved"
@@ -30,6 +35,9 @@ type ListingRow = {
   primary_color: string | null
   secondary_color: string | null
   fulfillment_type: string
+  pickup_zip: string | null
+  pickup_lat: number | null
+  pickup_lng: number | null
   pickup_city: string | null
   pickup_state: string | null
   is_bundle: boolean
@@ -44,15 +52,38 @@ type MarketplaceListing = {
   price: number
   location: string
   condition: string
+  rawCondition: string
   category: string
   eventType: string
   style: string
   primaryColor: string
+  secondaryColor: string
+  fulfillmentType: string
   badge: string
   imageUrl: string
   isBundle: boolean
   isSaved: boolean
   createdAt: string
+  pickupZip: string
+  pickupLat: number | null
+  pickupLng: number | null
+  distanceMiles: number | null
+}
+
+type FilterState = {
+  condition: string
+  fulfillmentType: string
+  maxPrice: string
+  bundleOnly: boolean
+  radiusMiles: string
+}
+
+const emptyFilters: FilterState = {
+  condition: "",
+  fulfillmentType: "",
+  maxPrice: "",
+  bundleOnly: false,
+  radiusMiles: "",
 }
 
 function FilterIcon() {
@@ -87,6 +118,27 @@ const eventTypes = [
   { label: "Holiday", value: "holiday" },
 ]
 
+const conditionOptions = [
+  { label: "New", value: "new" },
+  { label: "Like new", value: "like_new" },
+  { label: "Used once", value: "used_once" },
+  { label: "Good", value: "good" },
+  { label: "Fair", value: "fair" },
+]
+
+const fulfillmentOptions = [
+  { label: "Pickup", value: "pickup" },
+  { label: "Ships", value: "shipping" },
+  { label: "Pickup or ships", value: "pickup_or_shipping" },
+]
+
+const radiusOptions = [
+  { label: "10 mi", value: "10" },
+  { label: "25 mi", value: "25" },
+  { label: "50 mi", value: "50" },
+  { label: "100 mi", value: "100" },
+]
+
 function formatCondition(value: string) {
   const labels: Record<string, string> = {
     new: "New",
@@ -118,6 +170,14 @@ function formatLocation(city: string | null, state: string | null) {
   return "Location available"
 }
 
+function formatDistance(distanceMiles: number | null) {
+  if (distanceMiles === null) return ""
+
+  if (distanceMiles < 1) return "less than 1 mi away"
+
+  return `${Math.round(distanceMiles)} mi away`
+}
+
 function getPrimaryImage(images: ListingImageRecord[]) {
   if (!images || images.length === 0) return ""
 
@@ -142,23 +202,47 @@ function getCategoryName(category: CategoryRecord[] | CategoryRecord | null) {
 
 function toMarketplaceListing(
   listing: ListingRow,
-  saved: Record<string, boolean>
+  saved: Record<string, boolean>,
+  buyerCoordinates: Coordinates | null
 ): MarketplaceListing {
+  const hasPickupCoordinates =
+    typeof listing.pickup_lat === "number" &&
+    typeof listing.pickup_lng === "number"
+
+  const listingCoordinates = hasPickupCoordinates
+    ? {
+        lat: listing.pickup_lat as number,
+        lng: listing.pickup_lng as number,
+      }
+    : null
+
+  const distanceMiles =
+    buyerCoordinates && listingCoordinates
+      ? getDistanceMiles(buyerCoordinates, listingCoordinates)
+      : null
+
   return {
     id: listing.id,
     title: listing.title,
     price: Number(listing.price || 0),
     location: formatLocation(listing.pickup_city, listing.pickup_state),
     condition: formatCondition(listing.condition),
+    rawCondition: listing.condition,
     category: getCategoryName(listing.categories),
     eventType: listing.event_type,
     style: listing.style || "",
     primaryColor: listing.primary_color || "",
+    secondaryColor: listing.secondary_color || "",
+    fulfillmentType: listing.fulfillment_type,
     badge: formatBadge(listing.fulfillment_type, listing.is_bundle),
     imageUrl: getPrimaryImage(listing.listing_images || []),
     isBundle: listing.is_bundle,
     isSaved: Boolean(saved[listing.id]),
     createdAt: listing.created_at,
+    pickupZip: listing.pickup_zip || "",
+    pickupLat: listing.pickup_lat,
+    pickupLng: listing.pickup_lng,
+    distanceMiles,
   }
 }
 
@@ -173,7 +257,12 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [userId, setUserId] = useState("")
-  //const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
+  const [buyerCoordinates, setBuyerCoordinates] = useState<Coordinates | null>(
+    null
+  )
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<FilterState>(emptyFilters)
+  const [activeFilters, setActiveFilters] = useState<FilterState>(emptyFilters)
 
   useEffect(() => {
     let mounted = true
@@ -200,10 +289,17 @@ export default function MarketplacePage() {
       if (mounted && user) {
         setUserId(user.id)
 
-        const { data: favoriteRows } = await supabase
-          .from("favorites")
-          .select("listing_id")
-          .eq("user_id", user.id)
+        const [{ data: favoriteRows }, { data: profile }] = await Promise.all([
+          supabase
+            .from("favorites")
+            .select("listing_id")
+            .eq("user_id", user.id),
+          supabase
+            .from("profiles")
+            .select("zip_lat, zip_lng")
+            .eq("id", user.id)
+            .single(),
+        ])
 
         const favoriteMap: Record<string, boolean> = {}
 
@@ -213,23 +309,17 @@ export default function MarketplacePage() {
 
         setSaved(favoriteMap)
 
-      }
-
-      if (mounted && user) {
-        setUserId(user.id)
-
-        const { data: favoriteRows } = await supabase
-          .from("favorites")
-          .select("listing_id")
-          .eq("user_id", user.id)
-
-        const favoriteMap: Record<string, boolean> = {}
-
-        ;(favoriteRows || []).forEach((row) => {
-          favoriteMap[row.listing_id] = true
-        })
-
-        setSaved(favoriteMap)
+        if (
+          typeof profile?.zip_lat === "number" &&
+          typeof profile?.zip_lng === "number"
+        ) {
+          setBuyerCoordinates({
+            lat: profile.zip_lat,
+            lng: profile.zip_lng,
+          })
+        } else {
+          setBuyerCoordinates(null)
+        }
       }
 
       const { data, error: listingsError } = await supabase
@@ -247,6 +337,9 @@ export default function MarketplacePage() {
           primary_color,
           secondary_color,
           fulfillment_type,
+          pickup_zip,
+          pickup_lat,
+          pickup_lng,
           pickup_city,
           pickup_state,
           is_bundle,
@@ -285,8 +378,25 @@ export default function MarketplacePage() {
   }, [supabase])
 
   const marketplaceListings = useMemo(() => {
-    return listings.map((listing) => toMarketplaceListing(listing, saved))
-  }, [listings, saved])
+    return listings.map((listing) =>
+      toMarketplaceListing(listing, saved, buyerCoordinates)
+    )
+  }, [listings, saved, buyerCoordinates])
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+
+    if (activeFilters.condition) count += 1
+    if (activeFilters.fulfillmentType) count += 1
+    if (activeFilters.maxPrice) count += 1
+    if (activeFilters.bundleOnly) count += 1
+    if (activeFilters.radiusMiles) count += 1
+
+    return count
+  }, [activeFilters])
+
+  const radiusNeedsProfile =
+    Boolean(activeFilters.radiusMiles) && !buyerCoordinates
 
   const filteredListings = useMemo(() => {
     let next = marketplaceListings
@@ -300,13 +410,55 @@ export default function MarketplacePage() {
     }
 
     if (view === "nearby") {
-      next = next.filter((listing) =>
-        listing.location.toLowerCase().includes("tampa")
-      )
+      if (buyerCoordinates) {
+        next = next.filter(
+          (listing) =>
+            listing.distanceMiles !== null && listing.distanceMiles <= 25
+        )
+      } else {
+        next = next.filter((listing) =>
+          listing.location.toLowerCase().includes("tampa")
+        )
+      }
     }
 
     if (selectedEventType) {
       next = next.filter((listing) => listing.eventType === selectedEventType)
+    }
+
+    if (activeFilters.condition) {
+      next = next.filter(
+        (listing) => listing.rawCondition === activeFilters.condition
+      )
+    }
+
+    if (activeFilters.fulfillmentType) {
+      next = next.filter(
+        (listing) => listing.fulfillmentType === activeFilters.fulfillmentType
+      )
+    }
+
+    if (activeFilters.bundleOnly) {
+      next = next.filter((listing) => listing.isBundle)
+    }
+
+    const maxPrice = Number(activeFilters.maxPrice)
+
+    if (activeFilters.maxPrice && !Number.isNaN(maxPrice)) {
+      next = next.filter((listing) => listing.price <= maxPrice)
+    }
+
+    const radiusMiles = Number(activeFilters.radiusMiles)
+
+    if (
+      activeFilters.radiusMiles &&
+      !Number.isNaN(radiusMiles) &&
+      buyerCoordinates
+    ) {
+      next = next.filter(
+        (listing) =>
+          listing.distanceMiles !== null && listing.distanceMiles <= radiusMiles
+      )
     }
 
     const cleanQuery = query.trim().toLowerCase()
@@ -319,13 +471,42 @@ export default function MarketplacePage() {
           listing.location.toLowerCase().includes(cleanQuery) ||
           listing.condition.toLowerCase().includes(cleanQuery) ||
           listing.style.toLowerCase().includes(cleanQuery) ||
-          listing.primaryColor.toLowerCase().includes(cleanQuery)
+          listing.primaryColor.toLowerCase().includes(cleanQuery) ||
+          listing.secondaryColor.toLowerCase().includes(cleanQuery) ||
+          listing.pickupZip.toLowerCase().includes(cleanQuery)
         )
       })
     }
 
     return next
-  }, [marketplaceListings, query, selectedEventType, view])
+  }, [
+    marketplaceListings,
+    query,
+    selectedEventType,
+    view,
+    activeFilters,
+    buyerCoordinates,
+  ])
+
+  function openFilters() {
+    setDraftFilters(activeFilters)
+    setFiltersOpen(true)
+  }
+
+  function closeFilters() {
+    setFiltersOpen(false)
+  }
+
+  function clearFilters() {
+    setDraftFilters(emptyFilters)
+    setActiveFilters(emptyFilters)
+    setFiltersOpen(false)
+  }
+
+  function applyFilters() {
+    setActiveFilters(draftFilters)
+    setFiltersOpen(false)
+  }
 
   async function toggleSaved(id: string) {
     if (!userId) {
@@ -397,11 +578,17 @@ export default function MarketplacePage() {
 
           <button
             type="button"
-            className="mk-filter-button"
+            className={`mk-filter-button ${
+              activeFilterCount > 0 ? "has-filters" : ""
+            }`}
             aria-label="Open filters"
             title="Open filters"
+            onClick={openFilters}
           >
             <FilterIcon />
+            {activeFilterCount > 0 ? (
+              <span className="mk-filter-count">{activeFilterCount}</span>
+            ) : null}
           </button>
         </div>
 
@@ -457,7 +644,6 @@ export default function MarketplacePage() {
       <section className="mk-hero-strip">
         <div>
           <p>Marketplace</p>
-          {/* <h1>Find once-loved pieces for your next event.</h1> */}
           <h2>A Story in Every Piece.</h2>
         </div>
 
@@ -489,6 +675,15 @@ export default function MarketplacePage() {
         ))}
       </section>
 
+      {radiusNeedsProfile ? (
+        <section className="mk-empty">
+          <div>
+            <h2>Add your ZIP</h2>
+            <p>Save your ZIP in your profile to use nearby radius filters.</p>
+          </div>
+        </section>
+      ) : null}
+
       <section className="mk-feed" aria-label="Marketplace listings">
         {loading ? (
           <div className="mk-empty">
@@ -501,60 +696,252 @@ export default function MarketplacePage() {
             <p>{error}</p>
           </div>
         ) : filteredListings.length > 0 ? (
-          filteredListings.map((listing) => (
-            <article key={listing.id} className="mk-card">
-              <Link href={`/listing/${listing.id}`} className="mk-card-link">
-                <div className="mk-card-media">
-                  {listing.imageUrl ? (
-                    <img
-                      src={listing.imageUrl}
-                      alt={listing.title}
-                      className="mk-card-image"
-                    />
-                  ) : (
-                    <div className="mk-card-image-fallback" />
-                  )}
+          filteredListings.map((listing) => {
+            const distanceLabel = formatDistance(listing.distanceMiles)
 
-                  <div className="mk-card-image-wash" />
+            return (
+              <article key={listing.id} className="mk-card">
+                <Link href={`/listing/${listing.id}`} className="mk-card-link">
+                  <div className="mk-card-media">
+                    {listing.imageUrl ? (
+                      <img
+                        src={listing.imageUrl}
+                        alt={listing.title}
+                        className="mk-card-image"
+                      />
+                    ) : (
+                      <div className="mk-card-image-fallback" />
+                    )}
 
-                  <span className="mk-card-badge">{listing.badge}</span>
-                </div>
+                    <div className="mk-card-image-wash" />
 
-                <div className="mk-card-body">
-                  <div>
-                    <p className="mk-card-category">{listing.category}</p>
-                    <h2>{listing.title}</h2>
+                    <span className="mk-card-badge">{listing.badge}</span>
                   </div>
 
-                  <div className="mk-card-meta">
-                    <strong>${listing.price.toFixed(0)}</strong>
-                    <span>
-                      {listing.location} · {listing.condition}
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                  <div className="mk-card-body">
+                    <div>
+                      <p className="mk-card-category">{listing.category}</p>
+                      <h2>{listing.title}</h2>
+                    </div>
 
-              <button
-                type="button"
-                className={`mk-save-button ${listing.isSaved ? "is-saved" : ""}`}
-                onClick={() => toggleSaved(listing.id)}
-                aria-label={listing.isSaved ? "Remove favorite" : "Save listing"}
-              >
-                ♥
-              </button>
-            </article>
-          ))
+                    <div className="mk-card-meta">
+                      <strong>${listing.price.toFixed(0)}</strong>
+                      <span>
+                        {listing.location}
+                        {distanceLabel ? ` · ${distanceLabel}` : ""} ·{" "}
+                        {listing.condition}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+
+                <button
+                  type="button"
+                  className={`mk-save-button ${
+                    listing.isSaved ? "is-saved" : ""
+                  }`}
+                  onClick={() => toggleSaved(listing.id)}
+                  aria-label={
+                    listing.isSaved ? "Remove favorite" : "Save listing"
+                  }
+                >
+                  ♥
+                </button>
+              </article>
+            )
+          })
         ) : (
           <div className="mk-empty">
             <h2>No listings found</h2>
-            <p>Try another search or switch views.</p>
+            <p>Try another search or adjust your filters.</p>
           </div>
         )}
       </section>
 
-      <AppBottomNav active={view === "nearby" ? "nearby" : "shop"} />
+      {filtersOpen ? (
+        <div
+          className="mk-filter-overlay"
+          role="presentation"
+          onClick={closeFilters}
+        >
+          <section
+            className="mk-filter-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Marketplace filters"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mk-filter-sheet-header">
+              <div>
+                <p>Refine</p>
+                <h2>Filters</h2>
+              </div>
 
+              <button
+                type="button"
+                className="mk-filter-close"
+                onClick={closeFilters}
+                aria-label="Close filters"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mk-filter-group">
+              <p className="mk-filter-label">Condition</p>
+              <div className="mk-filter-chip-grid">
+                {conditionOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`mk-filter-chip ${
+                      draftFilters.condition === option.value ? "is-active" : ""
+                    }`}
+                    onClick={() =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        condition:
+                          current.condition === option.value ? "" : option.value,
+                      }))
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mk-filter-group">
+              <label className="mk-filter-label" htmlFor="maxPrice">
+                Max price
+              </label>
+
+              <div className="mk-price-input-shell">
+                <span>$</span>
+                <input
+                  id="maxPrice"
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  value={draftFilters.maxPrice}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      maxPrice: event.target.value,
+                    }))
+                  }
+                  placeholder="No limit"
+                />
+              </div>
+            </div>
+
+            <div className="mk-filter-group">
+              <p className="mk-filter-label">Distance</p>
+
+              {!buyerCoordinates ? (
+                <p className="mk-filter-helper">
+                  Add your ZIP in your profile to use distance filters.
+                </p>
+              ) : null}
+
+              <div className="mk-filter-chip-grid">
+                {radiusOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`mk-filter-chip ${
+                      draftFilters.radiusMiles === option.value
+                        ? "is-active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        radiusMiles:
+                          current.radiusMiles === option.value
+                            ? ""
+                            : option.value,
+                      }))
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+
+            <div className="mk-filter-group">
+              <p className="mk-filter-label">Delivery</p>
+              <div className="mk-filter-chip-grid">
+                {fulfillmentOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`mk-filter-chip ${
+                      draftFilters.fulfillmentType === option.value
+                        ? "is-active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        fulfillmentType:
+                          current.fulfillmentType === option.value
+                            ? ""
+                            : option.value,
+                      }))
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mk-filter-group">
+              <button
+                type="button"
+                className={`mk-filter-toggle ${
+                  draftFilters.bundleOnly ? "is-active" : ""
+                }`}
+                onClick={() =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    bundleOnly: !current.bundleOnly,
+                  }))
+                }
+              >
+                <span>
+                  <strong>Bundles only</strong>
+                  <small>Show grouped decor sets and full looks.</small>
+                </span>
+                <i aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="mk-filter-actions">
+              <button
+                type="button"
+                className="mk-filter-clear"
+                onClick={clearFilters}
+              >
+                Clear
+              </button>
+
+              <button
+                type="button"
+                className="mk-filter-apply"
+                onClick={applyFilters}
+              >
+                Apply filters
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      <AppBottomNav active={view === "nearby" ? "nearby" : "shop"} />
     </main>
   )
 }
