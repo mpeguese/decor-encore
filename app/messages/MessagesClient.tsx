@@ -348,14 +348,25 @@ export default function MessagesClient() {
 
     const body = messageText.trim()
 
-    if (!body) return
+if (!body) return
 
-    if (containsOffPlatformContact(body)) {
-      setError(
-        "Please keep communication inside Decor Encore. Contact details and off-platform payment references are not allowed."
-      )
-      return
-    }
+const recentOutgoingText = messages
+  .filter((message) => message.sender_id === userId)
+  .slice(-6)
+  .map((message) => message.body || "")
+  .join(" ")
+
+const combinedMessageText = `${recentOutgoingText} ${body}`
+
+if (
+  containsOffPlatformContact(body) ||
+  containsOffPlatformContact(combinedMessageText)
+) {
+  setError(
+    "Please keep communication and payment inside Decor Encore. Contact details and off-platform payment references are not allowed."
+  )
+  return
+}
 
     if (!selectedConversation || !userId || sending) return
 
