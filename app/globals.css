@@ -1634,3 +1634,14 @@ a {
   height: 42px;
   flex: 0 0 42px;
 }
+
+.messageError {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 700;
+}

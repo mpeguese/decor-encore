@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "./messages.module.css"
 import AppBottomNav from "@/app/components/AppBottomNav"
+import { containsOffPlatformContact } from "../lib/moderation/offPlatform"
 
 type ConversationRow = {
   id: string
@@ -347,7 +348,16 @@ export default function MessagesClient() {
 
     const body = messageText.trim()
 
-    if (!selectedConversation || !userId || !body || sending) return
+    if (!body) return
+
+    if (containsOffPlatformContact(body)) {
+      setError(
+        "Please keep communication inside Decor Encore. Contact details and off-platform payment references are not allowed."
+      )
+      return
+    }
+
+    if (!selectedConversation || !userId || sending) return
 
     setSending(true)
     setError("")
@@ -530,19 +540,30 @@ export default function MessagesClient() {
                   </div>
                 )}
               </div>
+              {error ? (
+  <div className={styles.toastWrap} role="alert">
+    <div className={styles.toastError}>{error}</div>
+  </div>
+) : null}
 
-              <form className={styles.messageComposer} onSubmit={handleSend}>
-                <input
-                  value={messageText}
-                  onChange={(event) => setMessageText(event.target.value)}
-                  placeholder="Write a message..."
-                  aria-label="Message"
-                />
+<form className={styles.messageComposer} onSubmit={handleSend}>
+  <input
+    value={messageText}
+    onChange={(event) => {
+      setMessageText(event.target.value)
 
-                <button type="submit" disabled={sending || !messageText.trim()}>
-                  <SendIcon />
-                </button>
-              </form>
+      if (error) {
+        setError("")
+      }
+    }}
+    placeholder="Write a message..."
+    aria-label="Message"
+  />
+
+  <button type="submit" disabled={sending || !messageText.trim()}>
+    <SendIcon />
+  </button>
+</form>
             </>
           ) : (
             <div className={styles.stateCard}>

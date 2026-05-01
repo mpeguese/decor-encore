@@ -421,3 +421,33 @@
     max-width: 88%;
   }
 }
+
+.toastWrap {
+  position: fixed;
+  left: 50%;
+  bottom: 160px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(92vw, 420px);
+  pointer-events: none;
+}
+
+.toastError {
+  padding: 13px 16px;
+  border-radius: 18px;
+  background: rgba(220, 38, 38, 0.96);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 18px 40px rgba(127, 29, 29, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 640px) {
+  .toastWrap {
+    bottom: 190px;
+    width: min(90vw, 360px);
+  }
+}
