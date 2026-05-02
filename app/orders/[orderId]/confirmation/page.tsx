@@ -22,6 +22,26 @@ type ListingRow = {
   pickup_state: string | null
 }
 
+function buildConfirmationNumber(orderId: string) {
+  const clean = orderId.replace(/-/g, "").toUpperCase()
+  return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
+}
+
+function formatOrderDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value))
+}
+
+function formatOrderTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value))
+}
+
 export default function OrderConfirmationPage() {
   const params = useParams()
   const supabase = useMemo(() => createClient(), [])
@@ -32,6 +52,7 @@ export default function OrderConfirmationPage() {
 
   const [order, setOrder] = useState<OrderRow | null>(null)
   const [listing, setListing] = useState<ListingRow | null>(null)
+  const [buyerEmail, setBuyerEmail] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -50,6 +71,8 @@ export default function OrderConfirmationPage() {
         setLoading(false)
         return
       }
+
+      setBuyerEmail(user.email || "")
 
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
@@ -96,7 +119,7 @@ export default function OrderConfirmationPage() {
   if (loading) {
     return (
       <main className={styles.confirmationPage}>
-        <section className={styles.confirmationCard}>
+        <section className={styles.receiptShell}>
           <h1>Loading confirmation</h1>
           <p>Getting your order details.</p>
         </section>
@@ -107,45 +130,111 @@ export default function OrderConfirmationPage() {
   if (error || !order) {
     return (
       <main className={styles.confirmationPage}>
-        <section className={styles.confirmationCard}>
+        <section className={styles.receiptShell}>
           <h1>Order unavailable</h1>
           <p>{error || "This order could not be loaded."}</p>
-          <Link href="/marketplace">Back to marketplace</Link>
+          <Link href="/marketplace" className={styles.singleAction}>
+            Back to marketplace
+          </Link>
         </section>
       </main>
     )
   }
 
+  const confirmationNumber = buildConfirmationNumber(order.id)
+  const totalPaid = Number(order.total || 0).toFixed(2)
+
   return (
     <main className={styles.confirmationPage}>
-      <section className={styles.confirmationCard}>
-        <div className={styles.checkMark}>✓</div>
+      <section className={styles.receiptShell}>
+        <div className={styles.receiptHeader}>
+          <div className={styles.checkMark}>✓</div>
 
-        <p>Order confirmed</p>
-        <h1>Your purchase is complete.</h1>
+          <p>Order confirmed</p>
+          <h1>Receipt</h1>
 
-        <div className={styles.orderSummary}>
+          <span>
+            A confirmation email has been sent to{" "}
+            <strong>{buyerEmail || "your account email"}</strong>.
+          </span>
+        </div>
+
+        <div className={styles.receiptMeta}>
           <div>
-            <span>Item</span>
-            <strong>{listing?.title || "Decor listing"}</strong>
+            <span>Confirmation</span>
+            <strong>{confirmationNumber}</strong>
           </div>
 
           <div>
-            <span>Total paid</span>
-            <strong>${Number(order.total || 0).toFixed(0)}</strong>
-          </div>
-
-          <div>
-            <span>Status</span>
-            <strong>{order.status}</strong>
+            <span>Date</span>
+            <strong>
+              {formatOrderDate(order.created_at)} · {formatOrderTime(order.created_at)}
+            </strong>
           </div>
         </div>
 
-        <div className={styles.actions}>
-          <Link href="/marketplace">Keep shopping</Link>
-          <Link href="/messages">Messages</Link>
+        <div className={styles.receiptDivider} />
+
+        <div className={styles.receiptList}>
+          <div className={styles.receiptLine}>
+            <div>
+              <span>Item</span>
+              <strong>{listing?.title || "Decor listing"}</strong>
+            </div>
+            <p>${totalPaid}</p>
+          </div>
+
+          <div className={styles.receiptLine}>
+            <div>
+              <span>Status</span>
+              <strong>{order.status}</strong>
+            </div>
+            <p>Paid</p>
+          </div>
+
+          <div className={styles.receiptLine}>
+            <div>
+              <span>Payment method</span>
+              <strong>Mock card ending in 4242</strong>
+            </div>
+            <p>Card</p>
+          </div>
         </div>
+
+        <div className={styles.receiptDivider} />
+
+        <div className={styles.receiptTotal}>
+          <span>Total paid</span>
+          <strong>${totalPaid}</strong>
+        </div>
+
+        <p className={styles.receiptNote}>
+          Keep this confirmation number for your records. You can manage this
+          purchase from Orders or message the seller for pickup and fulfillment
+          details.
+        </p>
       </section>
+
+      <nav className={styles.confirmationBottomBar}>
+        <div className={styles.confirmationSegment}>
+          <Link href="/marketplace" className={styles.confirmationOption}>
+            Keep shopping
+          </Link>
+
+          <Link
+            href="/orders"
+            className={`${styles.confirmationOption} ${styles.confirmationPrimary}`}
+          >
+            Orders
+          </Link>
+
+          <Link href="/messages" className={styles.confirmationOption}>
+            Messages
+          </Link>
+
+          <span className={styles.confirmationSlider} />
+        </div>
+      </nav>
     </main>
   )
 }

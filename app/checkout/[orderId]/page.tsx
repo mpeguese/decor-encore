@@ -61,6 +61,17 @@ function digitsOnly(value: string, maxLength: number) {
   return value.replace(/\D/g, "").slice(0, maxLength)
 }
 
+function getCardBrand(cardNumber: string) {
+  const digits = cardNumber.replace(/\D/g, "")
+
+  if (/^4/.test(digits)) return "Visa"
+  if (/^(5[1-5]|2[2-7])/.test(digits)) return "Mastercard"
+  if (/^3[47]/.test(digits)) return "Amex"
+  if (/^6(?:011|5)/.test(digits)) return "Discover"
+
+  return ""
+}
+
 export default function CheckoutPage() {
   const params = useParams()
   const router = useRouter()
@@ -76,8 +87,10 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState("")
+  
 
   const [cardNumber, setCardNumber] = useState("")
+  const cardBrand = useMemo(() => getCardBrand(cardNumber), [cardNumber])
   const [expiration, setExpiration] = useState("")
   const [cvc, setCvc] = useState("")
   const [zip, setZip] = useState("")
@@ -164,6 +177,11 @@ export default function CheckoutPage() {
     event.preventDefault()
 
     if (!order) return
+
+    if (order.status === "paid") {
+    router.push(`/orders/${order.id}/confirmation`)
+    return
+    }
 
     const cardDigits = cardNumber.replace(/\D/g, "")
     const expirationDigits = expiration.replace(/\D/g, "")
@@ -297,17 +315,21 @@ export default function CheckoutPage() {
           {error ? <div className={styles.errorToast}>{error}</div> : null}
 
           <label>
-            Card number
+            <span className={styles.cardLabelRow}>
+                Card number
+                {cardBrand ? <strong>{cardBrand}</strong> : null}
+            </span>
+
             <input
-              value={cardNumber}
-              onChange={(event) => {
+                value={cardNumber}
+                onChange={(event) => {
                 setCardNumber(formatCardNumber(event.target.value))
                 if (error) setError("")
-              }}
-              placeholder="4242 4242 4242 4242"
-              inputMode="numeric"
-              autoComplete="cc-number"
-              maxLength={19}
+                }}
+                placeholder="4242 4242 4242 4242"
+                inputMode="numeric"
+                autoComplete="cc-number"
+                maxLength={19}
             />
           </label>
 
