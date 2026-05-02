@@ -1,0 +1,112 @@
+.confirmationPage {
+  min-height: 100dvh;
+  padding: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--plum);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(244, 191, 219, 0.64), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(135, 186, 171, 0.42), transparent 30%),
+    linear-gradient(180deg, #ffe9f3 0%, #fff8fb 54%, #ffe9f3 100%);
+}
+
+.confirmationCard {
+  width: min(100%, 520px);
+  padding: 24px;
+  text-align: center;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 28px 90px rgba(81, 45, 56, 0.16);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+}
+
+.checkMark {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--plum);
+  font-size: 34px;
+  font-weight: 950;
+  box-shadow: 0 18px 44px rgba(81, 45, 56, 0.24);
+}
+
+.confirmationCard > p {
+  margin: 0;
+  color: var(--mauve);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.confirmationCard h1 {
+  margin: 8px 0 0;
+  font-size: 36px;
+  line-height: 0.96;
+  letter-spacing: -0.07em;
+}
+
+.orderSummary {
+  margin-top: 22px;
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.orderSummary div {
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(255, 233, 243, 0.56);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+}
+
+.orderSummary span {
+  color: rgba(81, 45, 56, 0.54);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.orderSummary strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 16px;
+}
+
+.actions {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.actions a,
+.confirmationCard > a {
+  min-height: 50px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #fff;
+  background: var(--plum);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.actions a:last-child {
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.confirmationCard > a {
+  margin-top: 18px;
+  padding: 0 18px;
+}

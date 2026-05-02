@@ -19,13 +19,24 @@ export default function HomePage() {
     <main className="de-page">
       <section className="de-hero">
         <div className="de-video-shell" aria-hidden="true">
+          {/* <video
+            className="de-hero-video de-hero-video-desktop"
+            src="/videos/decor-hero-desktop.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="none"
+          /> */}
+
           <video
-            className="de-hero-video"
+            className="de-hero-video de-hero-video-mobile"
             src="/videos/decor-hero.mp4"
             autoPlay
             muted
             loop
             playsInline
+            preload="none"
           />
           <div className="de-video-wash" />
         </div>

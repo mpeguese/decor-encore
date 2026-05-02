@@ -563,7 +563,7 @@ export default function MarketplacePage() {
           </Link>
 
           <Link href="/profile" className="mk-avatar" aria-label="Profile">
-            M
+            P
           </Link>
         </div>
 

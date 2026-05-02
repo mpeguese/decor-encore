@@ -50,6 +50,16 @@ type SellerProfile = {
   state: string | null
 }
 
+const reportReasons = [
+  "Scam/Fraud",
+  "Selling or promoting restricted items",
+  "Promoting off platform transaction",
+  "Inaccurate listing",
+  "Nudity or sexual imagery",
+  "Violence, hate or exploitation",
+  "Bullying or harassment",
+]
+
 function BackIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -184,8 +194,17 @@ export default function ListingDetailPage() {
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-
   const [userId, setUserId] = useState("")
+
+  const [reportOpen, setReportOpen] = useState(false)
+  const [selectedReportReason, setSelectedReportReason] = useState("")
+  const [reportDetails, setReportDetails] = useState("")
+  const [reportSubmitting, setReportSubmitting] = useState(false)
+  const [reportError, setReportError] = useState("")
+  const [reportSuccess, setReportSuccess] = useState("")
+
+  const [purchaseToast, setPurchaseToast] = useState("")
+  const [buySubmitting, setBuySubmitting] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -259,25 +278,23 @@ export default function ListingDetailPage() {
         setUserId(user.id)
 
         const { data: favoriteRow } = await supabase
-            .from("favorites")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("listing_id", normalizedListing.id)
-            .maybeSingle()
+          .from("favorites")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("listing_id", normalizedListing.id)
+          .maybeSingle()
 
         setSaved(Boolean(favoriteRow))
       }
 
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, last_name, full_name, city, state")
-          .eq("id", normalizedListing.seller_id)
-          .single()
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, full_name, city, state")
+        .eq("id", normalizedListing.seller_id)
+        .single()
 
-        if (mounted) {
-          setSeller((profile || null) as SellerProfile | null)
-        }
+      if (mounted) {
+        setSeller((profile || null) as SellerProfile | null)
       }
 
       setLoading(false)
@@ -301,7 +318,7 @@ export default function ListingDetailPage() {
 
     if (!userId) {
       router.push(
-          `/login?next=${encodeURIComponent(`/listing/${listing.id}`)}&reason=favorite`
+        `/login?next=${encodeURIComponent(`/listing/${listing.id}`)}&reason=favorite`
       )
       return
     }
@@ -310,71 +327,218 @@ export default function ListingDetailPage() {
     setSaved(!currentlySaved)
 
     if (currentlySaved) {
-        const { error } = await supabase
+      const { error } = await supabase
         .from("favorites")
         .delete()
         .eq("user_id", userId)
         .eq("listing_id", listing.id)
 
-        if (error) {
+      if (error) {
         setSaved(true)
-        }
+      }
 
-        return
+      return
     }
 
     const { error } = await supabase.from("favorites").insert({
-        user_id: userId,
-        listing_id: listing.id,
+      user_id: userId,
+      listing_id: listing.id,
     })
 
     if (error) {
-        setSaved(false)
+      setSaved(false)
     }
-    }
+  }
 
   async function handleContactSeller() {
+    if (!listing) return
+
+    if (!userId) {
+      router.push(
+        `/login?next=${encodeURIComponent(`/listing/${listing.id}`)}&reason=message`
+      )
+      return
+    }
+
+    if (userId === listing.seller_id) {
+      router.push("/seller")
+      return
+    }
+
+    const { data: existingConversation } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("listing_id", listing.id)
+      .eq("buyer_id", userId)
+      .maybeSingle()
+
+    if (existingConversation?.id) {
+      router.push(`/messages?conversationId=${existingConversation.id}`)
+      return
+    }
+
+    const { data: conversation, error: conversationError } = await supabase
+      .from("conversations")
+      .insert({
+        listing_id: listing.id,
+        buyer_id: userId,
+        seller_id: listing.seller_id,
+      })
+      .select("id")
+      .single()
+
+    if (conversationError || !conversation?.id) {
+      return
+    }
+
+    router.push(`/messages?conversationId=${conversation.id}`)
+  }
+
+  async function handleBuyNow() {
   if (!listing) return
 
   if (!userId) {
-    router.push(
-      `/login?next=${encodeURIComponent(`/listing/${listing.id}`)}&reason=message`
-    )
+    setPurchaseToast("Please sign in or create an account to purchase this item.")
+
+    window.setTimeout(() => {
+      setPurchaseToast("")
+    }, 3000)
+
     return
   }
 
   if (userId === listing.seller_id) {
-    router.push("/seller")
+    setPurchaseToast("You cannot purchase your own listing.")
+
+    window.setTimeout(() => {
+      setPurchaseToast("")
+    }, 3000)
+
     return
   }
 
-  const { data: existingConversation } = await supabase
-    .from("conversations")
-    .select("id")
-    .eq("listing_id", listing.id)
-    .eq("buyer_id", userId)
-    .maybeSingle()
+  setBuySubmitting(true)
 
-  if (existingConversation?.id) {
-    router.push(`/messages?conversationId=${existingConversation.id}`)
-    return
-  }
+  const subtotal = Number(listing.price || 0)
+  const shipping =
+    listing.fulfillment_type === "shipping" ||
+    listing.fulfillment_type === "pickup_or_shipping"
+      ? Number(listing.shipping_price || 0)
+      : 0
 
-  const { data: conversation, error: conversationError } = await supabase
-    .from("conversations")
+  const total = subtotal + shipping
+
+  const { data: order, error } = await supabase
+    .from("orders")
     .insert({
       listing_id: listing.id,
       buyer_id: userId,
       seller_id: listing.seller_id,
+      status: "pending",
+      subtotal,
+      platform_fee: 0,
+      total,
     })
     .select("id")
     .single()
 
-  if (conversationError || !conversation?.id) {
+  setBuySubmitting(false)
+
+  if (error || !order?.id) {
+    setPurchaseToast(error?.message || "Unable to start checkout.")
+
+    window.setTimeout(() => {
+      setPurchaseToast("")
+    }, 3000)
+
     return
   }
 
-  router.push(`/messages?conversationId=${conversation.id}`)
+  router.push(`/checkout/${order.id}`)
+}
+
+  function openReportSheet() {
+    setReportOpen(true)
+    setReportError("")
+    setReportSuccess("")
+  }
+
+  function closeReportSheet() {
+    setReportOpen(false)
+    setReportError("")
+  }
+
+  async function handleSubmitReport() {
+  if (!listing) return
+
+  if (!userId) {
+    setReportOpen(false)
+    setReportSuccess("Please sign in or create an account to report a listing.")
+
+    window.setTimeout(() => {
+      setReportSuccess("")
+    }, 3000)
+
+    return
+  }
+
+  if (!selectedReportReason) {
+    setReportError("Please select a reason.")
+    return
+  }
+
+  setReportSubmitting(true)
+  setReportError("")
+
+  const { data: existingReports, error: existingReportError } = await supabase
+    .from("listing_reports")
+    .select("id")
+    .eq("listing_id", listing.id)
+    .eq("reported_by", userId)
+    .limit(1)
+
+  if (existingReportError) {
+    setReportSubmitting(false)
+    setReportError(existingReportError.message)
+    return
+  }
+
+  if (existingReports && existingReports.length > 0) {
+    setReportSubmitting(false)
+    setReportOpen(false)
+    setReportSuccess(
+      "You already reported this listing. Thanks for helping keep Decor Encore safe."
+    )
+
+    window.setTimeout(() => {
+      setReportSuccess("")
+    }, 3000)
+
+    return
+  }
+
+  const { error } = await supabase.from("listing_reports").insert({
+    listing_id: listing.id,
+    reported_by: userId,
+    reason: selectedReportReason,
+    details: reportDetails.trim() || null,
+  })
+
+  setReportSubmitting(false)
+
+  if (error) {
+    setReportError(error.message)
+    return
+  }
+
+  setReportOpen(false)
+  setSelectedReportReason("")
+  setReportDetails("")
+  setReportSuccess("Thanks — this report has been submitted for review.")
+
+  window.setTimeout(() => {
+    setReportSuccess("")
+  }, 3000)
 }
 
   if (loading) {
@@ -483,26 +647,6 @@ export default function ListingDetailPage() {
             <strong>${Number(listing.price || 0).toFixed(0)}</strong>
           </div>
 
-          <div className={styles.actionRow}>
-            <button
-              type="button"
-              className={`${styles.favoriteButton} ${saved ? styles.isSaved : ""}`}
-              onClick={toggleFavorite}
-            >
-              <HeartIcon filled={saved} />
-              <span>{saved ? "Saved" : "Save"}</span>
-            </button>
-
-            <button
-                type="button"
-                className={styles.messageButton}
-                onClick={handleContactSeller}
-                >
-                <MessageIcon />
-                <span>Contact seller</span>
-            </button>
-          </div>
-
           <section className={styles.infoGrid}>
             <article>
               <span>Condition</span>
@@ -608,20 +752,123 @@ export default function ListingDetailPage() {
               </p>
             </div>
           </section>
+
+          <div className={styles.reportListingFooter}>
+            <button
+              type="button"
+              className={styles.reportButton}
+              onClick={openReportSheet}
+            >
+              Report this listing
+            </button>
+          </div>
         </section>
       </section>
 
-      <nav className={styles.detailBottomBar}>
-        <div>
-          <span>Total</span>
-          <strong>${Number(listing.price || 0).toFixed(0)}</strong>
+      {purchaseToast ? (
+        <div className={styles.reportToast} role="status">
+          {purchaseToast}
         </div>
+      ) : null}
 
-        <button type="button" onClick={handleContactSeller}>
-            <MessageIcon />
-            Contact seller
-        </button>
-      </nav>
+      {reportSuccess ? (
+        <div className={styles.reportToast} role="status">
+          {reportSuccess}
+        </div>
+      ) : null}
+
+      {reportOpen ? (
+        <div className={styles.reportOverlay} role="presentation">
+          <div className={styles.reportSheet} role="dialog" aria-modal="true">
+            <div className={styles.reportHeader}>
+              <div>
+                <p>Report</p>
+                <h2>Report listing</h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeReportSheet}
+                aria-label="Close report form"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.reportReasonList}>
+              {reportReasons.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  className={
+                    selectedReportReason === reason
+                      ? styles.reportReasonActive
+                      : ""
+                  }
+                  onClick={() => {
+                    setSelectedReportReason(reason)
+                    setReportError("")
+                  }}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <label className={styles.reportDetailsField}>
+              <span>Report details</span>
+              <textarea
+                value={reportDetails}
+                onChange={(event) => setReportDetails(event.target.value)}
+                placeholder="Add any details that can help us review this listing."
+                rows={4}
+              />
+            </label>
+
+            {reportError ? (
+              <p className={styles.reportError}>{reportError}</p>
+            ) : null}
+
+            <button
+              type="button"
+              className={styles.reportSubmitButton}
+              onClick={handleSubmitReport}
+              disabled={reportSubmitting}
+            >
+              {reportSubmitting ? "Submitting..." : "Report"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <nav className={styles.detailBottomBar}>
+  <div className={styles.purchaseSegment}>
+    <div className={styles.purchaseTotal}>
+      <span>Total</span>
+      <strong>${Number(listing.price || 0).toFixed(0)}</strong>
+    </div>
+
+    <button
+      type="button"
+      className={`${styles.purchaseOption} ${styles.purchaseBuy}`}
+      onClick={handleBuyNow}
+      disabled={buySubmitting}
+    >
+      {buySubmitting ? "Starting..." : "Buy"}
+    </button>
+
+    <button
+      type="button"
+      className={`${styles.purchaseOption} ${styles.purchaseContact}`}
+      onClick={handleContactSeller}
+    >
+      <MessageIcon />
+      <span>Contact</span>
+    </button>
+
+    <span className={styles.purchaseSlider} />
+  </div>
+</nav>
     </main>
   )
 }

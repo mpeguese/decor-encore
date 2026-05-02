@@ -1,4 +1,4 @@
- /* app/listing/[id]/listing-detail.module.css */
+/* app/listing/[id]/listing-detail.module.css */
 .detailPage {
   min-height: 100dvh;
   padding: 14px 14px 112px;
@@ -244,7 +244,6 @@
 
 .favoriteButton svg,
 .messageButton svg,
-.detailBottomBar a svg,
 .detailBottomBar button svg {
   width: 20px;
   height: 20px;
@@ -280,7 +279,7 @@
 .infoGrid span,
 .detailList span,
 .sellerCard span,
-.detailBottomBar span {
+.purchaseTotal span {
   color: rgba(81, 45, 56, 0.54);
   font-size: 11px;
   font-weight: 950;
@@ -366,20 +365,26 @@
   font-weight: 800;
 }
 
+/* Bottom purchase switch */
 .detailBottomBar {
   position: fixed;
   z-index: 50;
   left: max(12px, env(safe-area-inset-left));
   right: max(12px, env(safe-area-inset-right));
   bottom: max(12px, env(safe-area-inset-bottom));
-  max-width: 520px;
+  max-width: 560px;
   margin: 0 auto;
-  min-height: 68px;
-  padding: 9px;
+}
+
+.purchaseSegment {
+  position: relative;
+  min-height: 70px;
+  padding: 7px;
   display: grid;
-  grid-template-columns: 0.75fr 1.25fr;
+  grid-template-columns: 0.9fr 1fr 1.15fr;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
+  overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 233, 243, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.68);
@@ -388,41 +393,74 @@
   -webkit-backdrop-filter: blur(28px);
 }
 
-.detailBottomBar div {
-  padding-left: 12px;
-  display: grid;
+.purchaseTotal,
+.purchaseOption {
+  position: relative;
+  z-index: 2;
 }
 
-.detailBottomBar strong {
-  font-size: 22px;
+.purchaseTotal {
+  min-width: 0;
+  padding-left: 12px;
+  display: grid;
+  align-content: center;
+}
+
+.purchaseTotal strong {
+  margin-top: 2px;
+  color: var(--plum);
+  font-size: 20px;
+  line-height: 1;
   letter-spacing: -0.06em;
 }
 
-.detailBottomBar a,
-.detailBottomBar button {
-  min-height: 50px;
+.purchaseOption {
+  min-height: 54px;
   border: 0;
   border-radius: 999px;
+  background: transparent;
+  color: rgba(81, 45, 56, 0.7);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  text-decoration: none;
-  color: #fff;
-  background: var(--plum);
-  font-size: 14px;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 950;
-  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.22);
+  line-height: 1;
   cursor: pointer;
-}
-
-.detailBottomBar button {
   appearance: none;
   -webkit-appearance: none;
-  width: 100%;
-  max-height: 50px;
-  font-family: inherit;
-  line-height: 1;
+}
+
+.purchaseBuy {
+  color: #fff;
+}
+
+.purchaseContact {
+  color: var(--plum);
+}
+
+.purchaseContact svg {
+  width: 18px;
+  height: 18px;
+}
+
+.purchaseOption:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.purchaseSlider {
+  position: absolute;
+  z-index: 1;
+  top: 7px;
+  bottom: 7px;
+  left: calc(7px + ((100% - 14px) * 0.9 / 3.05));
+  width: calc((100% - 14px) * 1 / 3.05);
+  border-radius: 999px;
+  background: var(--plum);
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.22);
 }
 
 .stateCard {
@@ -455,6 +493,175 @@
   border-radius: 999px;
   padding: 0 18px;
   font-weight: 950;
+}
+
+.reportListingFooter {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 88px;
+}
+
+.reportButton {
+  border: 0;
+  background: transparent;
+  color: rgba(81, 45, 56, 0.58);
+  font-size: 14px;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.reportOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(81, 45, 56, 0.34);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.reportSheet {
+  width: min(100%, 520px);
+  max-height: 82dvh;
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: 32px;
+  color: var(--plum);
+  background: rgba(255, 233, 243, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 28px 90px rgba(81, 45, 56, 0.28);
+}
+
+.reportHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reportHeader p {
+  margin: 0;
+  color: var(--mauve);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.reportHeader h2 {
+  margin: 4px 0 0;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.reportHeader button {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.reportReasonList {
+  margin-top: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.reportReasonList button {
+  min-height: 46px;
+  border-radius: 18px;
+  border: 1px solid rgba(81, 45, 56, 0.1);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--plum);
+  font-size: 13px;
+  font-weight: 850;
+  text-align: left;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.reportReasonList .reportReasonActive {
+  color: #fff;
+  background: var(--plum);
+  border-color: var(--plum);
+}
+
+.reportDetailsField {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.reportDetailsField span {
+  color: rgba(81, 45, 56, 0.7);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.reportDetailsField textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(81, 45, 56, 0.12);
+  border-radius: 20px;
+  padding: 13px 14px;
+  outline: none;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.reportError {
+  margin: 12px 0 0;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.reportSubmitButton {
+  margin-top: 16px;
+  min-height: 52px;
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--plum);
+  font-size: 14px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 16px 38px rgba(81, 45, 56, 0.22);
+}
+
+.reportSubmitButton:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.reportToast {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  z-index: 90;
+  width: min(92vw, 420px);
+  transform: translateX(-50%);
+  padding: 13px 16px;
+  border-radius: 18px;
+  color: #fff;
+  background: rgba(81, 45, 56, 0.94);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 850;
+  box-shadow: 0 18px 44px rgba(81, 45, 56, 0.28);
 }
 
 @media (min-width: 860px) {
@@ -513,12 +720,38 @@
     gap: 8px;
   }
 
-  .detailBottomBar {
-    min-height: 64px;
+  .purchaseSegment {
+    min-height: 66px;
+    grid-template-columns: 0.84fr 0.92fr 1.24fr;
   }
 
-  .detailBottomBar a,
-  .detailBottomBar button {
-    font-size: 13px;
+  .purchaseTotal {
+    padding-left: 9px;
+  }
+
+  .purchaseTotal span {
+    font-size: 9px;
+  }
+
+  .purchaseTotal strong {
+    font-size: 18px;
+  }
+
+  .purchaseOption {
+    min-height: 50px;
+    font-size: 12px;
+    gap: 5px;
+  }
+
+  .purchaseContact svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .purchaseSlider {
+    top: 7px;
+    bottom: 7px;
+    left: calc(7px + ((100% - 14px) * 0.84 / 3));
+    width: calc((100% - 14px) * 0.92 / 3);
   }
 }
