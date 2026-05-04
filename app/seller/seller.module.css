@@ -327,6 +327,20 @@
   font-weight: 950;
 }
 
+.payoutLink {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #fff;
+  background: var(--plum);
+  font-size: 13px;
+  font-weight: 950;
+}
+
 /* =========================================================
    Create Listing
    ========================================================= */

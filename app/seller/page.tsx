@@ -175,9 +175,12 @@ export default function SellerDashboardPage() {
       <section className={styles.payoutCard}>
         <div>
           <h2>Payout setup</h2>
-          <p>Stripe Connect will be added after listing flow is working.</p>
+          <p>Connect Stripe to receive payments from your sales.</p>
         </div>
-        <span>Later</span>
+
+        <Link href="/seller/payouts" className={styles.payoutLink}>
+          Setup
+        </Link>
       </section>
 
       <AppBottomNav active="sell" />
