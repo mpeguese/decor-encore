@@ -1,3 +1,4 @@
+// app/checkout/[orderId]/page.tsx
 "use client"
 
 import Link from "next/link"
@@ -211,28 +212,87 @@ export default function CheckoutPage() {
 
     const mockPaymentIntentId = `mock_pi_${Date.now()}`
 
-    const { error: updateError } = await supabase
-      .from("orders")
-      .update({
-        status: "paid",
-        stripe_payment_intent_id: mockPaymentIntentId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", order.id)
+    const { error: completeOrderError } = await supabase.rpc(
+      "complete_mock_order",
+      {
+        p_order_id: order.id,
+        p_payment_intent_id: mockPaymentIntentId,
+      }
+    )
 
-    if (updateError) {
-      setPaying(false)
-      setError(updateError.message)
-      return
+    if (completeOrderError) {
+    setPaying(false)
+    setError(completeOrderError.message)
+    return
     }
 
-    await supabase.from("order_events").insert({
-      order_id: order.id,
-      event_type: "mock_payment_completed",
-      note: "Mock checkout completed successfully.",
-    })
+    const { data: existingConversation } = await supabase
+  .from("conversations")
+  .select("id")
+  .eq("order_id", order.id)
+  .maybeSingle()
 
-    router.push(`/orders/${order.id}/confirmation`)
+let conversationId = existingConversation?.id || ""
+
+if (!conversationId) {
+  const { data: listingConversation } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("listing_id", order.listing_id)
+    .eq("buyer_id", order.buyer_id)
+    .maybeSingle()
+
+  if (listingConversation?.id) {
+    conversationId = listingConversation.id
+
+    await supabase
+      .from("conversations")
+      .update({
+        order_id: order.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", conversationId)
+  }
+}
+
+if (!conversationId) {
+  const { data: newConversation, error: conversationError } = await supabase
+    .from("conversations")
+    .insert({
+      order_id: order.id,
+      listing_id: order.listing_id,
+      buyer_id: order.buyer_id,
+      seller_id: order.seller_id,
+    })
+    .select("id")
+    .single()
+
+  if (conversationError || !newConversation?.id) {
+    setPaying(false)
+    setError(conversationError?.message || "Unable to start order conversation.")
+    return
+  }
+
+  conversationId = newConversation.id
+}
+
+await supabase.from("messages").insert({
+  conversation_id: conversationId,
+  sender_id: order.buyer_id,
+  body:
+    `Order confirmed for "${listing?.title || "your item"}". 
+
+Use this thread to coordinate pickup, delivery, and any questions with the seller.`,
+})
+
+await supabase
+  .from("conversations")
+  .update({
+    updated_at: new Date().toISOString(),
+  })
+  .eq("id", conversationId)
+
+router.push(`/orders/${order.id}/confirmation?conversationId=${conversationId}`)
   }
 
   if (loading) {

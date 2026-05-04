@@ -171,6 +171,10 @@ export default function ProfilePage() {
           My listings
         </Link>
 
+        <Link href="/seller/orders" className={styles.quickItem}>
+          Sales
+        </Link>
+
         <Link href="/messages" className={styles.quickItem}>
           Messages
         </Link>

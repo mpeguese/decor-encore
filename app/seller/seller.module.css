@@ -130,19 +130,32 @@
   max-width: 980px;
   margin: 20px auto 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
-.statsGrid article {
+.statsGrid article,
+.statLinkCard {
   min-height: 86px;
   padding: 14px;
   display: grid;
   align-content: center;
+  text-decoration: none;
+  color: inherit;
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.52);
   border: 1px solid rgba(255, 255, 255, 0.66);
   box-shadow: 0 16px 44px rgba(81, 45, 56, 0.1);
+}
+
+.statLinkCard {
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.statLinkCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 52px rgba(81, 45, 56, 0.14);
 }
 
 .statsGrid span {
@@ -765,7 +778,8 @@
     gap: 8px;
   }
 
-  .statsGrid article {
+  .statsGrid article,
+  .statLinkCard {
     padding: 12px;
   }
 
@@ -1025,3 +1039,4 @@
 .editSaveBar .publishButton {
   width: 100%;
 }
+

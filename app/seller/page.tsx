@@ -1,3 +1,4 @@
+// app/seller/page.tsx
 "use client"
 
 import Link from "next/link"
@@ -84,6 +85,7 @@ export default function SellerDashboardPage() {
   const publishedCount = listings.filter((item) => item.status === "published").length
   const draftCount = listings.filter((item) => item.status === "draft").length
   const pausedCount = listings.filter((item) => item.status === "paused").length
+  const soldCount = listings.filter((item) => item.status === "sold").length
 
   if (loading) {
     return (
@@ -132,6 +134,11 @@ export default function SellerDashboardPage() {
           <span>{pausedCount}</span>
           <p>Paused</p>
         </article>
+
+        <Link href="/seller/orders" className={styles.statLinkCard}>
+          <span>{soldCount}</span>
+          <p>Sold</p>
+        </Link>
       </section>
 
       <section className={styles.sellerPanel}>

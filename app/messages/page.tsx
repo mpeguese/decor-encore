@@ -1,3 +1,4 @@
+// app/messages/page.tsx
 import { Suspense } from "react"
 import MessagesClient from "./MessagesClient"
 

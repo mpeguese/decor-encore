@@ -1,0 +1,353 @@
+.sellerOrdersPage {
+  min-height: 100dvh;
+  padding: 14px 14px 96px;
+  color: var(--plum);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(244, 191, 219, 0.64), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(135, 186, 171, 0.42), transparent 30%),
+    linear-gradient(180deg, #ffe9f3 0%, #fff8fb 54%, #ffe9f3 100%);
+}
+
+.sellerOrdersHeader {
+  max-width: 920px;
+  margin: 0 auto;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+}
+
+.sellerOrdersHeader strong {
+  justify-self: center;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.backLink,
+.headerAction {
+  text-decoration: none;
+  color: var(--plum);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.headerAction {
+  justify-self: end;
+}
+
+.sellerOrdersShell {
+  width: min(100%, 920px);
+  margin: 18px auto 0;
+}
+
+.sellerOrdersIntro {
+  padding: 0 4px 16px;
+}
+
+.sellerOrdersIntro p {
+  margin: 0;
+  color: var(--mauve);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.sellerOrdersIntro h1 {
+  margin: 6px 0 0;
+  font-size: 46px;
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+}
+
+.sellerOrdersIntro span {
+  display: block;
+  margin-top: 10px;
+  color: rgba(81, 45, 56, 0.64);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.ordersList {
+  display: grid;
+  gap: 12px;
+}
+
+.orderCard {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 14px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 18px 54px rgba(81, 45, 56, 0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.orderImage {
+  min-height: 112px;
+  overflow: hidden;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(255, 233, 243, 0.76), transparent 32%),
+    linear-gradient(135deg, #512d38 0%, #b27092 52%, #87baab 100%);
+  font-size: 28px;
+  font-weight: 950;
+}
+
+.orderImage img {
+  width: 100%;
+  height: 100%;
+  min-height: 112px;
+  display: block;
+  object-fit: cover;
+}
+
+.orderContent {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 9px;
+}
+
+.orderTopLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.orderTopLine span {
+  color: var(--mauve);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.orderTopLine strong {
+  color: var(--plum);
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.orderContent h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--plum);
+  font-size: 20px;
+  line-height: 1.08;
+  font-weight: 950;
+  letter-spacing: -0.055em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.orderDetails div {
+  min-width: 0;
+}
+
+.orderDetails span {
+  display: block;
+  color: rgba(81, 45, 56, 0.54);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+}
+
+.orderDetails strong {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: rgba(81, 45, 56, 0.78);
+  font-size: 12px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.orderActions a {
+  min-height: 42px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.orderActions a:first-child {
+  color: var(--plum);
+  background: rgba(255, 233, 243, 0.72);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+}
+
+.orderActions a:last-child {
+  color: #fff;
+  background: var(--plum);
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.18);
+}
+
+.stateCard {
+  padding: 22px;
+  text-align: center;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 18px 54px rgba(81, 45, 56, 0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  margin-top: 20;
+}
+
+.stateCard h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 0.98;
+  letter-spacing: -0.065em;
+}
+
+.stateCard p {
+  margin: 10px 0 0;
+  color: rgba(81, 45, 56, 0.62);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.stateCard a {
+  margin-top: 16px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #fff;
+  background: var(--plum);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+@media (min-width: 760px) {
+  .sellerOrdersPage {
+    padding: 22px 22px 112px;
+  }
+
+  .sellerOrdersShell {
+    margin-top: 26px;
+  }
+
+  .sellerOrdersIntro h1 {
+    font-size: 56px;
+  }
+
+  .orderCard {
+    grid-template-columns: 124px minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  .orderImage,
+  .orderImage img {
+    min-height: 132px;
+  }
+
+  .orderContent h2 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .sellerOrdersHeader {
+    grid-template-columns: 64px 1fr 72px;
+  }
+
+  .orderCard {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 11px;
+    border-radius: 28px;
+  }
+
+  .orderImage,
+  .orderImage img {
+    min-height: 104px;
+  }
+
+  .orderDetails {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .orderDetails div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .orderDetails strong {
+    margin-top: 0;
+    text-align: right;
+  }
+
+  .orderActions {
+    grid-template-columns: 1fr;
+  }
+
+  .orderActions a {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 390px) {
+  .sellerOrdersPage {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .sellerOrdersIntro h1 {
+    font-size: 42px;
+  }
+
+  .orderCard {
+    grid-template-columns: 76px minmax(0, 1fr);
+    padding: 11px;
+  }
+
+  .orderImage,
+  .orderImage img {
+    min-height: 98px;
+    border-radius: 22px;
+  }
+
+  .orderContent h2 {
+    font-size: 17px;
+  }
+
+  .orderTopLine strong {
+    font-size: 16px;
+  }
+}

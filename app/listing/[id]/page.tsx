@@ -1,3 +1,4 @@
+// app/listing/[id]/page.tsx
 "use client"
 
 import Link from "next/link"
@@ -20,6 +21,7 @@ type ListingImageRecord = {
 type ListingRow = {
   id: string
   seller_id: string
+  status: string
   title: string
   description: string | null
   price: number
@@ -224,6 +226,7 @@ export default function ListingDetailPage() {
           `
           id,
           seller_id,
+          status,
           title,
           description,
           price,
@@ -395,7 +398,17 @@ export default function ListingDetailPage() {
   }
 
   async function handleBuyNow() {
-  if (!listing) return
+    if (!listing) return
+
+    if (listing.status === "sold") {
+      setPurchaseToast("This listing has already been sold.")
+
+      window.setTimeout(() => {
+        setPurchaseToast("")
+    }, 3000)
+
+    return
+  }
 
   if (!userId) {
     setPurchaseToast("Please sign in or create an account to purchase this item.")
@@ -426,7 +439,8 @@ export default function ListingDetailPage() {
       ? Number(listing.shipping_price || 0)
       : 0
 
-  const total = subtotal + shipping
+  const platformFee = Math.round(subtotal * 0.08 * 100) / 100
+  const total = subtotal + shipping + platformFee
 
   const { data: order, error } = await supabase
     .from("orders")
@@ -436,7 +450,7 @@ export default function ListingDetailPage() {
       seller_id: listing.seller_id,
       status: "pending",
       subtotal,
-      platform_fee: 0,
+      platform_fee: platformFee,
       total,
     })
     .select("id")
@@ -852,9 +866,13 @@ export default function ListingDetailPage() {
       type="button"
       className={`${styles.purchaseOption} ${styles.purchaseBuy}`}
       onClick={handleBuyNow}
-      disabled={buySubmitting}
+      disabled={buySubmitting || listing.status === "sold"}
     >
-      {buySubmitting ? "Starting..." : "Buy"}
+      {listing.status === "sold"
+        ? "Sold"
+        : buySubmitting
+          ? "Starting..."
+          : "Buy"}
     </button>
 
     <button
