@@ -323,3 +323,243 @@
   font-weight: 950;
   box-shadow: 0 16px 38px rgba(81, 45, 56, 0.22);
 }
+
+.timelineCard {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 26px;
+  background: rgba(255, 233, 243, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.64);
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timelineHeader span {
+  color: rgba(81, 45, 56, 0.52);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.timelineHeader strong {
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--plum);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.timelineList {
+  margin-top: 14px;
+  display: grid;
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.timelineMarker {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.timelineMarker span {
+  position: relative;
+  z-index: 2;
+  width: 11px;
+  height: 11px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: var(--plum);
+  box-shadow: 0 0 0 5px rgba(81, 45, 56, 0.08);
+}
+
+.timelineMarker i {
+  width: 2px;
+  min-height: 44px;
+  margin-top: 5px;
+  display: block;
+  border-radius: 999px;
+  background: rgba(81, 45, 56, 0.14);
+}
+
+.timelineContent {
+  padding-bottom: 16px;
+}
+
+.timelineItem:last-child .timelineContent {
+  padding-bottom: 0;
+}
+
+.timelineContent div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timelineContent strong {
+  color: var(--plum);
+  font-size: 14px;
+  font-weight: 950;
+  text-transform: capitalize;
+}
+
+.timelineContent span {
+  flex: 0 0 auto;
+  color: rgba(81, 45, 56, 0.52);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.timelineContent p {
+  margin: 5px 0 0;
+  color: rgba(81, 45, 56, 0.64);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.helpButton {
+  margin-top: 10px;
+  min-height: 50px;
+  width: 100%;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--plum);
+  background: rgba(255, 233, 243, 0.76);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+@media (max-width: 390px) {
+  .timelineContent div {
+    display: grid;
+    gap: 3px;
+  }
+
+  .timelineContent span {
+    font-size: 10px;
+  }
+}
+
+.buyerActionCard {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  box-shadow: 0 18px 54px rgba(81, 45, 56, 0.08);
+}
+
+.buyerActionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.buyerActionHeader span {
+  color: rgba(81, 45, 56, 0.52);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.buyerActionHeader strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--plum);
+  font-size: 22px;
+  line-height: 0.98;
+  font-weight: 950;
+  letter-spacing: -0.055em;
+}
+
+.buyerActionList {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.buyerActionList button,
+.buyerActionList a {
+  min-height: 48px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.buyerActionList button {
+  border: 0;
+  cursor: pointer;
+}
+
+.buyerActionList button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.buyerPrimaryAction {
+  color: #fff;
+  background: var(--plum);
+  box-shadow: 0 14px 34px rgba(81, 45, 56, 0.18);
+}
+
+.buyerActionList a {
+  color: var(--plum);
+  background: rgba(255, 233, 243, 0.76);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+}
+
+.buyerActionNote,
+.buyerActionError,
+.buyerActionMessage {
+  margin: 12px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.buyerActionNote {
+  color: rgba(81, 45, 56, 0.62);
+}
+
+.buyerActionError {
+  color: #9f1239;
+}
+
+.buyerActionMessage {
+  color: var(--plum);
+}
+
+@media (max-width: 390px) {
+  .buyerActionList {
+    grid-template-columns: 1fr;
+  }
+}

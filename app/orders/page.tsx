@@ -1,9 +1,29 @@
+// app/orders/page.tsx
 "use client"
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
-import styles from "./orders.module.css"
+import styles from "@/app/seller/orders/seller-orders.module.css"
+import AppBottomNav from "@/app/components/AppBottomNav"
+
+type ListingImageRow = {
+  image_url: string
+  is_primary: boolean
+  sort_order: number
+}
+
+type ListingRow =
+  | {
+      title: string
+      listing_images: ListingImageRow[] | null
+    }
+  | {
+      title: string
+      listing_images: ListingImageRow[] | null
+    }[]
+  | null
 
 type OrderRow = {
   id: string
@@ -13,22 +33,52 @@ type OrderRow = {
   status: string
   total: number
   created_at: string
-  listings:
-  | {
-      title: string
-    }
-  | {
-      title: string
-    }[]
-  | null
+  listings: ListingRow
 }
 
-function buildConfirmationNumber(orderId: string) {
-  const clean = orderId.replace(/-/g, "").toUpperCase()
-  return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
+type ProfileRow = {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  full_name: string | null
 }
 
-function formatOrderDate(value: string) {
+type ConversationRow = {
+  id: string
+  order_id: string | null
+  listing_id: string
+  buyer_id: string
+  seller_id: string
+}
+
+function getListing(order: OrderRow) {
+  if (Array.isArray(order.listings)) {
+    return order.listings[0] || null
+  }
+
+  return order.listings || null
+}
+
+function getPrimaryImage(order: OrderRow) {
+  const listing = getListing(order)
+  const images = listing?.listing_images || []
+
+  return [...images].sort((a, b) => {
+    if (a.is_primary && !b.is_primary) return -1
+    if (!a.is_primary && b.is_primary) return 1
+    return a.sort_order - b.sort_order
+  })[0]?.image_url
+}
+
+function getProfileName(profile: ProfileRow | undefined) {
+  if (!profile) return "Seller"
+
+  const name = [profile.first_name, profile.last_name].filter(Boolean).join(" ")
+
+  return name || profile.full_name || "Seller"
+}
+
+function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -40,24 +90,38 @@ function formatStatus(value: string) {
   const labels: Record<string, string> = {
     pending: "Pending",
     paid: "Paid",
+    confirmed: "Confirmed",
+    arranged: "Pickup / Delivery Arranged",
+    completed: "Completed",
     cancelled: "Cancelled",
     refunded: "Refunded",
+    disputed: "Disputed",
   }
 
   return labels[value] || value
 }
 
+function buildConfirmationNumber(orderId: string) {
+  const clean = orderId.replace(/-/g, "").toUpperCase()
+  return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
+}
+
 export default function OrdersPage() {
+  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const [orders, setOrders] = useState<OrderRow[]>([])
+  const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({})
+  const [conversationsByOrder, setConversationsByOrder] = useState<
+    Record<string, string>
+  >({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
     let mounted = true
 
-    async function loadOrders() {
+    async function loadBuyerOrders() {
       setLoading(true)
       setError("")
 
@@ -65,9 +129,10 @@ export default function OrdersPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
+      if (!mounted) return
+
       if (!user) {
-        setError("Please sign in to view your orders.")
-        setLoading(false)
+        router.replace("/login?next=/orders")
         return
       }
 
@@ -83,7 +148,12 @@ export default function OrdersPage() {
           total,
           created_at,
           listings (
-            title
+            title,
+            listing_images (
+              image_url,
+              is_primary,
+              sort_order
+            )
           )
         `
         )
@@ -93,44 +163,94 @@ export default function OrdersPage() {
       if (!mounted) return
 
       if (ordersError) {
-        setError(ordersError.message)
         setOrders([])
+        setError(ordersError.message)
         setLoading(false)
         return
       }
 
-      setOrders((data || []) as OrderRow[])
+      const nextOrders = (data || []) as unknown as OrderRow[]
+      setOrders(nextOrders)
+
+      const sellerIds = Array.from(
+        new Set(nextOrders.map((order) => order.seller_id).filter(Boolean))
+      )
+
+      if (sellerIds.length > 0) {
+        const { data: profileRows } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name, full_name")
+          .in("id", sellerIds)
+
+        if (mounted) {
+          const profileMap: Record<string, ProfileRow> = {}
+
+          ;((profileRows || []) as ProfileRow[]).forEach((profile) => {
+            profileMap[profile.id] = profile
+          })
+
+          setProfiles(profileMap)
+        }
+      }
+
+      const orderIds = nextOrders.map((order) => order.id)
+
+      if (orderIds.length > 0) {
+        const { data: conversationRows } = await supabase
+          .from("conversations")
+          .select("id, order_id, listing_id, buyer_id, seller_id")
+          .in("order_id", orderIds)
+
+        if (mounted) {
+          const conversationMap: Record<string, string> = {}
+
+          ;((conversationRows || []) as ConversationRow[]).forEach(
+            (conversation) => {
+              if (conversation.order_id) {
+                conversationMap[conversation.order_id] = conversation.id
+              }
+            }
+          )
+
+          setConversationsByOrder(conversationMap)
+        }
+      }
+
       setLoading(false)
     }
 
-    loadOrders()
+    loadBuyerOrders()
 
     return () => {
       mounted = false
     }
-  }, [supabase])
+  }, [router, supabase])
 
   return (
-    <main className={styles.ordersPage}>
-      <header className={styles.ordersHeader}>
-        <Link href="/marketplace" className={styles.backLink}>
+    <main className={styles.sellerOrdersPage}>
+      <header className={styles.sellerOrdersHeader}>
+        <Link href="/profile" className={styles.backLink}>
           Back
         </Link>
 
         <strong>Decor Encore</strong>
+
+        <Link href="/messages" className={styles.headerAction}>
+          Messages
+        </Link>
       </header>
 
-      <section className={styles.ordersShell}>
-        <div className={styles.ordersIntro}>
-          <p>Purchases</p>
-          <h1>Your orders</h1>
-          <span>Review receipts, confirmation numbers, and purchase status.</span>
+      <section className={styles.sellerOrdersShell}>
+        <div className={styles.sellerOrdersIntro}>
+          <p>Your orders</p>
+          <h1>Purchases</h1>
+          <span>Track what you bought, seller details, and order help.</span>
         </div>
 
         {loading ? (
           <section className={styles.stateCard}>
-            <h2>Loading orders</h2>
-            <p>Getting your purchases.</p>
+            <h2>Loading purchases</h2>
+            <p>Getting your latest orders.</p>
           </section>
         ) : null}
 
@@ -138,77 +258,89 @@ export default function OrdersPage() {
           <section className={styles.stateCard}>
             <h2>Orders unavailable</h2>
             <p>{error}</p>
-            <Link href="/login?next=/orders">Sign in</Link>
+            <Link href="/profile">Back to profile</Link>
           </section>
         ) : null}
 
         {!loading && !error && orders.length === 0 ? (
           <section className={styles.stateCard}>
-            <h2>No orders yet</h2>
-            <p>Your purchases will appear here after checkout.</p>
-            <Link href="/marketplace">Start shopping</Link>
+            <h2>No purchases yet</h2>
+            <p>When you buy once-loved decor, your orders will appear here.</p>
+            <Link href="/marketplace">Browse decor</Link>
           </section>
         ) : null}
 
         {!loading && !error && orders.length > 0 ? (
           <div className={styles.ordersList}>
             {orders.map((order) => {
-              const listingRecord = Array.isArray(order.listings)
-                ? order.listings[0]
-                : order.listings
-
-              const title = listingRecord?.title || "Decor listing"
-              const statusLabel = formatStatus(order.status)
+              const listing = getListing(order)
+              const imageUrl = getPrimaryImage(order)
+              const sellerName = getProfileName(profiles[order.seller_id])
+              const conversationId = conversationsByOrder[order.id]
+              const messageHref = conversationId
+                ? `/messages?conversationId=${conversationId}`
+                : "/messages"
 
               return (
-                <Link
-                  key={order.id}
-                  href={`/orders/${order.id}/confirmation`}
-                  className={styles.orderRow}
-                >
-                  <div className={styles.orderMain}>
-                    <span>{buildConfirmationNumber(order.id)}</span>
-                    <strong>{title}</strong>
-                    <p>{formatOrderDate(order.created_at)}</p>
+                <article key={order.id} className={styles.orderCard}>
+                  <div className={styles.orderImage}>
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={listing?.title || "Purchased item"}
+                      />
+                    ) : (
+                      <span>D</span>
+                    )}
                   </div>
 
-                  <div className={styles.orderMeta}>
-                    <strong>${Number(order.total || 0).toFixed(2)}</strong>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        order.status === "paid" ? styles.statusPaid : ""
-                      }`}
-                    >
-                      {statusLabel}
-                    </span>
+                  <div className={styles.orderContent}>
+                    <div className={styles.orderTopLine}>
+                      <span>{buildConfirmationNumber(order.id)}</span>
+                      <strong>${Number(order.total || 0).toFixed(2)}</strong>
+                    </div>
+
+                    <h2>{listing?.title || "Decor listing"}</h2>
+
+                    <div className={styles.orderDetails}>
+                      <div>
+                        <span>Seller</span>
+                        <strong>{sellerName}</strong>
+                      </div>
+
+                      <div>
+                        <span>Date</span>
+                        <strong>{formatDate(order.created_at)}</strong>
+                      </div>
+
+                      <div>
+                        <span>Status</span>
+                        <strong>{formatStatus(order.status)}</strong>
+                      </div>
+                    </div>
+
+                    <div className={styles.orderActions}>
+                      <Link href={`/orders/${order.id}/confirmation`}>
+                        View Details
+                      </Link>
+
+                      <Link href={messageHref} className={styles.orderActionPrimary}>
+                        Message Seller
+                      </Link>
+
+                      <Link href={`/support/order?orderId=${order.id}`}>
+                        Need Help
+                      </Link>
+                    </div>
                   </div>
-                </Link>
+                </article>
               )
             })}
           </div>
         ) : null}
       </section>
 
-      <nav className={styles.ordersBottomBar}>
-        <div className={styles.ordersSegment}>
-          <Link href="/marketplace" className={styles.ordersOption}>
-            Keep shopping
-          </Link>
-
-          <Link
-            href="/orders"
-            className={`${styles.ordersOption} ${styles.ordersPrimary}`}
-          >
-            Orders
-          </Link>
-
-          <Link href="/messages" className={styles.ordersOption}>
-            Messages
-          </Link>
-
-          <span className={styles.ordersSlider} />
-        </div>
-      </nav>
+      <AppBottomNav active="orders" />
     </main>
   )
 }

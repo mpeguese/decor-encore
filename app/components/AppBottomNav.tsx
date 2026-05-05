@@ -1,3 +1,4 @@
+// app/components/AppBottomNav.tsx
 "use client"
 
 import Link from "next/link"
@@ -6,19 +7,71 @@ import { usePathname } from "next/navigation"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "./app-bottom-nav.module.css"
 
-type AppBottomNavProps = {
-  active?: "shop" | "nearby" | "sell" | "messages" | "profile"
+type NavKey =
+  | "shop"
+  | "nearby"
+  | "sell"
+  | "messages"
+  | "profile"
+  | "orders"
+  | "support"
+
+type AppBottomNavItem = {
+  key: NavKey
+  label: string
+  href: string
+  variant?: "default" | "sell"
 }
 
-function hasActivePath(pathname: string, target: AppBottomNavProps["active"]) {
+type AppBottomNavProps = {
+  active?: NavKey
+  items?: AppBottomNavItem[]
+}
+
+const defaultItems: AppBottomNavItem[] = [
+  {
+    key: "shop",
+    label: "Shop",
+    href: "/marketplace",
+  },
+  {
+    key: "nearby",
+    label: "Nearby",
+    href: "/marketplace?view=nearby",
+  },
+  {
+    key: "sell",
+    label: "Sell",
+    href: "/seller/listings/new",
+    variant: "sell",
+  },
+  {
+    key: "messages",
+    label: "Messages",
+    href: "/messages",
+  },
+  {
+    key: "profile",
+    label: "Profile",
+    href: "/profile",
+  },
+]
+
+function hasActivePath(pathname: string, target: NavKey) {
   if (target === "shop") return pathname === "/marketplace"
+  if (target === "nearby") return false
   if (target === "sell") return pathname.startsWith("/seller")
   if (target === "messages") return pathname.startsWith("/messages")
   if (target === "profile") return pathname.startsWith("/profile")
+  if (target === "orders") return pathname.startsWith("/orders")
+  if (target === "support") return pathname.startsWith("/support")
   return false
 }
 
-export default function AppBottomNav({ active }: AppBottomNavProps) {
+export default function AppBottomNav({
+  active,
+  items = defaultItems,
+}: AppBottomNavProps) {
   const pathname = usePathname()
   const supabase = useMemo(() => createClient(), [])
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
@@ -71,63 +124,41 @@ export default function AppBottomNav({ active }: AppBottomNavProps) {
     }
   }, [supabase, pathname])
 
-  const activeItem = active
-
   return (
-    <nav className={styles.appBottomNav} aria-label="Primary navigation">
-      <Link
-        href="/marketplace"
-        className={`${styles.navLink} ${
-          activeItem === "shop" || hasActivePath(pathname, "shop")
-            ? styles.active
-            : ""
-        }`}
-      >
-        Shop
-      </Link>
+    <nav 
+      className={styles.appBottomNav} 
+      aria-label="Primary navigation"
+      style={{ "--nav-count": items.length } as React.CSSProperties}
+    >
+      {items.map((item) => {
+        const isSellVariant = item.variant === "sell"
+        const isActive = active ? active === item.key : hasActivePath(pathname, item.key)
 
-      <Link
-        href="/marketplace?view=nearby"
-        className={`${styles.navLink} ${activeItem === "nearby" ? styles.active : ""}`}
-      >
-        Nearby
-      </Link>
-
-      <Link
-        href="/seller/listings/new"
-        className={`${styles.navLink} ${styles.sellLink} ${
-          activeItem === "sell" || hasActivePath(pathname, "sell")
-            ? styles.sellActive
-            : ""
-        }`}
-      >
-        Sell
-      </Link>
-
-      <Link
-        href="/messages"
-        className={`${styles.navLink} ${
-          activeItem === "messages" || hasActivePath(pathname, "messages")
-            ? styles.active
-            : ""
-        }`}
-      >
-        <span className={styles.labelWithDot}>
-          Messages
-          {hasUnreadMessages ? <span className={styles.unreadDot} /> : null}
-        </span>
-      </Link>
-
-      <Link
-        href="/profile"
-        className={`${styles.navLink} ${
-          activeItem === "profile" || hasActivePath(pathname, "profile")
-            ? styles.active
-            : ""
-        }`}
-      >
-        Profile
-      </Link>
+        return (
+          <Link
+            key={item.key}
+            href={item.href}
+            className={`${styles.navLink} ${
+              isSellVariant ? styles.sellLink : ""
+            } ${
+              isActive
+                ? isSellVariant
+                  ? styles.sellActive
+                  : styles.active
+                : ""
+            }`}
+          >
+            {item.key === "messages" ? (
+              <span className={styles.labelWithDot}>
+                {item.label}
+                {hasUnreadMessages ? <span className={styles.unreadDot} /> : null}
+              </span>
+            ) : (
+              item.label
+            )}
+          </Link>
+        )
+      })}
     </nav>
   )
 }

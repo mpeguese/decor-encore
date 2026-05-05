@@ -163,6 +163,10 @@ export default function ProfilePage() {
       </section>
 
       <section className={styles.quickGrid}>
+        <Link href="/orders" className={styles.quickItem}>
+          Purchases
+        </Link>
+
         <Link href="/marketplace?view=saved" className={styles.quickItem}>
           Favorites
         </Link>

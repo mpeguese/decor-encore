@@ -4,6 +4,8 @@
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { FormEvent, useEffect, useMemo, useState } from "react"
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
+import { loadStripe } from "@stripe/stripe-js"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "./checkout.module.css"
 
@@ -34,6 +36,18 @@ type ListingImageRow = {
   sort_order: number
 }
 
+type StripeCheckoutFormProps = {
+  order: OrderRow
+  listing: ListingRow
+  clientSecret: string
+}
+
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+
+const stripePromise = stripePublishableKey
+  ? loadStripe(stripePublishableKey)
+  : null
+
 function getPrimaryImage(images: ListingImageRow[]) {
   return [...images].sort((a, b) => {
     if (a.is_primary && !b.is_primary) return -1
@@ -42,40 +56,201 @@ function getPrimaryImage(images: ListingImageRow[]) {
   })[0]?.image_url
 }
 
-function formatCardNumber(value: string) {
-  const digitsOnly = value.replace(/\D/g, "").slice(0, 16)
+function StripeCheckoutForm({
+  order,
+  listing,
+  clientSecret,
+}: StripeCheckoutFormProps) {
+  const router = useRouter()
+  const stripe = useStripe()
+  const elements = useElements()
+  const supabase = useMemo(() => createClient(), [])
 
-  return digitsOnly.replace(/(.{4})/g, "$1 ").trim()
-}
+  const [paying, setPaying] = useState(false)
+  const [error, setError] = useState("")
 
-function formatExpiration(value: string) {
-  const digitsOnly = value.replace(/\D/g, "").slice(0, 4)
+  async function finalizeOrder(paymentIntentId: string) {
+    const { error: completeOrderError } = await supabase.rpc(
+      "complete_mock_order",
+      {
+        p_order_id: order.id,
+        p_payment_intent_id: paymentIntentId,
+      }
+    )
 
-  if (digitsOnly.length <= 2) {
-    return digitsOnly
+    if (completeOrderError) {
+      throw new Error(completeOrderError.message)
+    }
+
+    const { data: existingConversation } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("order_id", order.id)
+      .maybeSingle()
+
+    let conversationId = existingConversation?.id || ""
+
+    if (!conversationId) {
+      const { data: listingConversation } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", order.listing_id)
+        .eq("buyer_id", order.buyer_id)
+        .maybeSingle()
+
+      if (listingConversation?.id) {
+        conversationId = listingConversation.id
+
+        await supabase
+          .from("conversations")
+          .update({
+            order_id: order.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", conversationId)
+      }
+    }
+
+    if (!conversationId) {
+      const { data: newConversation, error: conversationError } = await supabase
+        .from("conversations")
+        .insert({
+          order_id: order.id,
+          listing_id: order.listing_id,
+          buyer_id: order.buyer_id,
+          seller_id: order.seller_id,
+        })
+        .select("id")
+        .single()
+
+      if (conversationError || !newConversation?.id) {
+        throw new Error(
+          conversationError?.message || "Unable to start order conversation."
+        )
+      }
+
+      conversationId = newConversation.id
+    }
+
+    await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: order.buyer_id,
+      body: `Order confirmed for "${listing.title || "your item"}". 
+
+Use this thread to coordinate pickup, delivery, and any questions with the seller.`,
+    })
+
+    await supabase
+      .from("conversations")
+      .update({
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", conversationId)
+
+    router.push(`/orders/${order.id}/confirmation?conversationId=${conversationId}`)
   }
 
-  return `${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`
-}
+  async function handleStripePayment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
 
-function digitsOnly(value: string, maxLength: number) {
-  return value.replace(/\D/g, "").slice(0, maxLength)
-}
+    if (!stripe || !elements) {
+      setError("Payment form is still loading.")
+      return
+    }
 
-function getCardBrand(cardNumber: string) {
-  const digits = cardNumber.replace(/\D/g, "")
+    if (order.status === "paid" || order.status === "completed") {
+      router.push(`/orders/${order.id}/confirmation`)
+      return
+    }
 
-  if (/^4/.test(digits)) return "Visa"
-  if (/^(5[1-5]|2[2-7])/.test(digits)) return "Mastercard"
-  if (/^3[47]/.test(digits)) return "Amex"
-  if (/^6(?:011|5)/.test(digits)) return "Discover"
+    setPaying(true)
+    setError("")
 
-  return ""
+    const { error: submitError } = await elements.submit()
+
+    if (submitError) {
+      setPaying(false)
+      setError(submitError.message || "Please check your payment details.")
+      return
+    }
+
+    const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/orders/${order.id}/confirmation`,
+      },
+      redirect: "if_required",
+    })
+
+    if (confirmError) {
+      setPaying(false)
+      setError(confirmError.message || "Payment could not be completed.")
+      return
+    }
+
+    if (paymentIntent?.status === "succeeded") {
+      try {
+        await finalizeOrder(paymentIntent.id)
+      } catch (finalizeError) {
+        setPaying(false)
+        setError(
+          finalizeError instanceof Error
+            ? finalizeError.message
+            : "Payment succeeded, but the order could not be finalized."
+        )
+      }
+
+      return
+    }
+
+    if (paymentIntent?.status === "processing") {
+      setError("Payment is processing. Please check your order again shortly.")
+      setPaying(false)
+      return
+    }
+
+    setError("Payment was not completed. Please try again.")
+    setPaying(false)
+  }
+
+  return (
+    <form className={styles.paymentCard} onSubmit={handleStripePayment}>
+      <div>
+        <p>Secure payment</p>
+        <h2>Pay with Stripe</h2>
+        <span>Use 4242 4242 4242 4242 while testing in Stripe test mode.</span>
+      </div>
+
+      {error ? <div className={styles.errorToast}>{error}</div> : null}
+
+      <div className={styles.trustRow}>
+        <span>Secure checkout</span>
+        <strong>Powered by Stripe</strong>
+      </div>
+
+      <div className={styles.paymentElementBox}>
+        <PaymentElement
+          options={{
+            layout: "tabs",
+          }}
+        />
+      </div>
+
+      <button type="submit" disabled={paying || !stripe || !elements}>
+        {paying ? "Processing..." : `Pay $${Number(order.total || 0).toFixed(0)}`}
+      </button>
+
+      <p className={styles.paymentFinePrint}>
+        Your payment details are securely processed by Stripe. Decor Encore does
+        not store your full card number.
+      </p>
+    </form>
+  )
 }
 
 export default function CheckoutPage() {
   const params = useParams()
-  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const orderId = Array.isArray(params.orderId)
@@ -85,16 +260,10 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState<OrderRow | null>(null)
   const [listing, setListing] = useState<ListingRow | null>(null)
   const [images, setImages] = useState<ListingImageRow[]>([])
+  const [clientSecret, setClientSecret] = useState("")
   const [loading, setLoading] = useState(true)
-  const [paying, setPaying] = useState(false)
+  const [paymentLoading, setPaymentLoading] = useState(false)
   const [error, setError] = useState("")
-  
-
-  const [cardNumber, setCardNumber] = useState("")
-  const cardBrand = useMemo(() => getCardBrand(cardNumber), [cardNumber])
-  const [expiration, setExpiration] = useState("")
-  const [cvc, setCvc] = useState("")
-  const [zip, setZip] = useState("")
 
   useEffect(() => {
     let mounted = true
@@ -108,6 +277,8 @@ export default function CheckoutPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      if (!mounted) return
 
       if (!user) {
         setError("Please sign in to continue checkout.")
@@ -174,126 +345,49 @@ export default function CheckoutPage() {
     }
   }, [orderId, supabase])
 
-  async function handleMockPayment(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  useEffect(() => {
+    let mounted = true
 
-    if (!order) return
+    async function initializePayment() {
+      if (!order || clientSecret) return
 
-    if (order.status === "paid") {
-    router.push(`/orders/${order.id}/confirmation`)
-    return
-    }
-
-    const cardDigits = cardNumber.replace(/\D/g, "")
-    const expirationDigits = expiration.replace(/\D/g, "")
-
-    if (cardDigits.length !== 16) {
-      setError("Enter a valid 16-digit test card number.")
-      return
-    }
-
-    if (expirationDigits.length !== 4) {
-      setError("Enter an expiration date in MM/YY format.")
-      return
-    }
-
-    if (cvc.length !== 3) {
-      setError("Enter a valid 3-digit CVC.")
-      return
-    }
-
-    if (zip.length !== 5) {
-      setError("Enter a valid 5-digit billing ZIP code.")
-      return
-    }
-
-    setPaying(true)
-    setError("")
-
-    const mockPaymentIntentId = `mock_pi_${Date.now()}`
-
-    const { error: completeOrderError } = await supabase.rpc(
-      "complete_mock_order",
-      {
-        p_order_id: order.id,
-        p_payment_intent_id: mockPaymentIntentId,
+      if (order.status === "paid" || order.status === "completed") {
+        return
       }
-    )
 
-    if (completeOrderError) {
-    setPaying(false)
-    setError(completeOrderError.message)
-    return
+      setPaymentLoading(true)
+      setError("")
+
+      const response = await fetch("/api/stripe/create-payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+        }),
+      })
+
+      const payload = await response.json()
+
+      if (!mounted) return
+
+      if (!response.ok) {
+        setError(payload.error || "Unable to initialize payment.")
+        setPaymentLoading(false)
+        return
+      }
+
+      setClientSecret(payload.clientSecret || "")
+      setPaymentLoading(false)
     }
 
-    const { data: existingConversation } = await supabase
-  .from("conversations")
-  .select("id")
-  .eq("order_id", order.id)
-  .maybeSingle()
+    initializePayment()
 
-let conversationId = existingConversation?.id || ""
-
-if (!conversationId) {
-  const { data: listingConversation } = await supabase
-    .from("conversations")
-    .select("id")
-    .eq("listing_id", order.listing_id)
-    .eq("buyer_id", order.buyer_id)
-    .maybeSingle()
-
-  if (listingConversation?.id) {
-    conversationId = listingConversation.id
-
-    await supabase
-      .from("conversations")
-      .update({
-        order_id: order.id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", conversationId)
-  }
-}
-
-if (!conversationId) {
-  const { data: newConversation, error: conversationError } = await supabase
-    .from("conversations")
-    .insert({
-      order_id: order.id,
-      listing_id: order.listing_id,
-      buyer_id: order.buyer_id,
-      seller_id: order.seller_id,
-    })
-    .select("id")
-    .single()
-
-  if (conversationError || !newConversation?.id) {
-    setPaying(false)
-    setError(conversationError?.message || "Unable to start order conversation.")
-    return
-  }
-
-  conversationId = newConversation.id
-}
-
-await supabase.from("messages").insert({
-  conversation_id: conversationId,
-  sender_id: order.buyer_id,
-  body:
-    `Order confirmed for "${listing?.title || "your item"}". 
-
-Use this thread to coordinate pickup, delivery, and any questions with the seller.`,
-})
-
-await supabase
-  .from("conversations")
-  .update({
-    updated_at: new Date().toISOString(),
-  })
-  .eq("id", conversationId)
-
-router.push(`/orders/${order.id}/confirmation?conversationId=${conversationId}`)
-  }
+    return () => {
+      mounted = false
+    }
+  }, [order, clientSecret])
 
   if (loading) {
     return (
@@ -365,89 +459,67 @@ router.push(`/orders/${order.id}/confirmation?conversationId=${conversationId}`)
           </div>
         </section>
 
-        <form className={styles.paymentCard} onSubmit={handleMockPayment}>
-          <div>
-            <p>Mock payment</p>
-            <h2>Pay with test card</h2>
-            <span>Use 4242 4242 4242 4242 for testing.</span>
-          </div>
+        {error ? <div className={styles.errorToast}>{error}</div> : null}
 
-          {error ? <div className={styles.errorToast}>{error}</div> : null}
+        {order.status === "paid" || order.status === "completed" ? (
+          <section className={styles.paymentCard}>
+            <div>
+              <p>Already paid</p>
+              <h2>Order complete</h2>
+              <span>This order has already been paid.</span>
+            </div>
 
-          <label>
-            <span className={styles.cardLabelRow}>
-                Card number
-                {cardBrand ? <strong>{cardBrand}</strong> : null}
-            </span>
-
-            <input
-                value={cardNumber}
-                onChange={(event) => {
-                setCardNumber(formatCardNumber(event.target.value))
-                if (error) setError("")
-                }}
-                placeholder="4242 4242 4242 4242"
-                inputMode="numeric"
-                autoComplete="cc-number"
-                maxLength={19}
+            <Link
+              href={`/orders/${order.id}/confirmation`}
+              className={styles.paidLink}
+            >
+              View order
+            </Link>
+          </section>
+        ) : paymentLoading ? (
+          <section className={styles.paymentCard}>
+            <div>
+              <p>Secure payment</p>
+              <h2>Loading payment</h2>
+              <span>Preparing Stripe checkout.</span>
+            </div>
+          </section>
+        ) : clientSecret && stripePromise ? (
+          <Elements
+            stripe={stripePromise}
+            options={{
+              clientSecret,
+              appearance: {
+                theme: "stripe",
+                variables: {
+                  colorPrimary: "#512d38",
+                  colorText: "#512d38",
+                  colorDanger: "#9f1239",
+                  colorBackground: "rgba(255, 255, 255, 0.72)",
+                  borderRadius: "18px",
+                  fontFamily:
+                    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                },
+              },
+            }}
+          >
+            <StripeCheckoutForm
+              order={order}
+              listing={listing}
+              clientSecret={clientSecret}
             />
-          </label>
-
-          <div className={styles.fieldGrid}>
-            <label>
-              Expiration
-              <input
-                value={expiration}
-                onChange={(event) => {
-                  setExpiration(formatExpiration(event.target.value))
-                  if (error) setError("")
-                }}
-                placeholder="12/30"
-                inputMode="numeric"
-                autoComplete="cc-exp"
-                maxLength={5}
-              />
-            </label>
-
-            <label>
-              CVC
-              <input
-                value={cvc}
-                onChange={(event) => {
-                  setCvc(digitsOnly(event.target.value, 3))
-                  if (error) setError("")
-                }}
-                placeholder="123"
-                inputMode="numeric"
-                autoComplete="cc-csc"
-                maxLength={3}
-              />
-            </label>
-          </div>
-
-          <label>
-            Billing ZIP
-            <input
-              value={zip}
-              onChange={(event) => {
-                setZip(digitsOnly(event.target.value, 5))
-                if (error) setError("")
-              }}
-              placeholder="12345"
-              inputMode="numeric"
-              autoComplete="postal-code"
-              maxLength={5}
-            />
-          </label>
-
-          <button type="submit" disabled={paying || order.status === "paid"}>
-            {order.status === "paid"
-              ? "Already paid"
-              : paying
-                ? "Processing..."
-                : `Pay $${Number(order.total || 0).toFixed(0)}`}
-          </button>
-        </form>
+          </Elements>
+        ) : (
+          <section className={styles.paymentCard}>
+            <div>
+              <p>Payment unavailable</p>
+              <h2>Stripe could not load</h2>
+              <span>
+                Check that NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is configured.
+              </span>
+            </div>
+          </section>
+        )}
       </section>
     </main>
   )

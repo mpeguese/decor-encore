@@ -312,10 +312,16 @@ export default function SellerOrdersPage() {
 
                     <div className={styles.orderActions}>
                       <Link href={`/seller/orders/${order.id}`}>
-                        View details
+                        View Details
                       </Link>
 
-                      <Link href={messageHref}>Message buyer</Link>
+                      <Link href={messageHref} className={styles.orderActionPrimary}>
+                        Message Buyer
+                      </Link>
+
+                      <Link href={`/support/order?orderId=${order.id}`}>
+                        Need Help
+                      </Link>
                     </div>
                   </div>
                 </article>

@@ -1,3 +1,4 @@
+// app/orders/[orderId]/confirmation/page.tsx
 "use client"
 
 import Link from "next/link"
@@ -28,6 +29,14 @@ type ListingImageRow = {
   sort_order: number
 }
 
+type OrderEventRow = {
+  id: string
+  order_id: string
+  event_type: string
+  note: string | null
+  created_at: string
+}
+
 function buildConfirmationNumber(orderId: string) {
   const clean = orderId.replace(/-/g, "").toUpperCase()
   return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
@@ -56,6 +65,64 @@ function getPrimaryImage(images: ListingImageRow[]) {
   })[0]?.image_url
 }
 
+function formatStatus(value: string) {
+  const labels: Record<string, string> = {
+    pending: "Pending",
+    paid: "Paid",
+    confirmed: "Confirmed",
+    arranged: "Pickup / Delivery Arranged",
+    completed: "Completed",
+    cancelled: "Cancelled",
+    refunded: "Refunded",
+    disputed: "Disputed",
+  }
+
+  return labels[value] || value
+}
+
+function formatTimelineLabel(eventType: string) {
+  const labels: Record<string, string> = {
+    order_created: "Order placed",
+    payment_received: "Payment received",
+    seller_confirmed: "Seller confirmed",
+    pickup_delivery_arranged: "Pickup / delivery arranged",
+    buyer_confirmed_received: "Buyer confirmed received",
+    buyer_reviewed_seller: "Buyer reviewed seller",
+    seller_reviewed_buyer: "Seller reviewed buyer",
+    order_completed: "Completed",
+    order_cancelled: "Cancelled",
+    support_requested: "Help requested",
+    refund_requested: "Refund requested",
+    refund_processed: "Refund processed",
+  }
+
+  return labels[eventType] || eventType.replace(/_/g, " ")
+}
+
+function buildTimelineEvents(order: OrderRow, events: OrderEventRow[]) {
+  if (events.length > 0) {
+    return events.map((event) => ({
+      id: event.id,
+      label: formatTimelineLabel(event.event_type),
+      note: event.note || "",
+      created_at: event.created_at,
+    }))
+  }
+
+  return [
+    {
+      id: `fallback-${order.id}`,
+      label: "Order placed",
+      note: "Your order was created.",
+      created_at: order.created_at,
+    },
+  ]
+}
+
+function canConfirmReceived(status: string) {
+  return status === "confirmed" || status === "arranged"
+}
+
 export default function OrderConfirmationPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -70,8 +137,12 @@ export default function OrderConfirmationPage() {
   const [order, setOrder] = useState<OrderRow | null>(null)
   const [listing, setListing] = useState<ListingRow | null>(null)
   const [images, setImages] = useState<ListingImageRow[]>([])
+  const [orderEvents, setOrderEvents] = useState<OrderEventRow[]>([])
   const [buyerEmail, setBuyerEmail] = useState("")
   const [loading, setLoading] = useState(true)
+  const [savingReceived, setSavingReceived] = useState(false)
+  const [actionError, setActionError] = useState("")
+  const [actionMessage, setActionMessage] = useState("")
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -80,9 +151,14 @@ export default function OrderConfirmationPage() {
     async function loadConfirmation() {
       if (!orderId) return
 
+      setLoading(true)
+      setError("")
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      if (!mounted) return
 
       if (!user) {
         setError("Please sign in to view this order.")
@@ -114,23 +190,31 @@ export default function OrderConfirmationPage() {
         return
       }
 
-      const { data: listingData } = await supabase
-        .from("listings")
-        .select("id, title, pickup_city, pickup_state")
-        .eq("id", normalizedOrder.listing_id)
-        .single()
-
-      const { data: imageData } = await supabase
-        .from("listing_images")
-        .select("image_url, is_primary, sort_order")
-        .eq("listing_id", normalizedOrder.listing_id)
-        .order("sort_order", { ascending: true })
+      const [{ data: listingData }, { data: imageData }, { data: eventData }] =
+        await Promise.all([
+          supabase
+            .from("listings")
+            .select("id, title, pickup_city, pickup_state")
+            .eq("id", normalizedOrder.listing_id)
+            .single(),
+          supabase
+            .from("listing_images")
+            .select("image_url, is_primary, sort_order")
+            .eq("listing_id", normalizedOrder.listing_id)
+            .order("sort_order", { ascending: true }),
+          supabase
+            .from("order_events")
+            .select("id, order_id, event_type, note, created_at")
+            .eq("order_id", normalizedOrder.id)
+            .order("created_at", { ascending: true }),
+        ])
 
       if (!mounted) return
 
       setOrder(normalizedOrder)
       setListing((listingData || null) as ListingRow | null)
       setImages((imageData || []) as ListingImageRow[])
+      setOrderEvents((eventData || []) as OrderEventRow[])
       setLoading(false)
     }
 
@@ -140,6 +224,50 @@ export default function OrderConfirmationPage() {
       mounted = false
     }
   }, [orderId, supabase])
+
+  async function handleConfirmReceived() {
+    if (!order) return
+
+    setSavingReceived(true)
+    setActionError("")
+    setActionMessage("")
+
+    const { data, error: rpcError } = await supabase.rpc(
+      "confirm_buyer_order_received",
+      {
+        p_order_id: order.id,
+      }
+    )
+
+    setSavingReceived(false)
+
+    if (rpcError) {
+      setActionError(rpcError.message)
+      return
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+
+    setOrder({
+      ...order,
+      status: result?.status || "completed",
+    })
+
+    if (result?.event_id) {
+      setOrderEvents((current) => [
+        ...current,
+        {
+          id: result.event_id,
+          order_id: order.id,
+          event_type: result.event_type,
+          note: result.event_note || "",
+          created_at: result.event_created_at || new Date().toISOString(),
+        },
+      ])
+    }
+
+    setActionMessage("Order marked received.")
+  }
 
   if (loading) {
     return (
@@ -172,6 +300,8 @@ export default function OrderConfirmationPage() {
   const messageHref = conversationId
     ? `/messages?conversationId=${conversationId}`
     : "/messages"
+  const timelineEvents = buildTimelineEvents(order, orderEvents)
+  const showConfirmReceived = canConfirmReceived(order.status)
 
   return (
     <main className={styles.confirmationPage}>
@@ -179,8 +309,8 @@ export default function OrderConfirmationPage() {
         <div className={styles.receiptHeader}>
           <div className={styles.checkMark}>✓</div>
 
-          <p>Order confirmed</p>
-          <h1>Receipt</h1>
+          <p>{formatStatus(order.status)}</p>
+          <h1>Order</h1>
 
           <span>
             A confirmation email has been sent to{" "}
@@ -250,8 +380,93 @@ export default function OrderConfirmationPage() {
           <strong>${totalPaid}</strong>
         </div>
 
+                <section className={styles.buyerActionCard}>
+          <div className={styles.buyerActionHeader}>
+            <div>
+              <span>Order status</span>
+              <strong>{formatStatus(order.status)}</strong>
+            </div>
+          </div>
+
+          {showConfirmReceived ? (
+            <div className={styles.buyerActionList}>
+              <button
+                type="button"
+                className={styles.buyerPrimaryAction}
+                disabled={savingReceived}
+                onClick={handleConfirmReceived}
+              >
+                {savingReceived ? "Updating..." : "Confirm received"}
+              </button>
+
+              <Link href={`/support/order?orderId=${order.id}`}>
+                Need help?
+              </Link>
+            </div>
+          ) : (
+            <p className={styles.buyerActionNote}>
+              {order.status === "completed"
+                ? "This order has been marked complete."
+                : order.status === "cancelled"
+                ? "This order has been cancelled."
+                : "You can confirm receipt after the seller confirms or arranges fulfillment."}
+            </p>
+          )}
+
+          {actionError ? <p className={styles.buyerActionError}>{actionError}</p> : null}
+          {actionMessage ? (
+            <p className={styles.buyerActionMessage}>{actionMessage}</p>
+          ) : null}
+        </section>
+
+        {order.status === "completed" ? (
+          <Link
+            href={`/reviews/order?orderId=${order.id}`}
+            className={styles.helpButton}
+          >
+            Review seller
+          </Link>
+        ) : null}
+
+        <section className={styles.timelineCard}>
+          <div className={styles.timelineHeader}>
+            <span>Status timeline</span>
+            <strong>{timelineEvents.length}</strong>
+          </div>
+
+          <div className={styles.timelineList}>
+            {timelineEvents.map((event, index) => (
+              <div key={event.id} className={styles.timelineItem}>
+                <div className={styles.timelineMarker}>
+                  <span />
+                  {index < timelineEvents.length - 1 ? <i /> : null}
+                </div>
+
+                <div className={styles.timelineContent}>
+                  <div>
+                    <strong>{event.label}</strong>
+                    <span>
+                      {formatOrderDate(event.created_at)} ·{" "}
+                      {formatOrderTime(event.created_at)}
+                    </span>
+                  </div>
+
+                  {event.note ? <p>{event.note}</p> : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <Link href={messageHref} className={styles.messageSellerButton}>
           Message seller
+        </Link>
+
+        <Link
+          href={`/support/order?orderId=${order.id}`}
+          className={styles.helpButton}
+        >
+          Need help with this order?
         </Link>
 
         <p className={styles.receiptNote}>

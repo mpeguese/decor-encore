@@ -1,3 +1,4 @@
+// app/seller/orders/[orderId]/page.tsx
 "use client"
 
 import Link from "next/link"
@@ -11,6 +12,16 @@ type ListingImageRow = {
   is_primary: boolean
   sort_order: number
 }
+
+type OrderStatus =
+  | "pending"
+  | "paid"
+  | "confirmed"
+  | "arranged"
+  | "completed"
+  | "cancelled"
+  | "refunded"
+  | "disputed"
 
 type OrderRow = {
   id: string
@@ -44,6 +55,21 @@ type ProfileRow = {
 type ConversationRow = {
   id: string
   order_id: string | null
+}
+
+type OrderEventRow = {
+  id: string
+  order_id: string
+  event_type: string
+  note: string | null
+  created_at: string
+}
+
+type StageAction = {
+  nextStatus: "confirmed" | "arranged" | "completed" | "cancelled"
+  label: string
+  helper: string
+  variant?: "primary" | "danger"
 }
 
 function getListing(order: OrderRow) {
@@ -86,16 +112,124 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value))
+}
+
 function formatStatus(value: string) {
   const labels: Record<string, string> = {
     pending: "Pending",
     paid: "Paid",
+    confirmed: "Confirmed",
+    arranged: "Pickup / Delivery Arranged",
+    completed: "Completed",
     cancelled: "Cancelled",
     refunded: "Refunded",
-    completed: "Completed",
+    disputed: "Disputed",
   }
 
   return labels[value] || value
+}
+
+function formatTimelineLabel(eventType: string) {
+  const labels: Record<string, string> = {
+    order_created: "Order placed",
+    payment_received: "Payment received",
+    seller_confirmed: "Seller confirmed",
+    pickup_delivery_arranged: "Pickup / delivery arranged",
+    buyer_reviewed_seller: "Buyer reviewed seller",
+    seller_reviewed_buyer: "Seller reviewed buyer",
+    order_completed: "Completed",
+    order_cancelled: "Cancelled",
+    support_requested: "Help requested",
+    refund_requested: "Refund requested",
+    refund_processed: "Refund processed",
+  }
+
+  return labels[eventType] || eventType.replace(/_/g, " ")
+}
+
+function buildTimelineEvents(order: OrderRow, events: OrderEventRow[]) {
+  if (events.length > 0) {
+    return events.map((event) => ({
+      id: event.id,
+      label: formatTimelineLabel(event.event_type),
+      note: event.note || "",
+      created_at: event.created_at,
+    }))
+  }
+
+  return [
+    {
+      id: `fallback-${order.id}`,
+      label: "Order placed",
+      note: "This order was created.",
+      created_at: order.created_at,
+    },
+  ]
+}
+
+function getSellerStageActions(status: string): StageAction[] {
+  if (status === "pending" || status === "paid") {
+    return [
+      {
+        nextStatus: "confirmed",
+        label: "Confirm order",
+        helper: "Let the buyer know this sale is confirmed.",
+        variant: "primary",
+      },
+      {
+        nextStatus: "cancelled",
+        label: "Cancel order",
+        helper: "Use only if this order cannot be fulfilled.",
+        variant: "danger",
+      },
+    ]
+  }
+
+  if (status === "confirmed") {
+    return [
+      {
+        nextStatus: "arranged",
+        label: "Mark arranged",
+        helper: "Pickup or delivery details have been coordinated.",
+        variant: "primary",
+      },
+      {
+        nextStatus: "completed",
+        label: "Mark complete",
+        helper: "Use when the buyer has received the item.",
+      },
+      {
+        nextStatus: "cancelled",
+        label: "Cancel order",
+        helper: "Use only if this order cannot be fulfilled.",
+        variant: "danger",
+      },
+    ]
+  }
+
+  if (status === "arranged") {
+    return [
+      {
+        nextStatus: "completed",
+        label: "Mark complete",
+        helper: "Use when the buyer has received the item.",
+        variant: "primary",
+      },
+      {
+        nextStatus: "cancelled",
+        label: "Cancel order",
+        helper: "Use only if this order cannot be fulfilled.",
+        variant: "danger",
+      },
+    ]
+  }
+
+  return []
 }
 
 export default function SellerOrderDetailPage() {
@@ -109,7 +243,11 @@ export default function SellerOrderDetailPage() {
   const [order, setOrder] = useState<OrderRow | null>(null)
   const [buyer, setBuyer] = useState<ProfileRow | null>(null)
   const [conversationId, setConversationId] = useState("")
+  const [orderEvents, setOrderEvents] = useState<OrderEventRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [savingStage, setSavingStage] = useState("")
+  const [stageError, setStageError] = useState("")
+  const [stageMessage, setStageMessage] = useState("")
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -172,7 +310,7 @@ export default function SellerOrderDetailPage() {
         return
       }
 
-      const [{ data: buyerProfile }, { data: conversationData }] =
+      const [{ data: buyerProfile }, { data: conversationData }, { data: eventData }] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -184,6 +322,11 @@ export default function SellerOrderDetailPage() {
             .select("id, order_id")
             .eq("order_id", normalizedOrder.id)
             .maybeSingle(),
+          supabase
+            .from("order_events")
+            .select("id, order_id, event_type, note, created_at")
+            .eq("order_id", normalizedOrder.id)
+            .order("created_at", { ascending: true }),
         ])
 
       if (!mounted) return
@@ -191,6 +334,7 @@ export default function SellerOrderDetailPage() {
       setOrder(normalizedOrder)
       setBuyer((buyerProfile || null) as ProfileRow | null)
       setConversationId((conversationData as ConversationRow | null)?.id || "")
+      setOrderEvents((eventData || []) as OrderEventRow[])
       setLoading(false)
     }
 
@@ -200,6 +344,51 @@ export default function SellerOrderDetailPage() {
       mounted = false
     }
   }, [orderId, supabase])
+
+  async function advanceStage(nextStatus: StageAction["nextStatus"]) {
+    if (!order) return
+
+    setSavingStage(nextStatus)
+    setStageError("")
+    setStageMessage("")
+
+    const { data, error: rpcError } = await supabase.rpc(
+      "advance_seller_order_stage",
+      {
+        p_order_id: order.id,
+        p_next_status: nextStatus,
+      }
+    )
+
+    setSavingStage("")
+
+    if (rpcError) {
+      setStageError(rpcError.message)
+      return
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+
+    setOrder({
+      ...order,
+      status: result?.status || nextStatus,
+    })
+
+    if (result?.event_id) {
+      setOrderEvents((current) => [
+        ...current,
+        {
+          id: result.event_id,
+          order_id: order.id,
+          event_type: result.event_type,
+          note: result.event_note || "",
+          created_at: result.event_created_at || new Date().toISOString(),
+        },
+      ])
+    }
+
+    setStageMessage("Order updated.")
+  }
 
   if (loading) {
     return (
@@ -230,6 +419,8 @@ export default function SellerOrderDetailPage() {
   const messageHref = conversationId
     ? `/messages?conversationId=${conversationId}`
     : "/messages"
+  const timelineEvents = buildTimelineEvents(order, orderEvents)
+  const stageActions = getSellerStageActions(order.status)
 
   return (
     <main className={styles.sellerOrdersPage}>
@@ -291,10 +482,109 @@ export default function SellerOrderDetailPage() {
 
             <div className={styles.orderActions}>
               <Link href="/seller/orders">All sales</Link>
-              <Link href={messageHref}>Message buyer</Link>
+
+              <Link href={messageHref} className={styles.orderActionPrimary}>
+                Message buyer
+              </Link>
+
+              <Link href={`/support/order?orderId=${order.id}`}>Need help</Link>
             </div>
           </div>
         </article>
+
+        <section className={styles.stageCard}>
+          <div className={styles.stageHeader}>
+            <div>
+              <p>Seller actions</p>
+              <h2>{formatStatus(order.status)}</h2>
+            </div>
+            <span>{stageActions.length > 0 ? "Open" : "Final"}</span>
+          </div>
+
+          {stageActions.length > 0 ? (
+            <div className={styles.stageActionList}>
+              {stageActions.map((action) => (
+                <button
+                  key={action.nextStatus}
+                  type="button"
+                  className={
+                    action.variant === "primary"
+                      ? styles.stagePrimary
+                      : action.variant === "danger"
+                      ? styles.stageDanger
+                      : ""
+                  }
+                  disabled={Boolean(savingStage)}
+                  onClick={() => advanceStage(action.nextStatus)}
+                >
+                  <strong>
+                    {savingStage === action.nextStatus
+                      ? "Updating..."
+                      : action.label}
+                  </strong>
+                  <span>{action.helper}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.stageEmpty}>
+              This order does not have any seller actions available.
+            </p>
+          )}
+
+          {stageError ? <p className={styles.stageError}>{stageError}</p> : null}
+          {stageMessage ? (
+            <p className={styles.stageMessage}>{stageMessage}</p>
+          ) : null}
+        </section>
+
+          {order.status === "completed" ? (
+          <section className={styles.stageCard}>
+            <div className={styles.stageHeader}>
+              <div>
+                <p>Review</p>
+                <h2>Review buyer</h2>
+              </div>
+              <span>Ready</span>
+            </div>
+
+            <div className={styles.stageActionList}>
+              <Link href={`/reviews/order?orderId=${order.id}`}>
+                <strong>Review buyer</strong>
+                <span>Share feedback from this completed order.</span>
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
+        <section className={styles.timelineCard}>
+          <div className={styles.timelineHeader}>
+            <span>Status timeline</span>
+            <strong>{timelineEvents.length}</strong>
+          </div>
+
+          <div className={styles.timelineList}>
+            {timelineEvents.map((event, index) => (
+              <div key={event.id} className={styles.timelineItem}>
+                <div className={styles.timelineMarker}>
+                  <span />
+                  {index < timelineEvents.length - 1 ? <i /> : null}
+                </div>
+
+                <div className={styles.timelineContent}>
+                  <div>
+                    <strong>{event.label}</strong>
+                    <span>
+                      {formatDate(event.created_at)} · {formatTime(event.created_at)}
+                    </span>
+                  </div>
+
+                  {event.note ? <p>{event.note}</p> : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className={styles.stateCard}>
           <h2>Fulfillment note</h2>
@@ -302,7 +592,6 @@ export default function SellerOrderDetailPage() {
             Coordinate pickup, delivery, and any order questions inside Decor
             Encore messages. Avoid sharing outside contact or payment details.
           </p>
-          {/* <Link href={messageHref}>Open conversation</Link> */}
         </section>
       </section>
     </main>

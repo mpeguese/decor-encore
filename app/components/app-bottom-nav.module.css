@@ -9,7 +9,7 @@
   margin: 0 auto;
   padding: 7px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(var(--nav-count, 5), minmax(0, 1fr));
   align-items: center;
   border-radius: 999px;
   background: rgba(255, 233, 243, 0.76);

@@ -495,26 +495,48 @@
 }
 
 .quickGrid {
-  max-width: 760px;
-  margin: 20px auto 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 0.55rem;
+  overflow-x: auto;
+  padding: 0 1rem 0.35rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.quickGrid::-webkit-scrollbar {
+  display: none;
 }
 
 .quickItem {
-  min-height: 68px;
-  display: grid;
-  place-items: center;
-  text-decoration: none;
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  margin-top: 20;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  border-radius: 24px;
+  white-space: nowrap;
+
+  text-decoration: none;
   color: var(--plum);
   background: rgba(255, 255, 255, 0.52);
   border: 1px solid rgba(255, 255, 255, 0.66);
   font-size: 13px;
   font-weight: 950;
   box-shadow: 0 16px 44px rgba(81, 45, 56, 0.1);
+}
+
+.quickItem:hover,
+.quickItem:focus,
+.quickItem:active,
+.quickItem:visited {
+  text-decoration: none;
+  color: var(--plum);
 }
 
 .profileCard {
@@ -584,7 +606,7 @@
   margin: 0 auto;
   padding: 7px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(var(--nav-count, 5), minmax(0, 1fr));
   align-items: center;
   border-radius: 999px;
   background: rgba(255, 233, 243, 0.76);
