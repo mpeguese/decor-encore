@@ -37,6 +37,11 @@ type OrderEventRow = {
   created_at: string
 }
 
+type CancellationRequestRow = {
+  id: string
+  status: string
+}
+
 function buildConfirmationNumber(orderId: string) {
   const clean = orderId.replace(/-/g, "").toUpperCase()
   return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
@@ -89,6 +94,7 @@ function formatTimelineLabel(eventType: string) {
     buyer_confirmed_received: "Buyer confirmed received",
     buyer_reviewed_seller: "Buyer reviewed seller",
     seller_reviewed_buyer: "Seller reviewed buyer",
+    cancellation_requested: "Cancellation requested",
     order_completed: "Completed",
     order_cancelled: "Cancelled",
     support_requested: "Help requested",
@@ -123,6 +129,10 @@ function canConfirmReceived(status: string) {
   return status === "confirmed" || status === "arranged"
 }
 
+function canRequestCancellation(status: string) {
+  return !["completed", "cancelled", "refunded"].includes(status)
+}
+
 export default function OrderConfirmationPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -139,10 +149,14 @@ export default function OrderConfirmationPage() {
   const [images, setImages] = useState<ListingImageRow[]>([])
   const [orderEvents, setOrderEvents] = useState<OrderEventRow[]>([])
   const [buyerEmail, setBuyerEmail] = useState("")
+  const [hasCancellationRequest, setHasCancellationRequest] = useState(false)
   const [loading, setLoading] = useState(true)
   const [savingReceived, setSavingReceived] = useState(false)
+  const [savingCancellation, setSavingCancellation] = useState(false)
   const [actionError, setActionError] = useState("")
   const [actionMessage, setActionMessage] = useState("")
+  const [cancelError, setCancelError] = useState("")
+  const [cancelMessage, setCancelMessage] = useState("")
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -190,24 +204,36 @@ export default function OrderConfirmationPage() {
         return
       }
 
-      const [{ data: listingData }, { data: imageData }, { data: eventData }] =
-        await Promise.all([
-          supabase
-            .from("listings")
-            .select("id, title, pickup_city, pickup_state")
-            .eq("id", normalizedOrder.listing_id)
-            .single(),
-          supabase
-            .from("listing_images")
-            .select("image_url, is_primary, sort_order")
-            .eq("listing_id", normalizedOrder.listing_id)
-            .order("sort_order", { ascending: true }),
-          supabase
-            .from("order_events")
-            .select("id, order_id, event_type, note, created_at")
-            .eq("order_id", normalizedOrder.id)
-            .order("created_at", { ascending: true }),
-        ])
+      const [
+        { data: listingData },
+        { data: imageData },
+        { data: eventData },
+        { data: cancellationData },
+      ] = await Promise.all([
+        supabase
+          .from("listings")
+          .select("id, title, pickup_city, pickup_state")
+          .eq("id", normalizedOrder.listing_id)
+          .single(),
+        supabase
+          .from("listing_images")
+          .select("image_url, is_primary, sort_order")
+          .eq("listing_id", normalizedOrder.listing_id)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("order_events")
+          .select("id, order_id, event_type, note, created_at")
+          .eq("order_id", normalizedOrder.id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("order_support_requests")
+          .select("id, status")
+          .eq("order_id", normalizedOrder.id)
+          .eq("requester_id", user.id)
+          .eq("issue_type", "cancel_order")
+          .in("status", ["open", "in_review"])
+          .maybeSingle(),
+      ])
 
       if (!mounted) return
 
@@ -215,6 +241,7 @@ export default function OrderConfirmationPage() {
       setListing((listingData || null) as ListingRow | null)
       setImages((imageData || []) as ListingImageRow[])
       setOrderEvents((eventData || []) as OrderEventRow[])
+      setHasCancellationRequest(Boolean((cancellationData as CancellationRequestRow | null)?.id))
       setLoading(false)
     }
 
@@ -269,6 +296,47 @@ export default function OrderConfirmationPage() {
     setActionMessage("Order marked received.")
   }
 
+  async function handleCancellationRequest() {
+    if (!order) return
+
+    setSavingCancellation(true)
+    setCancelError("")
+    setCancelMessage("")
+
+    const { data, error: rpcError } = await supabase.rpc(
+      "request_buyer_order_cancellation",
+      {
+        p_order_id: order.id,
+      }
+    )
+
+    setSavingCancellation(false)
+
+    if (rpcError) {
+      setCancelError(rpcError.message)
+      return
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+
+    setHasCancellationRequest(true)
+
+    if (result?.event_id) {
+      setOrderEvents((current) => [
+        ...current,
+        {
+          id: result.event_id,
+          order_id: order.id,
+          event_type: result.event_type,
+          note: result.event_note || "",
+          created_at: result.event_created_at || new Date().toISOString(),
+        },
+      ])
+    }
+
+    setCancelMessage("Cancellation request sent.")
+  }
+
   if (loading) {
     return (
       <main className={styles.confirmationPage}>
@@ -302,6 +370,8 @@ export default function OrderConfirmationPage() {
     : "/messages"
   const timelineEvents = buildTimelineEvents(order, orderEvents)
   const showConfirmReceived = canConfirmReceived(order.status)
+  const showCancellationRequest =
+    canRequestCancellation(order.status) && !hasCancellationRequest
 
   return (
     <main className={styles.confirmationPage}>
@@ -367,7 +437,7 @@ export default function OrderConfirmationPage() {
           <div className={styles.receiptLine}>
             <div>
               <span>Payment method</span>
-              <strong>Mock card ending in 4242</strong>
+              <strong>Card via Stripe</strong>
             </div>
             <p>Card</p>
           </div>
@@ -380,7 +450,7 @@ export default function OrderConfirmationPage() {
           <strong>${totalPaid}</strong>
         </div>
 
-                <section className={styles.buyerActionCard}>
+        <section className={styles.buyerActionCard}>
           <div className={styles.buyerActionHeader}>
             <div>
               <span>Order status</span>
@@ -408,16 +478,60 @@ export default function OrderConfirmationPage() {
               {order.status === "completed"
                 ? "This order has been marked complete."
                 : order.status === "cancelled"
-                ? "This order has been cancelled."
-                : "You can confirm receipt after the seller confirms or arranges fulfillment."}
+                  ? "This order has been cancelled."
+                  : "You can confirm receipt after the seller confirms or arranges fulfillment."}
             </p>
           )}
 
-          {actionError ? <p className={styles.buyerActionError}>{actionError}</p> : null}
+          {actionError ? (
+            <p className={styles.buyerActionError}>{actionError}</p>
+          ) : null}
           {actionMessage ? (
             <p className={styles.buyerActionMessage}>{actionMessage}</p>
           ) : null}
         </section>
+
+        {canRequestCancellation(order.status) ? (
+          <section className={styles.cancelRequestCard}>
+            <div className={styles.cancelRequestHeader}>
+              <div>
+                <span>Cancellation</span>
+                <strong>
+                  {hasCancellationRequest
+                    ? "Request sent"
+                    : "Need to cancel?"}
+                </strong>
+              </div>
+            </div>
+
+            <p>
+              If the order cannot be completed, request cancellation here. If
+              payment has already been made, Decor Encore support may need to
+              review the order before any refund is processed.
+            </p>
+
+            {showCancellationRequest ? (
+              <button
+                type="button"
+                disabled={savingCancellation}
+                onClick={handleCancellationRequest}
+              >
+                {savingCancellation ? "Sending..." : "Request cancellation"}
+              </button>
+            ) : (
+              <span className={styles.cancelRequestStatus}>
+                Cancellation request is open.
+              </span>
+            )}
+
+            {cancelError ? (
+              <p className={styles.buyerActionError}>{cancelError}</p>
+            ) : null}
+            {cancelMessage ? (
+              <p className={styles.buyerActionMessage}>{cancelMessage}</p>
+            ) : null}
+          </section>
+        ) : null}
 
         {order.status === "completed" ? (
           <Link

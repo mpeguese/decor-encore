@@ -45,7 +45,13 @@ type StripeCheckoutFormProps = {
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 const stripePromise = stripePublishableKey
-  ? loadStripe(stripePublishableKey)
+  ? loadStripe(stripePublishableKey, {
+      developerTools: {
+        assistant: {
+          enabled: false,
+        },
+      },
+    })
   : null
 
 function getPrimaryImage(images: ListingImageRow[]) {
