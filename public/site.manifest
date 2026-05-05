@@ -1,0 +1,21 @@
+{
+  "name": "Decor Encore",
+  "short_name": "Decor Encore",
+  "description": "A marketplace for once-loved event decor.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff8f7",
+  "theme_color": "#c77f91",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
