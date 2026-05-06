@@ -342,11 +342,18 @@
   }
 
   .orderActions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.24rem;
+    padding: 0.28rem;
+    border-radius: 999px;
   }
 
-  .orderActions a {
-    min-height: 40px;
+  .orderActions a,
+  .orderActions button {
+    min-height: 34px;
+    padding: 0 0.35rem;
+    font-size: 10px;
+    letter-spacing: -0.02em;
   }
 }
 
