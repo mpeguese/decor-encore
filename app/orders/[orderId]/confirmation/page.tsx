@@ -12,6 +12,8 @@ type OrderRow = {
   listing_id: string
   buyer_id: string
   status: string
+  subtotal: number
+  platform_fee: number
   total: number
   created_at: string
 }
@@ -184,7 +186,7 @@ export default function OrderConfirmationPage() {
 
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
-        .select("id, listing_id, buyer_id, status, total, created_at")
+        .select("id, listing_id, buyer_id, status, subtotal, platform_fee, total, created_at")
         .eq("id", orderId)
         .single()
 
@@ -363,6 +365,10 @@ export default function OrderConfirmationPage() {
   }
 
   const confirmationNumber = buildConfirmationNumber(order.id)
+  const subtotalPaid = Number(order.subtotal || 0).toFixed(2)
+  const platformFeePaid = Number(
+    order.platform_fee || Number(order.subtotal || 0) * 0.08
+  ).toFixed(2)
   const totalPaid = Number(order.total || 0).toFixed(2)
   const imageUrl = getPrimaryImage(images)
   const messageHref = conversationId
@@ -417,21 +423,21 @@ export default function OrderConfirmationPage() {
               <span>Item</span>
               <strong>{listing?.title || "Decor listing"}</strong>
             </div>
-            <p>${totalPaid}</p>
+            <p>${subtotalPaid}</p>
           </div>
 
           <div className={styles.receiptLine}>
             <div>
               <span>Subtotal</span>
             </div>
-            <p>${totalPaid}</p>
+            <p>${subtotalPaid}</p>
           </div>
 
           <div className={styles.receiptLine}>
             <div>
               <span>Platform fee</span>
             </div>
-            <p>$0.00</p>
+            <p>${platformFeePaid}</p>
           </div>
 
           <div className={styles.receiptLine}>

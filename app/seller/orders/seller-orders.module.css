@@ -248,7 +248,7 @@
   box-shadow: 0 18px 54px rgba(81, 45, 56, 0.1);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  margin-top: 20;
+  margin-top: 20px;
 }
 
 .stateCard h2 {
