@@ -432,15 +432,25 @@ export default function ListingDetailPage() {
 
   setBuySubmitting(true)
 
-  const subtotal = Number(listing.price || 0)
-  const shipping =
+  // const subtotal = Number(listing.price || 0)
+  // const shipping =
+  //   listing.fulfillment_type === "shipping" ||
+  //   listing.fulfillment_type === "pickup_or_shipping"
+  //     ? Number(listing.shipping_price || 0)
+  //     : 0
+
+  // const platformFee = Math.round(subtotal * 0.08 * 100) / 100
+  // const total = subtotal + shipping + platformFee
+
+  const subtotal = Number(Number(listing.price || 0).toFixed(2))
+  const shippingAmount =
     listing.fulfillment_type === "shipping" ||
     listing.fulfillment_type === "pickup_or_shipping"
-      ? Number(listing.shipping_price || 0)
+      ? Number(Number(listing.shipping_price || 0).toFixed(2))
       : 0
 
-  const platformFee = Math.round(subtotal * 0.08 * 100) / 100
-  const total = subtotal + shipping + platformFee
+  const platformFee = Number((subtotal * 0.08).toFixed(2))
+  const total = Number((subtotal + shippingAmount + platformFee).toFixed(2))
 
   const { data: order, error } = await supabase
     .from("orders")
@@ -450,6 +460,7 @@ export default function ListingDetailPage() {
       seller_id: listing.seller_id,
       status: "pending",
       subtotal,
+      shipping_amount: shippingAmount,
       platform_fee: platformFee,
       total,
     })

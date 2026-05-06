@@ -13,6 +13,7 @@ type OrderRow = {
   buyer_id: string
   status: string
   subtotal: number
+  shipping_amount: number
   platform_fee: number
   total: number
   created_at: string
@@ -186,7 +187,7 @@ export default function OrderConfirmationPage() {
 
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
-        .select("id, listing_id, buyer_id, status, subtotal, platform_fee, total, created_at")
+        .select("id, listing_id, buyer_id, status, subtotal, shipping_amount, platform_fee, total, created_at")
         .eq("id", orderId)
         .single()
 
@@ -366,9 +367,8 @@ export default function OrderConfirmationPage() {
 
   const confirmationNumber = buildConfirmationNumber(order.id)
   const subtotalPaid = Number(order.subtotal || 0).toFixed(2)
-  const platformFeePaid = Number(
-    order.platform_fee || Number(order.subtotal || 0) * 0.08
-  ).toFixed(2)
+  const shippingPaid = Number(order.shipping_amount || 0).toFixed(2)
+  const platformFeePaid = Number(order.platform_fee || 0).toFixed(2)
   const totalPaid = Number(order.total || 0).toFixed(2)
   const imageUrl = getPrimaryImage(images)
   const messageHref = conversationId
@@ -418,35 +418,34 @@ export default function OrderConfirmationPage() {
         <div className={styles.receiptDivider} />
 
         <div className={styles.receiptList}>
-          <div className={styles.receiptLine}>
-            <div>
-              <span>Item</span>
-              <strong>{listing?.title || "Decor listing"}</strong>
-            </div>
-            <p>${subtotalPaid}</p>
+          <div>
+            <span>Item</span>
+            <strong>{listing?.title || "Decor listing"}</strong>
           </div>
+          <p>${subtotalPaid}</p>
+        </div>
 
-          <div className={styles.receiptLine}>
-            <div>
-              <span>Subtotal</span>
-            </div>
-            <p>${subtotalPaid}</p>
+        <div className={styles.receiptLine}>
+          <div>
+            <span>Subtotal</span>
           </div>
+          <p>${subtotalPaid}</p>
+        </div>
 
+        {Number(order.shipping_amount || 0) > 0 ? (
           <div className={styles.receiptLine}>
             <div>
-              <span>Platform fee</span>
+              <span>Shipping</span>
             </div>
-            <p>${platformFeePaid}</p>
+            <p>${shippingPaid}</p>
           </div>
+        ) : null}
 
-          <div className={styles.receiptLine}>
-            <div>
-              <span>Payment method</span>
-              <strong>Card via Stripe</strong>
-            </div>
-            <p>Card</p>
+        <div className={styles.receiptLine}>
+          <div>
+            <span>Platform fee</span>
           </div>
+          <p>${platformFeePaid}</p>
         </div>
 
         <div className={styles.receiptDivider} />

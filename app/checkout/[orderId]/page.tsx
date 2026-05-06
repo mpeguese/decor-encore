@@ -8,6 +8,7 @@ import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-
 import { loadStripe } from "@stripe/stripe-js"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "./checkout.module.css"
+import AppBottomNav from "@/app/components/AppBottomNav"
 
 type OrderRow = {
   id: string
@@ -16,6 +17,7 @@ type OrderRow = {
   seller_id: string
   status: string
   subtotal: number
+  shipping_amount: number
   platform_fee: number
   total: number
 }
@@ -244,7 +246,7 @@ Use this thread to coordinate pickup, delivery, and any questions with the selle
       </div>
 
       <button type="submit" disabled={paying || !stripe || !elements}>
-        {paying ? "Processing..." : `Pay $${Number(order.total || 0).toFixed(0)}`}
+        {paying ? "Processing..." : `Pay $${Number(order.total || 0).toFixed(2)}`}
       </button>
 
       <p className={styles.paymentFinePrint}>
@@ -295,7 +297,7 @@ export default function CheckoutPage() {
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .select(
-          "id, listing_id, buyer_id, seller_id, status, subtotal, platform_fee, total"
+          "id, listing_id, buyer_id, seller_id, status, subtotal, shipping_amount, platform_fee, total"
         )
         .eq("id", orderId)
         .single()
@@ -421,15 +423,29 @@ export default function CheckoutPage() {
   if (!order || !listing) return null
 
   const imageUrl = getPrimaryImage(images)
+  const subtotalDisplay = Number(order.subtotal || 0).toFixed(2)
+const shippingDisplay = Number(order.shipping_amount || 0).toFixed(2)
+const platformFeeDisplay = Number(order.platform_fee || 0).toFixed(2)
+const totalDisplay = Number(order.total || 0).toFixed(2)
 
   return (
     <main className={styles.checkoutPage}>
-      <header className={styles.checkoutHeader}>
+      {/* <header className={styles.checkoutHeader}>
         <Link href={`/listing/${listing.id}`} className={styles.backLink}>
           Back
         </Link>
 
         <strong>Decor Encore</strong>
+      </header> */}
+      <header className={styles.checkoutHeader}>
+        <Link href="/" className={styles.brand}>
+          <span className={styles.brandMark}>D</span>
+          <span>Decor Encore</span>
+        </Link>
+
+        <Link href={`/listing/${listing.id}`} className={styles.headerLink}>
+          Listing
+        </Link>
       </header>
 
       <section className={styles.checkoutShell}>
@@ -446,20 +462,29 @@ export default function CheckoutPage() {
             <p>Order summary</p>
             <h1>{listing.title}</h1>
 
-            <div className={styles.priceRows}>
-              <div>
+            <div className={styles.checkoutReceipt}>
+              <div className={styles.checkoutReceiptLine}>
                 <span>Subtotal</span>
-                <strong>${Number(order.subtotal || 0).toFixed(0)}</strong>
+                <strong>${subtotalDisplay}</strong>
               </div>
 
-              <div>
+              {Number(order.shipping_amount || 0) > 0 ? (
+                <div className={styles.checkoutReceiptLine}>
+                  <span>Shipping</span>
+                  <strong>${shippingDisplay}</strong>
+                </div>
+              ) : null}
+
+              <div className={styles.checkoutReceiptLine}>
                 <span>Platform fee</span>
-                <strong>${Number(order.platform_fee || 0).toFixed(0)}</strong>
+                <strong>${platformFeeDisplay}</strong>
               </div>
 
-              <div className={styles.totalRow}>
+              <div className={styles.checkoutReceiptDivider} />
+
+              <div className={styles.checkoutReceiptTotal}>
                 <span>Total</span>
-                <strong>${Number(order.total || 0).toFixed(0)}</strong>
+                <strong>${totalDisplay}</strong>
               </div>
             </div>
           </div>
@@ -527,6 +552,26 @@ export default function CheckoutPage() {
           </section>
         )}
       </section>
+      <AppBottomNav
+          active="shop"
+          items={[
+            {
+              key: "shop",
+              label: "Shop",
+              href: "/marketplace",
+            },
+            {
+              key: "messages",
+              label: "Messages",
+              href: "/messages",
+            },
+            {
+              key: "profile",
+              label: "Profile",
+              href: "/profile",
+            },
+          ]}
+        />
     </main>
   )
 }
