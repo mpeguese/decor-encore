@@ -618,10 +618,9 @@
 
 .supportActions {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.45rem;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   padding-top: 0.2rem;
 }
 
@@ -639,7 +638,7 @@
 }
 
 .supportActions button {
-  flex: 1 1 160px;
+  flex: 1 1 auto;
   border: 0;
   background: var(--plum);
   color: #fff;
@@ -654,7 +653,7 @@
 
 .supportActions a {
   flex: 0 0 auto;
-  padding: 0 1rem;
+  padding: 0 0.95rem;
   color: var(--plum);
   background: rgba(255, 233, 243, 0.72);
   border: 1px solid rgba(81, 45, 56, 0.08);
@@ -662,13 +661,19 @@
 
 @media (max-width: 520px) {
   .supportActions {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr 0.75fr;
+    gap: 0.45rem;
+    align-items: center;
   }
 
   .supportActions button,
   .supportActions a {
-    width: 100%;
+    width: auto;
+    min-height: 40px;
+    padding: 0 0.65rem;
+    font-size: 12px;
+    white-space: nowrap;
   }
 }
 
