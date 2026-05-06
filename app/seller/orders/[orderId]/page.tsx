@@ -65,6 +65,13 @@ type OrderEventRow = {
   created_at: string
 }
 
+type CancellationRequestRow = {
+  id: string
+  status: string
+  message: string | null
+  created_at: string
+}
+
 type StageAction = {
   nextStatus: "confirmed" | "arranged" | "completed" | "cancelled"
   label: string
@@ -140,8 +147,10 @@ function formatTimelineLabel(eventType: string) {
     payment_received: "Payment received",
     seller_confirmed: "Seller confirmed",
     pickup_delivery_arranged: "Pickup / delivery arranged",
+    buyer_confirmed_received: "Buyer confirmed received",
     buyer_reviewed_seller: "Buyer reviewed seller",
     seller_reviewed_buyer: "Seller reviewed buyer",
+    cancellation_requested: "Cancellation requested",
     order_completed: "Completed",
     order_cancelled: "Cancelled",
     support_requested: "Help requested",
@@ -244,6 +253,8 @@ export default function SellerOrderDetailPage() {
   const [buyer, setBuyer] = useState<ProfileRow | null>(null)
   const [conversationId, setConversationId] = useState("")
   const [orderEvents, setOrderEvents] = useState<OrderEventRow[]>([])
+  const [cancellationRequest, setCancellationRequest] =
+    useState<CancellationRequestRow | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingStage, setSavingStage] = useState("")
   const [stageError, setStageError] = useState("")
@@ -310,24 +321,35 @@ export default function SellerOrderDetailPage() {
         return
       }
 
-      const [{ data: buyerProfile }, { data: conversationData }, { data: eventData }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id, first_name, last_name, full_name")
-            .eq("id", normalizedOrder.buyer_id)
-            .single(),
-          supabase
-            .from("conversations")
-            .select("id, order_id")
-            .eq("order_id", normalizedOrder.id)
-            .maybeSingle(),
-          supabase
-            .from("order_events")
-            .select("id, order_id, event_type, note, created_at")
-            .eq("order_id", normalizedOrder.id)
-            .order("created_at", { ascending: true }),
-        ])
+      const [
+        { data: buyerProfile },
+        { data: conversationData },
+        { data: eventData },
+        { data: cancellationData },
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, first_name, last_name, full_name")
+          .eq("id", normalizedOrder.buyer_id)
+          .single(),
+        supabase
+          .from("conversations")
+          .select("id, order_id")
+          .eq("order_id", normalizedOrder.id)
+          .maybeSingle(),
+        supabase
+          .from("order_events")
+          .select("id, order_id, event_type, note, created_at")
+          .eq("order_id", normalizedOrder.id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("order_support_requests")
+          .select("id, status, message, created_at")
+          .eq("order_id", normalizedOrder.id)
+          .eq("issue_type", "cancel_order")
+          .in("status", ["open", "in_review"])
+          .maybeSingle(),
+      ])
 
       if (!mounted) return
 
@@ -335,6 +357,9 @@ export default function SellerOrderDetailPage() {
       setBuyer((buyerProfile || null) as ProfileRow | null)
       setConversationId((conversationData as ConversationRow | null)?.id || "")
       setOrderEvents((eventData || []) as OrderEventRow[])
+      setCancellationRequest(
+        (cancellationData || null) as CancellationRequestRow | null
+      )
       setLoading(false)
     }
 
@@ -491,6 +516,31 @@ export default function SellerOrderDetailPage() {
             </div>
           </div>
         </article>
+        
+        {cancellationRequest ? (
+          <section className={styles.cancellationAlertCard}>
+            <div className={styles.cancellationAlertHeader}>
+              <div>
+                <p>Cancellation requested</p>
+                <h2>Buyer needs help</h2>
+              </div>
+              <span>{cancellationRequest.status}</span>
+            </div>
+
+            <p>
+              The buyer requested cancellation for this order. Review the order,
+              message the buyer, or cancel the order if it cannot be fulfilled.
+              Refunds may still need to be handled separately.
+            </p>
+
+            <div className={styles.cancellationAlertActions}>
+              <Link href={messageHref}>Message buyer</Link>
+              <Link href={`/support/order?orderId=${order.id}`}>
+                View help request
+              </Link>
+            </div>
+          </section>
+        ) : null}
 
         <section className={styles.stageCard}>
           <div className={styles.stageHeader}>
