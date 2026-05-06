@@ -1136,17 +1136,23 @@
 
 @media (max-width: 520px) {
   .reviewActions {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr 0.8fr;
+    gap: 0.45rem;
+    align-items: center;
   }
 
   .reviewActions button,
   .reviewActions a {
-    width: 100%;
+    width: auto;
+    min-height: 42px;
+    padding: 0 0.8rem;
+    font-size: 12px;
   }
 
   .reviewRatingRow {
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 0.2rem;
   }
 
   .reviewRatingRow button {
