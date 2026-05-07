@@ -243,12 +243,12 @@ function buildEmailHtml({
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:rgba(255,255,255,0.84);border:1px solid rgba(81,45,56,0.08);border-radius:28px;overflow:hidden;box-shadow:0 22px 70px rgba(81,45,56,0.12);">
             <tr>
               <td style="padding:24px 24px 10px;">
-                <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;background:#fff6fb;border:1px solid #ffffff;border-radius:999px;box-shadow:0 12px 32px rgba(81,45,56,0.10);">
+                <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
                   <tr>
-                    <td width="34" height="34" align="center" valign="middle" style="width:34px;height:34px;border-radius:999px;background:#512d38;color:#ffffff;font-size:15px;font-weight:900;line-height:34px;text-align:center;">
+                    <td valign="middle" style="padding:0 8px 0 0;color:#512d38;font-size:24px;font-weight:900;line-height:1;">
                       D
                     </td>
-                    <td valign="middle" style="padding:0 13px 0 10px;color:#512d38;font-size:16px;font-weight:900;letter-spacing:-0.03em;line-height:34px;white-space:nowrap;">
+                    <td valign="middle" style="padding:0;color:#512d38;font-size:24px;font-weight:900;letter-spacing:-0.04em;line-height:1.15;white-space:nowrap;">
                       Decor Encore
                     </td>
                   </tr>
