@@ -158,20 +158,20 @@ export default function HomePage() {
         <div className="de-story-grid">
           <div className="de-story-card">
             <span>01</span>
-            <h2>Find your pieces</h2>
-            <p>Browse once-loved decor curated for another celebration.</p>
+            <h2>Discover pieces with a past</h2>
+            <p>Every celebration starts with a feeling. Browse once-loved event decor that has already been part of someone’s beautiful moment — and is ready to bring yours to life.</p>
           </div>
 
           <div className="de-story-card">
             <span>02</span>
-            <h2>Build the look</h2>
-            <p>Mix, match, and create a cohesive style for your event without starting from scratch.</p>
+            <h2>Bring your vision to life</h2>
+            <p>Create a polished look by combining pieces you love — without buying everything new or figuring it all out from scratch.</p>
           </div>
 
           <div className="de-story-card">
             <span>03</span>
-            <h2>Pass it on</h2>
-            <p>Resell your decor after the event and let it live again.</p>
+            <h2>Let the story continue</h2>
+            <p>When the day has passed, give your decor another chapter by listing it here <b><u>first</u></b>. Inspire someone planning their own unforgettable moment.</p>
           </div>
         </div>
       </section>
