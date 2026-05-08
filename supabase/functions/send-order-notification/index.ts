@@ -245,9 +245,6 @@ function buildEmailHtml({
               <td style="padding:24px 24px 10px;">
                 <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
                   <tr>
-                    <td valign="middle" style="padding:0 8px 0 0;color:#512d38;font-size:24px;font-weight:900;line-height:1;">
-                      D
-                    </td>
                     <td valign="middle" style="padding:0;color:#512d38;font-size:24px;font-weight:900;letter-spacing:-0.04em;line-height:1.15;white-space:nowrap;">
                       Decor Encore
                     </td>

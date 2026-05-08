@@ -477,6 +477,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  margin-top: 10px;
 }
 
 .payoutHelpHeader p {

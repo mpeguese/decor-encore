@@ -211,16 +211,28 @@ export default function SellerPayoutsPage() {
               <div>
                 <span>04</span>
                 <p>
+                  Enter valid bank details where you want your payments to go when
+                  prompted.
+                </p>
+              </div>
+
+              <div>
+                <span>05</span>
+                <p>
                   In test mode, you can use Stripe test bank details when
                   prompted.
                 </p>
               </div>
+              <Link href="/payments" style={{marginTop: 15}} className={styles.payoutHelpTerms}>
+                View full payment terms
+              </Link>
             </div>
 
-            <Link href="/payments" className={styles.payoutHelpTerms}>
+            {/* <Link href="/payments" style={{marginTop: 20}} className={styles.payoutHelpTerms}>
               View full payment terms
-            </Link>
+            </Link> */}
           </section>
+          
         </div>
       ) : null}
     </main>

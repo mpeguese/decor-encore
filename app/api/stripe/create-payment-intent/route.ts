@@ -10,8 +10,19 @@ type OrderRow = {
   buyer_id: string
   seller_id: string
   status: string
+  subtotal: number
+  shipping_amount: number
+  platform_fee: number
   total: number
   stripe_payment_intent_id: string | null
+}
+
+type SellerPayoutAccountRow = {
+  stripe_account_id: string | null
+  onboarding_status: string
+  charges_enabled: boolean
+  payouts_enabled: boolean
+  details_submitted: boolean
 }
 
 function getSupabaseAdmin() {
@@ -38,6 +49,10 @@ function getStripe() {
   }
 
   return new Stripe(stripeSecretKey)
+}
+
+function toCents(value: number) {
+  return Math.round(Number(value || 0) * 100)
 }
 
 export async function POST(request: NextRequest) {
@@ -70,7 +85,7 @@ export async function POST(request: NextRequest) {
     const { data: orderData, error: orderError } = await supabaseAdmin
       .from("orders")
       .select(
-        "id, listing_id, buyer_id, seller_id, status, total, stripe_payment_intent_id"
+        "id, listing_id, buyer_id, seller_id, status, subtotal, shipping_amount, platform_fee, total, stripe_payment_intent_id"
       )
       .eq("id", orderId)
       .single()
@@ -105,7 +120,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const amount = Math.round(Number(order.total || 0) * 100)
+    const { data: payoutData, error: payoutError } = await supabaseAdmin
+      .from("seller_payout_accounts")
+      .select(
+        "stripe_account_id, onboarding_status, charges_enabled, payouts_enabled, details_submitted"
+      )
+      .eq("seller_id", order.seller_id)
+      .maybeSingle()
+
+    if (payoutError) {
+      return NextResponse.json(
+        { error: payoutError.message },
+        { status: 500 }
+      )
+    }
+
+    const payoutAccount = payoutData as SellerPayoutAccountRow | null
+
+    if (
+      !payoutAccount?.stripe_account_id ||
+      !payoutAccount.charges_enabled ||
+      !payoutAccount.details_submitted
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Checkout is not available because this seller has not finished payout setup.",
+        },
+        { status: 409 }
+      )
+    }
+
+    const amount = toCents(order.total)
+    const applicationFeeAmount = toCents(order.platform_fee)
+    const transferAmount = toCents(
+      Number(order.subtotal || 0) + Number(order.shipping_amount || 0)
+    )
 
     if (!Number.isFinite(amount) || amount < 50) {
       return NextResponse.json(
@@ -114,10 +164,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let paymentIntent: Stripe.PaymentIntent
+    if (!Number.isFinite(applicationFeeAmount) || applicationFeeAmount < 0) {
+      return NextResponse.json(
+        { error: "Invalid platform fee." },
+        { status: 400 }
+      )
+    }
+
+    let existingIntent: Stripe.PaymentIntent | null = null
 
     if (order.stripe_payment_intent_id) {
-      const existingIntent = await stripe.paymentIntents.retrieve(
+      existingIntent = await stripe.paymentIntents.retrieve(
         order.stripe_payment_intent_id
       )
 
@@ -131,44 +188,47 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      paymentIntent = await stripe.paymentIntents.update(existingIntent.id, {
+      await stripe.paymentIntents.cancel(existingIntent.id)
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
         amount,
         currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        application_fee_amount: applicationFeeAmount,
+        transfer_data: {
+          destination: payoutAccount.stripe_account_id,
+        },
         metadata: {
           order_id: order.id,
           listing_id: order.listing_id,
           buyer_id: order.buyer_id,
           seller_id: order.seller_id,
+          seller_stripe_account_id: payoutAccount.stripe_account_id,
+          platform_fee_amount: String(applicationFeeAmount),
+          seller_transfer_amount: String(transferAmount),
         },
-      })
-    } else {
-      paymentIntent = await stripe.paymentIntents.create(
-        {
-          amount,
-          currency: "usd",
-          automatic_payment_methods: {
-            enabled: true,
-          },
-          metadata: {
-            order_id: order.id,
-            listing_id: order.listing_id,
-            buyer_id: order.buyer_id,
-            seller_id: order.seller_id,
-          },
-        },
-        {
-          idempotencyKey: `decor-encore-order-${order.id}`,
-        }
-      )
+      },
+      {
+        idempotencyKey: `decor-encore-connect-order-${order.id}-${Date.now()}`,
+      }
+    )
 
-      await supabaseAdmin
-        .from("orders")
-        .update({
-          stripe_payment_intent_id: paymentIntent.id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", order.id)
-    }
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        stripe_payment_intent_id: paymentIntent.id,
+        seller_stripe_account_id: payoutAccount.stripe_account_id,
+        stripe_application_fee_amount: Number(order.platform_fee || 0),
+        stripe_transfer_amount: Number(
+          Number(order.subtotal || 0) + Number(order.shipping_amount || 0)
+        ),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id)
 
     if (!paymentIntent.client_secret) {
       return NextResponse.json(

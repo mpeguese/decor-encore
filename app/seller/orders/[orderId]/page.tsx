@@ -371,49 +371,97 @@ export default function SellerOrderDetailPage() {
   }, [orderId, supabase])
 
   async function advanceStage(nextStatus: StageAction["nextStatus"]) {
-    if (!order) return
+  if (!order) return
 
-    setSavingStage(nextStatus)
-    setStageError("")
-    setStageMessage("")
+  setSavingStage(nextStatus)
+  setStageError("")
+  setStageMessage("")
 
-    const { data, error: rpcError } = await supabase.rpc(
-      "advance_seller_order_stage",
-      {
-        p_order_id: order.id,
-        p_next_status: nextStatus,
-      }
-    )
+  if (nextStatus === "cancelled") {
+    const response = await fetch(`/api/orders/${order.id}/seller-cancel`, {
+      method: "POST",
+    })
+
+    const payload = await response.json()
 
     setSavingStage("")
 
-    if (rpcError) {
-      setStageError(rpcError.message)
+    if (!response.ok) {
+      setStageError(payload.error || "Unable to cancel this order.")
       return
     }
 
-    const result = Array.isArray(data) ? data[0] : data
-
     setOrder({
       ...order,
-      status: result?.status || nextStatus,
+      status: payload.status || "cancelled",
     })
 
-    if (result?.event_id) {
+    if (Array.isArray(payload.events)) {
       setOrderEvents((current) => [
         ...current,
-        {
-          id: result.event_id,
-          order_id: order.id,
-          event_type: result.event_type,
-          note: result.event_note || "",
-          created_at: result.event_created_at || new Date().toISOString(),
-        },
+        ...payload.events.map(
+          (event: {
+            id: string
+            event_type: string
+            note: string | null
+            created_at: string
+          }) => ({
+            id: event.id,
+            order_id: order.id,
+            event_type: event.event_type,
+            note: event.note || "",
+            created_at: event.created_at || new Date().toISOString(),
+          })
+        ),
       ])
     }
 
-    setStageMessage("Order updated.")
+    setStageMessage(
+      payload.status === "refunded"
+        ? "Order cancelled and refund started."
+        : "Order cancelled."
+    )
+
+    return
   }
+
+  const { data, error: rpcError } = await supabase.rpc(
+    "advance_seller_order_stage",
+    {
+      p_order_id: order.id,
+      p_next_status: nextStatus,
+    }
+  )
+
+  setSavingStage("")
+
+  if (rpcError) {
+    setStageError(rpcError.message)
+    return
+  }
+
+  const result = Array.isArray(data) ? data[0] : data
+
+  setOrder({
+    ...order,
+    status: result?.status || nextStatus,
+  })
+
+  if (result?.event_id) {
+    setOrderEvents((current) => [
+      ...current,
+      {
+        id: result.event_id,
+        order_id: order.id,
+        event_type: result.event_type,
+        note: result.event_note || "",
+        created_at: result.event_created_at || new Date().toISOString(),
+      },
+    ])
+  }
+
+  setStageMessage("Order updated.")
+}
 
   if (loading) {
     return (

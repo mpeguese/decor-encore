@@ -1,4 +1,4 @@
-// app/seller/listings/[id]/
+// app/seller/listings/[id]/edit/page.tsx
 "use client"
 
 import Link from "next/link"
