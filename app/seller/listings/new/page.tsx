@@ -10,6 +10,7 @@ import styles from "../../seller.module.css"
 
 type ListingKind = "item" | "bundle"
 type FulfillmentType = "pickup" | "shipping" | "pickup_or_shipping"
+type ShippingRateMode = "seller_flat" | "calculated"
 type SaveMode = "draft" | "published"
 
 type Category = {
@@ -98,7 +99,16 @@ export default function NewListingPage() {
   const [price, setPrice] = useState("")
   const [fulfillmentType, setFulfillmentType] =
     useState<FulfillmentType>("pickup")
-  const [shippingPrice, setShippingPrice] = useState("")
+  //const [shippingPrice, setShippingPrice] = useState("")
+  const [shippingRateMode, setShippingRateMode] =
+    useState<ShippingRateMode>("seller_flat")
+  const [shippingOriginZip, setShippingOriginZip] = useState("")
+  const [packageWeightLb, setPackageWeightLb] = useState("")
+  const [packageLengthIn, setPackageLengthIn] = useState("")
+  const [packageWidthIn, setPackageWidthIn] = useState("")
+  const [packageHeightIn, setPackageHeightIn] = useState("")
+  const [shippingHandlingFee, setShippingHandlingFee] = useState("")
+  const [shippingNotes, setShippingNotes] = useState("")
   const [pickupZip, setPickupZip] = useState("")
   const [pickupCity, setPickupCity] = useState("")
   const [pickupState, setPickupState] = useState("")
@@ -157,7 +167,7 @@ export default function NewListingPage() {
   const isShipping =
     fulfillmentType === "shipping" || fulfillmentType === "pickup_or_shipping"
 
-  const publishReady =
+  const coreDetailsReady =
     photos.length > 0 &&
     title.trim().length > 0 &&
     description.trim().length > 0 &&
@@ -165,15 +175,32 @@ export default function NewListingPage() {
     Number(price) > 0 &&
     Number(quantity) > 0 &&
     primaryColor.trim().length > 0 &&
-    styleValue.trim().length > 0 &&
-    (!isPickup ||
-      (pickupZip.trim().length > 0 &&
-        pickupCity.trim().length > 0 &&
-        pickupState.trim().length > 0)) &&
-    (!isShipping ||
-      (shippingPrice.trim().length > 0 && Number(shippingPrice) >= 0)) &&
-    (listingKind === "item" ||
-      (Number(bundleGuestCount) > 0 && bundleIncludes.trim().length > 0))
+    styleValue.trim().length > 0
+
+  const pickupDetailsReady =
+    !isPickup ||
+    (pickupZip.trim().length > 0 &&
+      pickupCity.trim().length > 0 &&
+      pickupState.trim().length > 0)
+
+  const packageDetailsReady =
+    shippingOriginZip.trim().length > 0 &&
+    Number(packageWeightLb) > 0 &&
+    Number(packageLengthIn) > 0 &&
+    Number(packageWidthIn) > 0 &&
+    Number(packageHeightIn) > 0
+
+  const shippingDetailsReady = !isShipping || packageDetailsReady
+
+  const bundleDetailsReady =
+    listingKind === "item" ||
+    (Number(bundleGuestCount) > 0 && bundleIncludes.trim().length > 0)
+
+  const publishReady =
+    coreDetailsReady &&
+    pickupDetailsReady &&
+    shippingDetailsReady &&
+    bundleDetailsReady
 
   function handlePhotoChange(files: FileList | null) {
     if (!files) return
@@ -290,7 +317,15 @@ export default function NewListingPage() {
           primary_color: primaryColor.trim() || null,
           secondary_color: secondaryColor.trim() || null,
           fulfillment_type: fulfillmentType,
-          shipping_price: isShipping ? Number(shippingPrice || 0) : null,
+          shipping_price: null,
+          shipping_rate_mode: isShipping ? shippingRateMode : "seller_flat",
+          shipping_origin_zip: isShipping ? shippingOriginZip.trim() || null : null,
+          package_weight_lb: isShipping ? Number(packageWeightLb || 0) : null,
+          package_length_in: isShipping ? Number(packageLengthIn || 0) : null,
+          package_width_in: isShipping ? Number(packageWidthIn || 0) : null,
+          package_height_in: isShipping ? Number(packageHeightIn || 0) : null,
+          shipping_handling_fee: 0,
+          shipping_notes: isShipping ? shippingNotes.trim() || null : null,
           pickup_zip: isPickup ? cleanPickupZip || null : null,
           pickup_lat: isPickup ? pickupCoordinates?.lat ?? null : null,
           pickup_lng: isPickup ? pickupCoordinates?.lng ?? null : null,
@@ -683,7 +718,7 @@ export default function NewListingPage() {
             </>
           ) : null}
 
-          {isShipping ? (
+          {/* {isShipping ? (
             <label className={`${styles.sellerField} ${styles.shippingField}`}>
               <span>Shipping price</span>
               <input
@@ -697,29 +732,152 @@ export default function NewListingPage() {
                 required={isShipping}
               />
             </label>
+          ) : null} */}
+
+          {isShipping ? (
+            <>
+              <div className={styles.kindSwitch} role="tablist" aria-label="Shipping rate mode">
+                <button
+                  type="button"
+                  className={shippingRateMode === "seller_flat" ? styles.switchActive : ""}
+                  onClick={() => setShippingRateMode("seller_flat")}
+                  role="tab"
+                  aria-selected={shippingRateMode === "seller_flat"}
+                >
+                  Package info
+                </button>
+
+                <button
+                  type="button"
+                  className={shippingRateMode === "calculated" ? styles.switchActive : ""}
+                  onClick={() => setShippingRateMode("seller_flat")}
+                  role="tab"
+                  aria-selected={shippingRateMode === "calculated"}
+                  aria-disabled="true"
+                  title="Calculated shipping is coming soon."
+                >
+                  Calculated
+                </button>
+
+                <span
+                  className={`${styles.kindSlider} ${
+                    shippingRateMode === "calculated"
+                      ? styles.sliderRight
+                      : styles.sliderLeft
+                  }`}
+                />
+              </div>
+
+              <label className={styles.sellerField}>
+                <span>Shipping origin ZIP</span>
+                <input
+                  value={shippingOriginZip}
+                  onChange={(event) => setShippingOriginZip(event.target.value)}
+                  inputMode="numeric"
+                  placeholder="Ships from ZIP"
+                  required={isShipping}
+                />
+              </label>
+
+              <div className={styles.twoColumn}>
+                <label className={styles.sellerField}>
+                  <span>Package weight</span>
+                  <input
+                    value={packageWeightLb}
+                    onChange={(event) => setPackageWeightLb(event.target.value)}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="Pounds"
+                    required={isShipping}
+                  />
+                </label>
+
+                <label className={styles.sellerField}>
+                  <span>Length</span>
+                  <input
+                    value={packageLengthIn}
+                    onChange={(event) => setPackageLengthIn(event.target.value)}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="Inches"
+                    required={isShipping}
+                  />
+                </label>
+              </div>
+
+              <div className={styles.twoColumn}>
+                <label className={styles.sellerField}>
+                  <span>Width</span>
+                  <input
+                    value={packageWidthIn}
+                    onChange={(event) => setPackageWidthIn(event.target.value)}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="Inches"
+                    required={isShipping}
+                  />
+                </label>
+
+                <label className={styles.sellerField}>
+                  <span>Height</span>
+                  <input
+                    value={packageHeightIn}
+                    onChange={(event) => setPackageHeightIn(event.target.value)}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="Inches"
+                    required={isShipping}
+                  />
+                </label>
+              </div>
+
+              <label className={styles.sellerField}>
+                <span>Shipping notes</span>
+                <input
+                  value={shippingNotes}
+                  onChange={(event) => setShippingNotes(event.target.value)}
+                  placeholder="Optional"
+                />
+              </label>
+            </>
           ) : null}
         </section>
 
         {error ? <p className={styles.sellerError}>{error}</p> : null}
 
-        <section className={styles.publishBar}>
-          <button
-            type="button"
-            className={styles.draftButton}
-            onClick={() => saveListing("draft")}
-            disabled={saving}
-          >
-            Draft
-          </button>
+{!publishReady ? (
+  <p className={styles.publishHint}>
+    Complete all required details before publishing. Shipping listings need an
+    origin ZIP, package weight, and package dimensions.
+  </p>
+) : null}
 
-          <button
-            type="submit"
-            className={styles.publishButton}
-            disabled={saving || !publishReady}
-          >
-            {saving ? "Saving..." : "Publish"}
-          </button>
-        </section>
+<section className={styles.publishBar}>
+  <button
+    type="button"
+    className={styles.draftButton}
+    onClick={() => saveListing("draft")}
+    disabled={saving}
+  >
+    Draft
+  </button>
+
+  <button
+    type="submit"
+    className={styles.publishButton}
+    disabled={saving || !publishReady}
+  >
+    {saving ? "Saving..." : "Publish"}
+  </button>
+</section>
       </form>
 
       {previewPhotoUrl ? (
