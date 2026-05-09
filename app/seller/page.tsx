@@ -183,7 +183,26 @@ export default function SellerDashboardPage() {
         </Link>
       </section>
 
-      <AppBottomNav active="sell" />
+      <AppBottomNav
+        active="sell"
+        items={[
+          {
+            key: "sell",
+            label: "Sell",
+            href: "/seller",
+          },
+          {
+            key: "messages",
+            label: "Messages",
+            href: "/messages",
+          },
+          {
+            key: "profile",
+            label: "Profile",
+            href: "/profile",
+          },
+        ]}
+      />
     </main>
   )
 }

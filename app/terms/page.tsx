@@ -15,7 +15,7 @@ export default function TermsPage() {
         </header>
         <div className="legal-header">
           <h1>Terms of Use</h1>
-          <p>Effective Date: Apr 29, 2026</p>
+          <p>Effective Date: Apr 26, 2026</p>
         </div>
 
         <div className="legal-content">
@@ -196,6 +196,19 @@ export default function TermsPage() {
           </p>
 
           <p>
+            Shipping rates shown at checkout are based on information provided by 
+            the seller, buyer shipping information, package details, and third-party 
+            carrier or shipping-rate providers. Rates may be estimates and may differ 
+            from the final cost a seller pays when purchasing postage or shipping an item.
+          </p>
+
+          <p>
+            Sellers are responsible for properly packing shipped items, purchasing or arranging 
+            shipment, using the selected or reasonably comparable shipping service, and providing 
+            truthful fulfillment updates.
+          </p>
+
+          <p>
             Decor Encore is not responsible for lost items, damaged items, missed
             pickups, late deliveries, shipping carrier issues, incorrect
             addresses, unsafe meetup locations, or fulfillment disputes between
@@ -352,7 +365,7 @@ export default function TermsPage() {
           <h2>26. Contact</h2>
           <p>
             Questions about these Terms may be sent to:{" "}
-            <strong>[Insert Contact Email]</strong>
+            <strong>info@decor-ecore.com</strong>
           </p>
         </div>
       </section>

@@ -15,7 +15,7 @@ export default function PaymentsPolicyPage() {
         </header>
         <div className="legal-header">
           <h1>Payments Policy</h1>
-          <p>Effective Date: Apr 29, 2026</p>
+          <p>Effective Date: Apr 26, 2026</p>
         </div>
 
         <div className="legal-content">
@@ -55,9 +55,9 @@ export default function PaymentsPolicyPage() {
 
           <h2>3. Buyer Payments</h2>
           <p>
-            Buyers may be required to pay the item price, applicable service
-            fees, taxes, shipping fees, delivery fees, or other disclosed charges
-            at checkout.
+            Buyer checkout total may include item price, Decor Encore platform/service 
+            fees, shipping charges selected by the buyer, taxes where applicable, and 
+            any other disclosed charges.
           </p>
 
           <p>
@@ -106,16 +106,25 @@ export default function PaymentsPolicyPage() {
 
           <h2>7. Refunds</h2>
           <p>
-            Refunds may depend on seller terms, platform policies, payment
-            provider rules, dispute outcomes, or applicable law. Decor Encore may
-            provide tools to request, issue, or review refunds, but does not
-            guarantee that any refund will be granted.
+            Refunds are not guaranteed and may depend on seller actions, Decor Encore policies, 
+            payment processor rules, dispute outcomes, and applicable law. Decor Encore may provide tools 
+            to request, review, approve, deny, or process refunds, but a refund request does not automatically 
+            mean a refund will be granted.
           </p>
 
           <p>
-            If a refund is issued, associated platform fees, payment processing
-            fees, or service fees may or may not be refundable depending on the
-            circumstances and applicable rules.
+            If a seller cancels a paid order, cannot fulfill an order, fails to ship or provide 
+            the item as described, or otherwise causes the transaction to be cancelled, Decor Encore 
+            may refund the buyer according to platform policy and payment processor rules. Where permitted, 
+            Decor Encore may retain, reverse, deduct, or recover platform fees, payment processing costs, 
+            shipping amounts, carrier-related costs, cancellation-related costs, or other transaction-related costs.
+          </p>
+
+          <p>
+            If a refund is issued, the refunded amount may vary depending on the circumstances. Platform fees, 
+            payment processing fees, service fees, shipping charges, and other transaction-related costs may be 
+            refundable, partially refundable, or non-refundable, and may be retained by Decor Encore, reversed 
+            through the payment processor, or deducted from current or future seller payouts where permitted.
           </p>
 
           <h2>8. Cancellations</h2>
@@ -241,7 +250,7 @@ export default function PaymentsPolicyPage() {
           <h2>19. Contact</h2>
           <p>
             Questions about this Payments Policy may be sent to:{" "}
-            <strong>[Insert Contact Email]</strong>
+            <strong>info@decore-encore.com</strong>
           </p>
         </div>
       </section>

@@ -330,7 +330,27 @@ export default function SellerOrdersPage() {
           </div>
         ) : null}
       </section>
-      <AppBottomNav active="sell" />
+      {/* <AppBottomNav active="sell" /> */}
+      <AppBottomNav
+                //active="shop"
+                items={[
+                  {
+                    key: "shop",
+                    label: "Shop",
+                    href: "/marketplace",
+                  },
+                  {
+                    key: "messages",
+                    label: "Messages",
+                    href: "/messages",
+                  },
+                  {
+                    key: "profile",
+                    label: "Profile",
+                    href: "/profile",
+                  },
+                ]}
+              />
     </main>
   )
 }

@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         </header>
         <div className="legal-header">
           <h1>Privacy Policy</h1>
-          <p>Effective Date: [Insert Date]</p>
+          <p>Effective Date: April 29, 2026</p>
         </div>
 
         <div className="legal-content">
@@ -153,6 +153,13 @@ export default function PrivacyPage() {
             tools.
           </p>
 
+          <p>
+            We may share shipping-related information with shipping-rate, carrier, 
+            logistics, or tracking providers, such as Shippo, USPS, UPS, FedEx, or 
+            similar providers, to calculate rates, support shipping, provide tracking, 
+            or resolve fulfillment issues.
+          </p>
+
           <h2>12. Legal and Safety Sharing</h2>
           <p>
             We may disclose information if we believe it is reasonably necessary
@@ -243,7 +250,7 @@ export default function PrivacyPage() {
           <h2>22. Contact</h2>
           <p>
             Questions about this Privacy Policy may be sent to:{" "}
-            <strong>[Insert Contact Email]</strong>
+            <strong>info@decor-encore.com</strong>
           </p>
         </div>
       </section>

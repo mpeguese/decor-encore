@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "../seller-orders.module.css"
+import AppBottomNav from "@/app/components/AppBottomNav"
 
 type ListingImageRow = {
   image_url: string
@@ -846,6 +847,26 @@ export default function SellerOrderDetailPage() {
           </p>
         </section>
       </section>
+      <AppBottomNav
+                active="orders"
+                items={[
+                  {
+                    key: "orders",
+                    label: "Orders",
+                    href: "/seller/orders",
+                  },
+                  {
+                    key: "messages",
+                    label: "Messages",
+                    href: "/messages",
+                  },
+                  {
+                    key: "profile",
+                    label: "Profile",
+                    href: "/profile",
+                  },
+                ]}
+              />
     </main>
   )
 }

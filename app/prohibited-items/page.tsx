@@ -197,7 +197,7 @@ export default function ProhibitedItemsPage() {
           <h2>16. Contact</h2>
           <p>
             Questions about this policy may be sent to:{" "}
-            <strong>[Insert Contact Email]</strong>
+            <strong>info@decor-encore.com</strong>
           </p>
         </div>
       </section>

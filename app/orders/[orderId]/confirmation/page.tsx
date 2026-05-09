@@ -92,6 +92,48 @@ function formatStatus(value: string) {
   return labels[value] || value
 }
 
+function formatFulfillmentMethod(value: string | null) {
+  if (value === "shipping") return "Shipping"
+  if (value === "pickup") return "Pickup"
+  return "Fulfillment"
+}
+
+function getFulfillmentStatus(order: OrderRow) {
+  if (order.fulfillment_method === "shipping") {
+    if (order.status === "arranged") {
+      return "Your order is on the way."
+    }
+
+    if (order.status === "completed") {
+      return "This order has been marked received."
+    }
+
+    if (order.status === "confirmed") {
+      return "The seller confirmed your order and will mark it shipped once it is on the way."
+    }
+
+    return "Your shipping details are saved for this order."
+  }
+
+  if (order.fulfillment_method === "pickup") {
+    if (order.status === "arranged") {
+      return "Pickup details have been arranged with the seller."
+    }
+
+    if (order.status === "completed") {
+      return "This order has been marked received."
+    }
+
+    return "Coordinate pickup time and meeting details with the seller in Decor Encore messages."
+  }
+
+  return "Fulfillment details will appear here once selected."
+}
+
+function getSelectedShippingService(order: OrderRow) {
+  return [order.shipping_carrier, order.shipping_service].filter(Boolean).join(" ")
+}
+
 function formatTimelineLabel(eventType: string) {
   const labels: Record<string, string> = {
     order_created: "Order placed",
@@ -385,9 +427,9 @@ export default function OrderConfirmationPage() {
     canRequestCancellation(order.status) && !hasCancellationRequest
 
   const isShippingOrder = order.fulfillment_method === "shipping"
-  const selectedShippingService = [order.shipping_carrier, order.shipping_service]
-    .filter(Boolean)
-    .join(" ")
+  const isPickupOrder = order.fulfillment_method === "pickup"
+  const selectedShippingService = getSelectedShippingService(order)
+  const fulfillmentStatus = getFulfillmentStatus(order)
 
   return (
     <main className={styles.confirmationPage}>
@@ -428,11 +470,10 @@ export default function OrderConfirmationPage() {
         <div className={styles.receiptDivider} />
 
         <div className={styles.receiptList}>
-          <div>
-            <span>Item</span>
+          <div className={styles.receiptItemOnly}>
+            <span>Item </span>
             <strong>{listing?.title || "Decor listing"}</strong>
           </div>
-          <p>${subtotalPaid}</p>
         </div>
 
         <div className={styles.receiptLine}>
@@ -446,9 +487,6 @@ export default function OrderConfirmationPage() {
           <div className={styles.receiptLine}>
             <div>
               <span>Shipping</span>
-              {isShippingOrder && selectedShippingService ? (
-                <strong>{selectedShippingService}</strong>
-              ) : null}
             </div>
             <p>${shippingPaid}</p>
           </div>
@@ -468,7 +506,61 @@ export default function OrderConfirmationPage() {
           <strong>${totalPaid}</strong>
         </div>
 
-        <section className={styles.buyerActionCard}>
+        <section className={styles.fulfillmentSummaryCard}>
+          <div className={styles.fulfillmentSummaryHeader}>
+            <div>
+              <span>Fulfillment</span>
+              <strong>{formatFulfillmentMethod(order.fulfillment_method)}</strong>
+            </div>
+
+            <p>
+              {isShippingOrder
+                ? order.status === "arranged"
+                  ? "On the way"
+                  : "Shipping selected"
+                : isPickupOrder
+                  ? "Pickup selected"
+                  : "Pending"}
+            </p>
+          </div>
+
+        {isShippingOrder ? (
+          <div className={styles.fulfillmentSummaryGrid}>
+            <div>
+              <span>Selected service</span>
+              <strong>{selectedShippingService || "Shipping service selected"}</strong>
+            </div>
+
+            <div>
+              <span>Shipping paid</span>
+              <strong>${shippingPaid}</strong>
+            </div>
+
+            {order.shipping_estimated_days ? (
+              <div>
+                <span>Estimate</span>
+                <strong>
+                  {order.shipping_estimated_days} day
+                  {order.shipping_estimated_days === 1 ? "" : "s"}
+                </strong>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {isPickupOrder ? (
+          <div className={styles.fulfillmentSummaryGrid}>
+            <div>
+              <span>Next step</span>
+              <strong>Coordinate pickup with the seller</strong>
+            </div>
+          </div>
+        ) : null}
+
+        <p className={styles.fulfillmentSummaryNote}>{fulfillmentStatus}</p>
+      </section>
+
+      <section className={styles.buyerActionCard}>
           <div className={styles.buyerActionHeader}>
             <div>
               <span>Order status</span>
