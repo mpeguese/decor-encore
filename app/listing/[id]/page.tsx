@@ -443,12 +443,11 @@ export default function ListingDetailPage() {
   // const total = subtotal + shipping + platformFee
 
   const subtotal = Number(Number(listing.price || 0).toFixed(2))
-  const shippingAmount =
-    listing.fulfillment_type === "shipping" ||
-    listing.fulfillment_type === "pickup_or_shipping"
-      ? Number(Number(listing.shipping_price || 0).toFixed(2))
-      : 0
 
+  const initialFulfillmentMethod =
+    listing.fulfillment_type === "shipping" ? "shipping" : "pickup"
+
+  const shippingAmount = 0
   const platformFee = Number((subtotal * 0.08).toFixed(2))
   const total = Number((subtotal + shippingAmount + platformFee).toFixed(2))
 
@@ -463,6 +462,8 @@ export default function ListingDetailPage() {
       shipping_amount: shippingAmount,
       platform_fee: platformFee,
       total,
+      fulfillment_method: initialFulfillmentMethod,
+      fulfillment_selected_at: new Date().toISOString(),
     })
     .select("id")
     .single()

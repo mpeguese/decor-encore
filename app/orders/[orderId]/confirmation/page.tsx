@@ -16,6 +16,10 @@ type OrderRow = {
   shipping_amount: number
   platform_fee: number
   total: number
+  fulfillment_method: string | null
+  shipping_carrier: string | null
+  shipping_service: string | null
+  shipping_estimated_days: number | null
   created_at: string
 }
 
@@ -94,6 +98,7 @@ function formatTimelineLabel(eventType: string) {
     payment_received: "Payment received",
     seller_confirmed: "Seller confirmed",
     pickup_delivery_arranged: "Pickup / delivery arranged",
+    seller_marked_shipped: "Shipped",
     buyer_confirmed_received: "Buyer confirmed received",
     buyer_reviewed_seller: "Buyer reviewed seller",
     seller_reviewed_buyer: "Seller reviewed buyer",
@@ -187,7 +192,7 @@ export default function OrderConfirmationPage() {
 
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
-        .select("id, listing_id, buyer_id, status, subtotal, shipping_amount, platform_fee, total, created_at")
+        .select("id, listing_id, buyer_id, status, subtotal, shipping_amount, platform_fee, total, fulfillment_method, shipping_carrier, shipping_service, shipping_estimated_days, created_at")
         .eq("id", orderId)
         .single()
 
@@ -379,6 +384,11 @@ export default function OrderConfirmationPage() {
   const showCancellationRequest =
     canRequestCancellation(order.status) && !hasCancellationRequest
 
+  const isShippingOrder = order.fulfillment_method === "shipping"
+  const selectedShippingService = [order.shipping_carrier, order.shipping_service]
+    .filter(Boolean)
+    .join(" ")
+
   return (
     <main className={styles.confirmationPage}>
       <section className={styles.receiptShell}>
@@ -436,6 +446,9 @@ export default function OrderConfirmationPage() {
           <div className={styles.receiptLine}>
             <div>
               <span>Shipping</span>
+              {isShippingOrder && selectedShippingService ? (
+                <strong>{selectedShippingService}</strong>
+              ) : null}
             </div>
             <p>${shippingPaid}</p>
           </div>
@@ -484,7 +497,9 @@ export default function OrderConfirmationPage() {
                 ? "This order has been marked complete."
                 : order.status === "cancelled"
                   ? "This order has been cancelled."
-                  : "You can confirm receipt after the seller confirms or arranges fulfillment."}
+                  : isShippingOrder
+                  ? "You can confirm receipt after the seller ships the order and it arrives."
+                  : "You can confirm receipt after the seller confirms or arranges pickup."}
             </p>
           )}
 

@@ -14,6 +14,7 @@ type OrderRow = {
   shipping_amount: number
   platform_fee: number
   total: number
+  fulfillment_method: string | null
   stripe_payment_intent_id: string | null
 }
 
@@ -23,6 +24,11 @@ type SellerPayoutAccountRow = {
   charges_enabled: boolean
   payouts_enabled: boolean
   details_submitted: boolean
+}
+
+type ListingRow = {
+  id: string
+  fulfillment_type: string
 }
 
 function getSupabaseAdmin() {
@@ -85,7 +91,7 @@ export async function POST(request: NextRequest) {
     const { data: orderData, error: orderError } = await supabaseAdmin
       .from("orders")
       .select(
-        "id, listing_id, buyer_id, seller_id, status, subtotal, shipping_amount, platform_fee, total, stripe_payment_intent_id"
+        "id, listing_id, buyer_id, seller_id, status, subtotal, shipping_amount, platform_fee, total, fulfillment_method, stripe_payment_intent_id"
       )
       .eq("id", orderId)
       .single()
@@ -116,6 +122,66 @@ export async function POST(request: NextRequest) {
     if (order.status === "cancelled" || order.status === "refunded") {
       return NextResponse.json(
         { error: "This order can no longer be paid." },
+        { status: 409 }
+      )
+    }
+
+    if (
+      order.fulfillment_method !== "pickup" &&
+      order.fulfillment_method !== "shipping"
+    ) {
+      return NextResponse.json(
+        { error: "Choose pickup or shipping before payment." },
+        { status: 409 }
+      )
+    }
+
+    const { data: listingData, error: listingError } = await supabaseAdmin
+      .from("listings")
+      .select("id, fulfillment_type")
+      .eq("id", order.listing_id)
+      .single()
+
+    if (listingError || !listingData) {
+      return NextResponse.json(
+        { error: "Listing not found." },
+        { status: 404 }
+      )
+    }
+
+    const listing = listingData as ListingRow
+
+    const pickupAllowed =
+      listing.fulfillment_type === "pickup" ||
+      listing.fulfillment_type === "pickup_or_shipping"
+
+    const shippingAllowed =
+      listing.fulfillment_type === "shipping" ||
+      listing.fulfillment_type === "pickup_or_shipping"
+
+    if (order.fulfillment_method === "pickup" && !pickupAllowed) {
+      return NextResponse.json(
+        { error: "Pickup is not available for this listing." },
+        { status: 409 }
+      )
+    }
+
+    if (order.fulfillment_method === "shipping" && !shippingAllowed) {
+      return NextResponse.json(
+        { error: "Shipping is not available for this listing." },
+        { status: 409 }
+      )
+    }
+
+    if (
+      order.fulfillment_method === "shipping" &&
+      Number(order.shipping_amount || 0) <= 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Shipping needs a calculated rate before payment can be processed.",
+        },
         { status: 409 }
       )
     }

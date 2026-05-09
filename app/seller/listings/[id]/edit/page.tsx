@@ -661,7 +661,11 @@ export default function EditListingPage() {
       setNewPhotos([])
       setImagesToDelete([])
       setStatus(intendedStatus)
-      setMessage("Listing updated.")
+      //setMessage("Listing updated.")
+
+      window.setTimeout(() => {
+          setMessage("Listing updated.")
+      }, 3000)
 
       router.refresh()
     } catch (saveError) {

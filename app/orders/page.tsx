@@ -31,6 +31,7 @@ type OrderRow = {
   buyer_id: string
   seller_id: string
   status: string
+  fulfillment_method: string | null
   total: number
   created_at: string
   listings: ListingRow
@@ -86,12 +87,19 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
-function formatStatus(value: string) {
+function formatStatus(value: string, fulfillmentMethod?: string | null) {
+  if (value === "arranged" && fulfillmentMethod === "shipping") {
+    return "Shipped"
+  }
+
+  if (value === "arranged") {
+    return "Pickup arranged"
+  }
+
   const labels: Record<string, string> = {
     pending: "Pending",
     paid: "Paid",
     confirmed: "Confirmed",
-    arranged: "Pickup / Delivery Arranged",
     completed: "Completed",
     cancelled: "Cancelled",
     refunded: "Refunded",
@@ -145,6 +153,7 @@ export default function OrdersPage() {
           buyer_id,
           seller_id,
           status,
+          fulfillment_method,
           total,
           created_at,
           listings (
@@ -315,7 +324,7 @@ export default function OrdersPage() {
 
                       <div>
                         <span>Status</span>
-                        <strong>{formatStatus(order.status)}</strong>
+                        <strong>{formatStatus(order.status, order.fulfillment_method)}</strong>
                       </div>
                     </div>
 

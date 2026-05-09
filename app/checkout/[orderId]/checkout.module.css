@@ -396,3 +396,248 @@
     margin-bottom: 8px;
   }
 }
+
+.fulfillmentCard {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 24px;
+  background: rgba(255, 233, 243, 0.52);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+}
+
+.fulfillmentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.fulfillmentHeader span {
+  color: rgba(81, 45, 56, 0.52);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.fulfillmentHeader strong {
+  color: var(--plum);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.fulfillmentChoiceSwitch {
+  position: relative;
+  margin-top: 12px;
+  padding: 0.32rem;
+  border-radius: 999px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  box-shadow: 0 14px 36px rgba(81, 45, 56, 0.08);
+  overflow: hidden;
+}
+
+.fulfillmentChoiceSwitch button {
+  position: relative;
+  z-index: 2;
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  color: rgba(81, 45, 56, 0.68);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.fulfillmentChoiceSwitch button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.fulfillmentChoiceSwitch .fulfillmentActive {
+  color: #fff;
+}
+
+.fulfillmentChoiceSlider {
+  position: absolute;
+  z-index: 1;
+  top: 0.32rem;
+  bottom: 0.32rem;
+  width: calc(50% - 0.32rem);
+  border-radius: 999px;
+  background: var(--plum);
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.18);
+  transition: transform 180ms ease;
+}
+
+.fulfillmentChoiceLeft {
+  transform: translateX(0);
+  left: 0.32rem;
+}
+
+.fulfillmentChoiceRight {
+  transform: translateX(100%);
+  left: 0.32rem;
+}
+
+.fulfillmentStatic {
+  margin-top: 12px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  color: rgba(81, 45, 56, 0.68);
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.fulfillmentNote,
+.fulfillmentWarning {
+  margin: 10px 0 0 !important;
+  color: rgba(81, 45, 56, 0.62) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  line-height: 1.4;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.fulfillmentWarning {
+  color: #9f1239 !important;
+}
+
+.shippingRatePanel {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.shippingAddressGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.shippingAddressGrid label {
+  display: grid;
+  gap: 6px;
+}
+
+.shippingAddressGrid label span {
+  color: rgba(81, 45, 56, 0.58);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+}
+
+.shippingAddressGrid input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(81, 45, 56, 0.1);
+  border-radius: 999px;
+  padding: 0 14px;
+  outline: none;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.shippingAddressGrid input:focus {
+  border-color: rgba(178, 112, 146, 0.58);
+  box-shadow: 0 0 0 4px rgba(244, 191, 219, 0.28);
+}
+
+.calculateShippingButton {
+  min-height: 46px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--plum);
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 14px 32px rgba(81, 45, 56, 0.18);
+}
+
+.calculateShippingButton:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.shippingRateList {
+  display: grid;
+  gap: 8px;
+}
+
+.shippingRateList button {
+  min-height: 54px;
+  padding: 10px 12px;
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.58);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shippingRateList button span {
+  display: grid;
+  gap: 3px;
+}
+
+.shippingRateList button strong {
+  color: var(--plum);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.shippingRateList button em {
+  color: rgba(81, 45, 56, 0.58);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.shippingRateList button b {
+  color: var(--plum);
+  font-size: 15px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.shippingRateList .shippingRateSelected {
+  color: #fff;
+  background: var(--plum);
+  box-shadow: 0 14px 34px rgba(81, 45, 56, 0.18);
+}
+
+.shippingRateList .shippingRateSelected strong,
+.shippingRateList .shippingRateSelected em,
+.shippingRateList .shippingRateSelected b {
+  color: #fff;
+}
+
+@media (min-width: 620px) {
+  .shippingAddressGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .shippingAddressGrid label:nth-child(2),
+  .shippingAddressGrid label:nth-child(3) {
+    grid-column: span 2;
+  }
+}

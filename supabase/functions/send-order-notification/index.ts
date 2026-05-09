@@ -92,6 +92,7 @@ function getNotificationTarget(eventType: string) {
   const buyerEvents = new Set([
     "seller_confirmed",
     "pickup_delivery_arranged",
+    "seller_marked_shipped",
     "order_cancelled",
     "refund_processed",
   ])
@@ -160,6 +161,17 @@ function getEmailContent({
       preview: basePreview,
       heading: "Fulfillment details were arranged",
       body: `Pickup or delivery details were marked arranged for "${listingTitle}". Check your order timeline and messages for details.`,
+      ctaText: "View order",
+      ctaPath: `/orders/${order.id}/confirmation`,
+    }
+  }
+
+  if (event.event_type === "seller_marked_shipped") {
+    return {
+      subject: `Your Decor Encore order is on the way`,
+      preview: basePreview,
+      heading: "Your order is on the way",
+      body: `${sellerName} marked "${listingTitle}" as shipped. Check your order timeline and messages for fulfillment updates.`,
       ctaText: "View order",
       ctaPath: `/orders/${order.id}/confirmation`,
     }

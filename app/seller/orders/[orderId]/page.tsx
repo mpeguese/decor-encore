@@ -29,7 +29,23 @@ type OrderRow = {
   buyer_id: string
   seller_id: string
   status: string
+  subtotal: number
+  shipping_amount: number
+  platform_fee: number
   total: number
+  fulfillment_method: string | null
+  ship_to_name: string | null
+  ship_to_line1: string | null
+  ship_to_line2: string | null
+  ship_to_city: string | null
+  ship_to_state: string | null
+  ship_to_postal_code: string | null
+  ship_to_country: string | null
+  shipping_rate_provider: string | null
+  shipping_rate_id: string | null
+  shipping_carrier: string | null
+  shipping_service: string | null
+  shipping_estimated_days: number | null
   created_at: string
   listings:
     | {
@@ -141,12 +157,53 @@ function formatStatus(value: string) {
   return labels[value] || value
 }
 
+function formatFulfillmentMethod(value: string | null) {
+  const labels: Record<string, string> = {
+    pickup: "Pickup",
+    shipping: "Shipping",
+  }
+
+  return value ? labels[value] || value : "Not selected"
+}
+
+function formatShipToAddress(order: OrderRow) {
+  const lines = [
+    order.ship_to_name,
+    order.ship_to_line1,
+    order.ship_to_line2,
+    [order.ship_to_city, order.ship_to_state, order.ship_to_postal_code]
+      .filter(Boolean)
+      .join(", ")
+      .replace(", ", ", "),
+    order.ship_to_country,
+  ].filter(Boolean)
+
+  return lines
+}
+
+function formatShippingService(order: OrderRow) {
+  const service = [order.shipping_carrier, order.shipping_service]
+    .filter(Boolean)
+    .join(" ")
+
+  if (!service) return "Not selected"
+
+  if (order.shipping_estimated_days) {
+    return `${service} · estimated ${order.shipping_estimated_days} day${
+      order.shipping_estimated_days === 1 ? "" : "s"
+    }`
+  }
+
+  return service
+}
+
 function formatTimelineLabel(eventType: string) {
   const labels: Record<string, string> = {
     order_created: "Order placed",
     payment_received: "Payment received",
     seller_confirmed: "Seller confirmed",
     pickup_delivery_arranged: "Pickup / delivery arranged",
+    seller_marked_shipped: "Shipped",
     buyer_confirmed_received: "Buyer confirmed received",
     buyer_reviewed_seller: "Buyer reviewed seller",
     seller_reviewed_buyer: "Seller reviewed buyer",
@@ -181,7 +238,12 @@ function buildTimelineEvents(order: OrderRow, events: OrderEventRow[]) {
   ]
 }
 
-function getSellerStageActions(status: string): StageAction[] {
+function getSellerStageActions(
+  status: string,
+  fulfillmentMethod: string | null
+): StageAction[] {
+  const isShippingOrder = fulfillmentMethod === "shipping"
+
   if (status === "pending" || status === "paid") {
     return [
       {
@@ -203,8 +265,10 @@ function getSellerStageActions(status: string): StageAction[] {
     return [
       {
         nextStatus: "arranged",
-        label: "Mark arranged",
-        helper: "Pickup or delivery details have been coordinated.",
+        label: isShippingOrder ? "Mark shipped" : "Mark arranged",
+        helper: isShippingOrder
+          ? "Let the buyer know this order is on the way."
+          : "Pickup details have been coordinated.",
         variant: "primary",
       },
       {
@@ -289,7 +353,23 @@ export default function SellerOrderDetailPage() {
           buyer_id,
           seller_id,
           status,
+          subtotal,
+          shipping_amount,
+          platform_fee,
           total,
+          fulfillment_method,
+          ship_to_name,
+          ship_to_line1,
+          ship_to_line2,
+          ship_to_city,
+          ship_to_state,
+          ship_to_postal_code,
+          ship_to_country,
+          shipping_rate_provider,
+          shipping_rate_id,
+          shipping_carrier,
+          shipping_service,
+          shipping_estimated_days,
           created_at,
           listings (
             title,
@@ -493,7 +573,13 @@ export default function SellerOrderDetailPage() {
     ? `/messages?conversationId=${conversationId}`
     : "/messages"
   const timelineEvents = buildTimelineEvents(order, orderEvents)
-  const stageActions = getSellerStageActions(order.status)
+  const stageActions = getSellerStageActions(
+    order.status,
+    order.fulfillment_method
+  )
+  const shipToAddressLines = formatShipToAddress(order)
+  const isShippingOrder = order.fulfillment_method === "shipping"
+  const isPickupOrder = order.fulfillment_method === "pickup"
 
   return (
     <main className={styles.sellerOrdersPage}>
@@ -564,6 +650,74 @@ export default function SellerOrderDetailPage() {
             </div>
           </div>
         </article>
+
+                <section className={styles.fulfillmentDetailCard}>
+          <div className={styles.fulfillmentDetailHeader}>
+            <div>
+              <p>Fulfillment</p>
+              <h2>{formatFulfillmentMethod(order.fulfillment_method)}</h2>
+            </div>
+
+            <span>
+              {isShippingOrder
+                ? `$${Number(order.shipping_amount || 0).toFixed(2)}`
+                : "Pickup"}
+            </span>
+          </div>
+
+          {isShippingOrder ? (
+            <div className={styles.fulfillmentDetailBody}>
+              <div className={styles.fulfillmentInfoGrid}>
+                <div>
+                  <span>Selected service</span>
+                  <strong>{formatShippingService(order)}</strong>
+                </div>
+
+                <div>
+                  <span>Shipping paid</span>
+                  <strong>${Number(order.shipping_amount || 0).toFixed(2)}</strong>
+                </div>
+              </div>
+
+              <div className={styles.shipToBox}>
+                <span>Ship to</span>
+
+                {shipToAddressLines.length > 0 ? (
+                  <address>
+                    {shipToAddressLines.map((line) => (
+                      <strong key={line}>{line}</strong>
+                    ))}
+                  </address>
+                ) : (
+                  <p>Shipping address has not been added yet.</p>
+                )}
+              </div>
+
+              <p className={styles.fulfillmentDetailNote}>
+                Use the selected service as the buyer-paid shipping estimate.
+                Coordinate packing, drop-off timing, and any questions with the
+                buyer in Decor Encore messages.
+              </p>
+            </div>
+          ) : null}
+
+          {isPickupOrder ? (
+            <div className={styles.fulfillmentDetailBody}>
+              <p className={styles.fulfillmentDetailNote}>
+                This order is set for pickup. Coordinate the pickup time and
+                meeting details with the buyer in Decor Encore messages.
+              </p>
+            </div>
+          ) : null}
+
+          {!isShippingOrder && !isPickupOrder ? (
+            <div className={styles.fulfillmentDetailBody}>
+              <p className={styles.fulfillmentDetailNote}>
+                Fulfillment has not been selected yet.
+              </p>
+            </div>
+          ) : null}
+        </section>
         
         {cancellationRequest ? (
           <section className={styles.cancellationAlertCard}>
@@ -685,10 +839,10 @@ export default function SellerOrderDetailPage() {
         </section>
 
         <section className={styles.stateCard}>
-          <h2>Fulfillment note</h2>
+          <h2>Keep it protected</h2>
           <p>
-            Coordinate pickup, delivery, and any order questions inside Decor
-            Encore messages. Avoid sharing outside contact or payment details.
+            Keep fulfillment coordination and order questions inside Decor Encore
+            messages. Avoid sharing outside contact or payment details.
           </p>
         </section>
       </section>
