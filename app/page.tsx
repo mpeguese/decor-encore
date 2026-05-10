@@ -72,9 +72,56 @@ export default function HomePage() {
     <span className="de-brand-name">Decor Encore</span>
   </Link>
 
+  <div className="de-header-actions">
+  <a
+    href="https://www.instagram.com/_decorencore_/"
+    className="de-social-link"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Follow Decor Encore on Instagram"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect
+        x="4"
+        y="4"
+        width="16"
+        height="16"
+        rx="5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
+    </svg>
+  </a>
+
+  <a
+  href="https://www.tiktok.com/@_decorencore_"
+  className="de-social-link"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="Follow Decor Encore on TikTok"
+>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M15.2 4c.35 2.38 1.72 4.06 4.08 4.38v3.08c-1.38.04-2.67-.36-3.9-1.16v5.64c0 3.02-2.08 5.06-5.14 5.06C7.36 21 5.2 18.92 5.2 16.14c0-2.86 2.2-4.94 5.26-4.94.32 0 .62.02.92.08v3.22a3.03 3.03 0 0 0-1-.16c-1.16 0-2.04.76-2.04 1.8 0 1.08.84 1.78 1.98 1.78 1.2 0 1.94-.72 1.94-2.08V4h2.94z"
+      fill="currentColor"
+    />
+  </svg>
+</a>
+
   <Link href="/login" className="de-signin">
     Sign in
   </Link>
+</div>
 </header>
 
 <div className="de-floating-logo">
@@ -168,7 +215,14 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <footer className="de-footer">
+        <p>© {new Date().getFullYear()} Decor Encore. All rights reserved.</p>
 
+        <div className="de-footer-links">
+          <Link href="/terms">Terms</Link>
+          <Link href="/privacy">Privacy</Link>
+        </div>
+      </footer>
     </main>
   )
 }
