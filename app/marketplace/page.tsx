@@ -109,6 +109,21 @@ function FilterIcon() {
   )
 }
 
+function HeartIcon({ isSaved }: { isSaved: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.3s-6.9-4.1-9.2-8.5C.9 8.1 3.1 4.5 6.9 4.5c2 0 3.7 1 5.1 2.8 1.4-1.8 3.1-2.8 5.1-2.8 3.8 0 6 3.6 4.1 7.3C18.9 16.2 12 20.3 12 20.3z"
+        fill={isSaved ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 const eventTypes = [
   { label: "Wedding", value: "wedding" },
   { label: "Quinceañera", value: "quinceanera" },
@@ -176,6 +191,14 @@ function formatDistance(distanceMiles: number | null) {
   if (distanceMiles < 1) return "less than 1 mi away"
 
   return `${Math.round(distanceMiles)} mi away`
+}
+
+function truncateText(value: string, maxLength = 22) {
+  const cleanValue = value.trim()
+
+  if (cleanValue.length <= maxLength) return cleanValue
+
+  return `${cleanValue.slice(0, maxLength).trimEnd()}...`
 }
 
 function getPrimaryImage(images: ListingImageRecord[]) {
@@ -246,6 +269,33 @@ function toMarketplaceListing(
   }
 }
 
+function getInitials({
+  firstName,
+  lastName,
+  email,
+}: {
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+}) {
+  const first = firstName?.trim()
+  const last = lastName?.trim()
+
+  if (first && last) {
+    return `${first[0]}${last[0]}`.toUpperCase()
+  }
+
+  if (first) {
+    return first[0].toUpperCase()
+  }
+
+  if (email) {
+    return email.trim()[0]?.toUpperCase() || "P"
+  }
+
+  return "P"
+}
+
 export default function MarketplacePage() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -263,6 +313,7 @@ export default function MarketplacePage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<FilterState>(emptyFilters)
   const [activeFilters, setActiveFilters] = useState<FilterState>(emptyFilters)
+  const [profileInitials, setProfileInitials] = useState("P")
 
   useEffect(() => {
     let mounted = true
@@ -285,6 +336,24 @@ export default function MarketplacePage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, last_name, email")
+          .eq("id", user.id)
+          .single()
+
+        setProfileInitials(
+          getInitials({
+            firstName: profile?.first_name,
+            lastName: profile?.last_name,
+            email: profile?.email || user.email,
+          })
+        )
+      } else {
+        setProfileInitials("P")
+      }
 
       if (mounted && user) {
         setUserId(user.id)
@@ -562,8 +631,8 @@ export default function MarketplacePage() {
             <span>Decor Encore</span>
           </Link>
 
-          <Link href="/profile" className="mk-avatar" aria-label="Profile">
-            P
+          <Link href="/profile" className="mk-avatar" aria-label="Open profile">
+            {profileInitials}
           </Link>
         </div>
 
@@ -604,7 +673,7 @@ export default function MarketplacePage() {
             role="tab"
             aria-selected={view === "for-you"}
           >
-            For You
+            Featured
           </button>
 
           <button
@@ -698,6 +767,9 @@ export default function MarketplacePage() {
         ) : filteredListings.length > 0 ? (
           filteredListings.map((listing) => {
             const distanceLabel = formatDistance(listing.distanceMiles)
+            const locationLabel = distanceLabel
+              ? `${listing.location} · ${distanceLabel}`
+              : listing.location
 
             return (
               <article key={listing.id} className="mk-card">
@@ -719,17 +791,16 @@ export default function MarketplacePage() {
                   </div>
 
                   <div className="mk-card-body">
-                    <div>
-                      <p className="mk-card-category">{listing.category}</p>
-                      <h2>{listing.title}</h2>
-                    </div>
+                    <p className="mk-card-category">{listing.category}</p>
+
+                    <h2 title={listing.title}>
+                      {truncateText(listing.title)}
+                    </h2>
 
                     <div className="mk-card-meta">
                       <strong>${listing.price.toFixed(0)}</strong>
-                      <span>
-                        {listing.location}
-                        {distanceLabel ? ` · ${distanceLabel}` : ""} ·{" "}
-                        {listing.condition}
+                      <span title={`${locationLabel} · ${listing.condition}`}>
+                        {locationLabel}
                       </span>
                     </div>
                   </div>
@@ -745,7 +816,7 @@ export default function MarketplacePage() {
                     listing.isSaved ? "Remove favorite" : "Save listing"
                   }
                 >
-                  ♥
+                  <HeartIcon isSaved={listing.isSaved} />
                 </button>
               </article>
             )

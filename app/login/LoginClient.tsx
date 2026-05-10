@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { FormEvent, useMemo, useState } from "react"
+import { FormEvent, useMemo, useState, useEffect } from "react"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "@/app/auth-flow.module.css"
 
@@ -67,6 +67,28 @@ function EyeIcon({ isVisible }: { isVisible: boolean }) {
   )
 }
 
+function useIsLargeScreen() {
+  const [isLargeScreen, setIsLargeScreen] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 760px)")
+
+    const updateScreenSize = () => {
+      setIsLargeScreen(mediaQuery.matches)
+    }
+
+    updateScreenSize()
+
+    mediaQuery.addEventListener("change", updateScreenSize)
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateScreenSize)
+    }
+  }, [])
+
+  return isLargeScreen
+}
+
 export default function LoginClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -84,6 +106,13 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+
+  const isLargeScreen = useIsLargeScreen()
+
+  const authVideoSrc =
+    isLargeScreen === true
+      ? "/videos/decor-hero-desktop.mp4"
+      : "/videos/decor-hero.mp4"
 
   async function routeAfterLogin(userId: string) {
     const { data: profile } = await supabase
@@ -178,14 +207,19 @@ export default function LoginClient() {
   return (
     <main className={styles.authPage}>
       <section className={styles.authMedia} aria-hidden="true">
-        <video
-          className={styles.authVideo}
-          src="/videos/decor-hero.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
+        {isLargeScreen !== null ? (
+          <video
+            key={authVideoSrc}
+            className={styles.authVideo}
+            src={authVideoSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+          />
+        ) : null}
+
         <div className={styles.authVideoWash} />
       </section>
 
@@ -201,9 +235,18 @@ export default function LoginClient() {
           </Link>
         </header>
 
+        <div className={styles.authFloatingLogo}>
+          <img
+            src="/images/decor-encore-logo.png"
+            alt="Decor Encore - A Story in Every Piece"
+            className={styles.authLogoImage}
+          />
+        </div>
+
         <div className={styles.authCard}>
-          <div className={styles.authCopy}>
-            <p>Decor Encore</p>
+
+        <div className={styles.authCopy}>
+          <p>Decor Encore</p>
             <h1>{mode === "signin" ? "Welcome back." : "Start your encore."}</h1>
 
             {reason === "favorite" ? (

@@ -2,11 +2,13 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 
 type Intent = "shop" | "sell"
 
 const featuredSearches = ["Backdrops", "Florals", "Table decor", "Bundles"]
+
+
 
 export default function HomePage() {
   const [intent, setIntent] = useState<Intent>("shop")
@@ -15,54 +17,77 @@ export default function HomePage() {
     return intent === "shop" ? "/marketplace" : "/seller/listings/new"
   }, [intent])
 
+  const isLargeScreen = useIsLargeScreen()
+
+  const heroVideoSrc =
+    isLargeScreen === true
+      ? "/videos/decor-hero-desktop.mp4"
+      : "/videos/decor-hero.mp4"
+
+  function useIsLargeScreen() {
+    const [isLargeScreen, setIsLargeScreen] = useState<boolean | null>(null)
+
+    useEffect(() => {
+      const mediaQuery = window.matchMedia("(min-width: 760px)")
+
+      const updateScreenSize = () => {
+        setIsLargeScreen(mediaQuery.matches)
+      }
+
+      updateScreenSize()
+
+      mediaQuery.addEventListener("change", updateScreenSize)
+
+      return () => {
+        mediaQuery.removeEventListener("change", updateScreenSize)
+      }
+    }, [])
+
+    return isLargeScreen
+  }
+
   return (
     <main className="de-page">
       <section className="de-hero">
         <div className="de-video-shell" aria-hidden="true">
-          {/* <video
-            className="de-hero-video de-hero-video-desktop"
-            src="/videos/decor-hero-desktop.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="none"
-          /> */}
-
+        {isLargeScreen !== null ? (
           <video
-            className="de-hero-video de-hero-video-mobile"
-            src="/videos/decor-hero.mp4"
+            key={heroVideoSrc}
+            className="de-hero-video"
+            src={heroVideoSrc}
             autoPlay
             muted
             loop
             playsInline
-            preload="none"
+            preload="metadata"
           />
-          <div className="de-video-wash" />
-        </div>
+        ) : null}
+
+        <div className="de-video-wash" />
+      </div>
 
         <header className="de-topbar">
-          <Link href="/" className="de-brand" aria-label="Decor Encore home">
-            <span className="de-brand-mark">D</span>
-            <span className="de-brand-name">Decor Encore</span>
-          </Link>
+  <Link href="/" className="de-brand" aria-label="Decor Encore home">
+    <span className="de-brand-mark">D</span>
+    <span className="de-brand-name">Decor Encore</span>
+  </Link>
 
-          <Link href="/login" className="de-signin">
-            Sign in
-          </Link>
-        </header>
+  <Link href="/login" className="de-signin">
+    Sign in
+  </Link>
+</header>
 
-        <div className="de-copy de-logo-image-wrap">
-          <img
-            src="/images/decor-encore-logo.png"
-            alt="Decor Encore - A Story in Every Piece"
-            className="de-hero-logo-image"
-          />
-        </div>
+<div className="de-floating-logo">
+  <img
+    src="/images/decor-encore-logo.png"
+    alt="Decor Encore - A Story in Every Piece"
+    className="de-hero-logo-image"
+  />
+</div>
 
-        <div className="de-hero-content">
-          <div className="de-copy">
-            <p className="de-kicker">Once-loved decor</p>
+<div className="de-hero-content">
+  <div className="de-copy">
+    <p className="de-kicker">Once-loved decor</p>
 
             {/* <h1>The next moment starts here.</h1> */}
 
@@ -120,38 +145,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* <section className="de-preview">
-        <div className="de-preview-header">
-          <p className="de-kicker">Marketplace preview</p>
-          <h2>Find the pieces that finish the look.</h2>
-        </div>
-
-        <div className="de-feed">
-          <Link href="/marketplace?category=backdrops-walls" className="de-feed-card de-feed-card-large">
-            <div className="de-card-media de-media-one" />
-            <div className="de-card-info">
-              <span>Backdrops & Walls</span>
-              <strong>Statement pieces for the photo moment.</strong>
-            </div>
-          </Link>
-
-          <Link href="/marketplace?category=table-decor" className="de-feed-card">
-            <div className="de-card-media de-media-two" />
-            <div className="de-card-info">
-              <span>Table Decor</span>
-              <strong>Centerpieces, runners, candles, chargers.</strong>
-            </div>
-          </Link>
-
-          <Link href="/marketplace?category=bundles" className="de-feed-card">
-            <div className="de-card-media de-media-three" />
-            <div className="de-card-info">
-              <span>Bundles</span>
-              <strong>One theme. One pickup. One clean package.</strong>
-            </div>
-          </Link>
-        </div>
-      </section> */}
       <section className="de-story-section">
         <p className="de-section-kicker">How it works</p>
 
