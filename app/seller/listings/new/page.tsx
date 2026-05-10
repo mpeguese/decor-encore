@@ -28,13 +28,17 @@ type PhotoPreview = {
 const eventTypes = [
   { label: "Wedding", value: "wedding" },
   { label: "Quinceañera", value: "quinceanera" },
-  { label: "Baby shower", value: "baby_shower" },
-  { label: "Graduation", value: "graduation" },
-  { label: "Corporate", value: "corporate" },
+  { label: "Baby Shower", value: "baby_shower" },
+  { label: "Gender Reveal", value: "gender_reveal" },
   { label: "Birthday", value: "birthday" },
-  { label: "Engagement", value: "engagement_party" },
-  { label: "Bridal shower", value: "bridal_shower" },
+  { label: "Graduation", value: "graduation" },
+  { label: "Prom", value: "prom" },
   { label: "Holiday", value: "holiday" },
+  { label: "Bridal Shower", value: "bridal_shower" },
+  { label: "Engagement Party", value: "engagement_party" },
+  { label: "Anniversary", value: "anniversary" },
+  { label: "Corporate", value: "corporate" },
+  { label: "Religious Celebration", value: "religious_celebration" },
   { label: "Other", value: "other" },
 ]
 
