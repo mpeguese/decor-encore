@@ -9,7 +9,7 @@ type Intent = "shop" | "sell"
 const featuredSearches = ["Backdrops", "Florals", "Table decor", "Bundles"]
 
 const INSTAGRAM_URL = "https://www.instagram.com/_decorencore_/"
-const TIKTOK_URL = "https://www.tiktok.com/@YOUR_TIKTOK_USERNAME"
+const TIKTOK_URL = "https://www.tiktok.com/@_decorencore_"
 
 function useIsLargeScreen() {
   const [isLargeScreen, setIsLargeScreen] = useState<boolean | null>(null)
