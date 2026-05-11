@@ -173,6 +173,10 @@ a {
   -webkit-backdrop-filter: blur(18px);
 }
 
+.de-mobile-signin {
+  display: none;
+}
+
 .de-header-actions {
   display: inline-flex;
   align-items: center;
@@ -642,6 +646,33 @@ a {
   text-decoration: underline;
 }
 
+@media (max-width: 759px) {
+  .de-signin-header {
+    display: none;
+  }
+
+  .de-mobile-signin {
+    margin-top: 12px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .de-mobile-signin span {
+    margin-left: 4px;
+    color: #fff;
+    font-weight: 950;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
 /* =========================================================
    Marketplace
    ========================================================= */
@@ -905,29 +936,38 @@ a {
 .mk-feed {
   margin-top: 16px;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mk-feed > .mk-empty {
+  grid-column: 1 / -1;
 }
 
 .mk-card {
   position: relative;
+  min-width: 0;
   overflow: hidden;
-  border-radius: 32px;
-  background: rgba(255, 255, 255, 0.46);
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  box-shadow: 0 24px 70px rgba(81, 45, 56, 0.12);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow: 0 18px 46px rgba(81, 45, 56, 0.11);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .mk-card-link {
   display: block;
+  height: 100%;
   text-decoration: none;
 }
 
 .mk-card-media {
   position: relative;
-  min-height: 255px;
+  aspect-ratio: 1 / 1.12;
+  min-height: 0;
   overflow: hidden;
-  border-radius: 31px 31px 24px 24px;
+  border-radius: 25px 25px 18px 18px;
   background:
     radial-gradient(circle at 24% 18%, rgba(255, 233, 243, 0.76), transparent 32%),
     linear-gradient(135deg, #512d38 0%, #b27092 52%, #87baab 100%);
@@ -940,6 +980,11 @@ a {
   height: 100%;
   display: block;
   object-fit: cover;
+  transition: transform 260ms ease;
+}
+
+.mk-card:hover .mk-card-image {
+  transform: scale(1.035);
 }
 
 .mk-card-image-fallback {
@@ -954,93 +999,123 @@ a {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(81, 45, 56, 0.02) 0%, rgba(81, 45, 56, 0.1) 54%, rgba(81, 45, 56, 0.32) 100%);
+    linear-gradient(180deg, rgba(81, 45, 56, 0.02) 0%, rgba(81, 45, 56, 0.08) 48%, rgba(81, 45, 56, 0.26) 100%);
 }
 
 .mk-card-badge {
   position: absolute;
   z-index: 2;
-  left: 12px;
-  top: 12px;
-  min-height: 32px;
+  left: 9px;
+  top: 9px;
+  min-height: 26px;
+  max-width: calc(100% - 50px);
   display: inline-flex;
   align-items: center;
-  padding: 0 12px;
+  padding: 0 9px;
   border-radius: 999px;
   color: var(--plum);
   background: rgba(255, 233, 243, 0.82);
   border: 1px solid rgba(255, 255, 255, 0.62);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 950;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 .mk-card-body {
-  padding: 14px 15px 16px;
+  min-width: 0;
+  padding: 10px 10px 12px;
   display: grid;
-  gap: 12px;
+  gap: 5px;
 }
 
 .mk-card-category {
   margin: 0;
+  min-width: 0;
   color: var(--mauve);
-  font-size: 11px;
+  font-size: 9.5px;
+  line-height: 1.1;
   font-weight: 950;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mk-card-body h2 {
-  margin: 5px 0 0;
-  font-size: 21px;
-  line-height: 1.04;
-  letter-spacing: -0.052em;
+  margin: 0;
+  min-width: 0;
+  color: var(--plum);
+  font-size: clamp(14px, 3.8vw, 18px);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
   font-weight: 950;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mk-card-meta {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 12px;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
 }
 
 .mk-card-meta strong {
-  font-size: 23px;
+  color: var(--plum);
+  font-size: clamp(16px, 4.2vw, 21px);
+  line-height: 1;
   letter-spacing: -0.055em;
 }
 
 .mk-card-meta span {
-  text-align: right;
-  color: rgba(81, 45, 56, 0.58);
-  font-size: 12px;
+  min-width: 0;
+  color: rgba(81, 45, 56, 0.6);
+  font-size: 11px;
   line-height: 1.25;
-  font-weight: 800;
+  font-weight: 850;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mk-save-button {
   position: absolute;
   z-index: 3;
-  top: 12px;
-  right: 12px;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 999px;
-  color: rgba(81, 45, 56, 0.62);
-  background: rgba(255, 233, 243, 0.78);
-  font-size: 18px;
-  font-weight: 950;
+  top: 9px;
+  right: 9px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.96);
+  background: transparent;
+  font-size: 0;
   cursor: pointer;
-  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.14);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  filter: drop-shadow(0 8px 14px rgba(81, 45, 56, 0.34));
+}
+
+.mk-save-button svg {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .mk-save-button.is-saved {
-  color: #fff;
-  background: var(--mauve);
+  color: var(--mauve);
+}
+
+.mk-save-button:focus-visible {
+  outline: 3px solid rgba(244, 191, 219, 0.68);
+  outline-offset: 3px;
+  border-radius: 999px;
 }
 
 .mk-empty {
@@ -1296,20 +1371,30 @@ a {
 
   .mk-feed {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    gap: 16px;
     margin-top: 20px;
   }
 
+  .mk-card {
+    border-radius: 30px;
+  }
+
   .mk-card-media {
-    min-height: 310px;
+    aspect-ratio: 1 / 1.08;
+    border-radius: 29px 29px 20px 20px;
   }
 
-  .mk-card:first-child {
-    grid-column: span 2;
+  .mk-card-body {
+    padding: 12px 12px 14px;
+    gap: 6px;
   }
 
-  .mk-card:first-child .mk-card-media {
-    min-height: 410px;
+  .mk-card-body h2 {
+    font-size: 18px;
+  }
+
+  .mk-card-meta strong {
+    font-size: 22px;
   }
 
   .mk-bottom-nav {
@@ -1317,45 +1402,10 @@ a {
   }
 }
 
-
-@media (max-width: 759px) {
-  .de-signin-header {
-    display: none;
-  }
-
-  .de-header-actions {
-    gap: 7px;
-  }
-
-  .de-social-link {
-    width: 40px;
-    height: 40px;
-  }
-
-  .de-social-link svg {
-    width: 23px;
-    height: 23px;
-  }
-
-  .de-mobile-signin {
-    margin-top: 12px;
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    text-decoration: none;
-    color: rgba(255, 255, 255, 0.88);
-    font-size: 13px;
-    font-weight: 800;
-  }
-
-  .de-mobile-signin span {
-    margin-left: 4px;
-    color: #fff;
-    font-weight: 950;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+@media (min-width: 1080px) {
+  .mk-feed {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
   }
 }
 
@@ -1409,7 +1459,23 @@ a {
   }
 
   .mk-card-media {
-    min-height: 235px;
+    aspect-ratio: 1 / 1.14;
+  }
+
+  .mk-card-body {
+    padding: 9px 9px 11px;
+  }
+
+  .mk-card-body h2 {
+    font-size: 14px;
+  }
+
+  .mk-card-meta strong {
+    font-size: 16px;
+  }
+
+  .mk-card-meta span {
+    font-size: 10.5px;
   }
 
   .mk-bottom-nav {
@@ -1795,4 +1861,3 @@ a {
   font-size: 13px;
   font-weight: 700;
 }
-
