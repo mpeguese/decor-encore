@@ -89,6 +89,7 @@ function useIsLargeScreen() {
   return isLargeScreen
 }
 
+
 export default function LoginClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -129,6 +130,41 @@ export default function LoginClient() {
 
     router.push("/onboarding")
     router.refresh()
+  }
+
+  async function handlePasswordReset() {
+    setLoading(true)
+    setMessage("")
+    setError("")
+
+    const cleanEmail = email.trim()
+
+    if (!cleanEmail) {
+      setError("Enter your email first, then tap Forgot password.")
+      setLoading(false)
+      return
+    }
+
+    const redirectTo = `${window.location.origin}/auth/reset-password`
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      cleanEmail,
+      { redirectTo }
+    )
+
+    if (resetError) {
+      setError(resetError.message)
+    } else {
+
+      setMessage("Check your email for a password reset link.")
+
+      window.setTimeout(() => {
+        setMessage("")
+      }, 5000)
+      
+    }
+
+    setLoading(false)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -199,6 +235,10 @@ export default function LoginClient() {
       }
 
       setMessage("Check your email to finish creating your account.")
+
+      window.setTimeout(() => {
+        setMessage("")
+      }, 5000)
     } finally {
       setLoading(false)
     }
@@ -360,6 +400,17 @@ export default function LoginClient() {
                 </button>
               </div>
             </label>
+
+            {mode === "signin" ? (
+              <button
+                type="button"
+                className={styles.forgotPasswordButton}
+                onClick={handlePasswordReset}
+                disabled={loading}
+              >
+                Forgot password?
+              </button>
+            ) : null}
 
             {error ? <p className={styles.errorText}>{error}</p> : null}
             {message ? <p className={styles.messageText}>{message}</p> : null}

@@ -126,6 +126,11 @@ export default function SellerOrdersPage() {
 
       if (!user) {
         setError("Please sign in to view seller orders.")
+
+        window.setTimeout(() => {
+          setError("")
+        }, 5000)
+
         setLoading(false)
         return
       }

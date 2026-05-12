@@ -383,7 +383,11 @@ if (
     }
 
     setMessages((current) => [...current, optimisticMessage])
-    setMessageText("")
+    //setMessageText("")
+
+    window.setTimeout(() => {
+        setMessageText("")
+      }, 3000)
 
     const { error: insertError } = await supabase.from("messages").insert({
       conversation_id: selectedConversation.id,

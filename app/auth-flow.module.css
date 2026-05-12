@@ -788,3 +788,27 @@
     transition: none;
   }
 }
+
+.forgotPasswordButton {
+  justify-self: end;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.forgotPasswordButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (min-width: 760px) {
+  .forgotPasswordButton {
+    color: var(--plum);
+  }
+}
