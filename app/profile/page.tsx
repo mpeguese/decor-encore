@@ -252,7 +252,26 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      <AppBottomNav active="profile" />
+      <AppBottomNav
+        active="profile"
+        items={[
+          {
+            key: "shop",
+            label: "Shop",
+            href: "/marketplace",
+          },
+          {
+            key: "messages",
+            label: "Messages",
+            href: "/messages",
+          },
+          {
+            key: "profile",
+            label: "Profile",
+            href: "/profile",
+          },
+        ]}
+      />
     </main>
   )
 }

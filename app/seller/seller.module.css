@@ -1063,3 +1063,56 @@
   font-weight: 800;
   line-height: 1.35;
 }
+
+.payoutWarningCard {
+  width: min(100%, 760px);
+  margin: 16px auto 0;
+  padding: 18px;
+  border-radius: 28px;
+  color: #fff;
+  background: linear-gradient(135deg, #512d38, #b27092);
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  box-shadow: 0 24px 70px rgba(81, 45, 56, 0.22);
+  display: grid;
+  gap: 14px;
+}
+
+.payoutWarningCard p {
+  margin: 0;
+  color: rgba(255, 233, 243, 0.86);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.payoutWarningCard h2 {
+  margin: 6px 0 0;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.payoutWarningCard span {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.payoutWarningCard a {
+  min-height: 46px;
+  width: fit-content;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--plum);
+  background: rgba(255, 233, 243, 0.94);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 950;
+}

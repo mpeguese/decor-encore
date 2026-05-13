@@ -1,3 +1,4 @@
+// app/api/stripe/connect/sync/route.ts
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"

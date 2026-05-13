@@ -167,6 +167,7 @@ export default function MessagesClient() {
   const [selectedConversationId, setSelectedConversationId] = useState("")
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [messageText, setMessageText] = useState("")
+  const [unreadByConversation, setUnreadByConversation] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [threadLoading, setThreadLoading] = useState(false)
   const [sending, setSending] = useState(false)
@@ -234,6 +235,29 @@ export default function MessagesClient() {
       const nextConversations = (data || []) as unknown as ConversationRow[]
       setConversations(nextConversations)
 
+      const conversationIds = nextConversations.map((conversation) => conversation.id)
+
+      if (conversationIds.length > 0) {
+        const { data: unreadRows } = await supabase
+          .from("messages")
+          .select("conversation_id")
+          .in("conversation_id", conversationIds)
+          .neq("sender_id", user.id)
+          .is("read_at", null)
+
+        const unreadMap: Record<string, boolean> = {}
+
+        ;((unreadRows || []) as { conversation_id: string }[]).forEach((row) => {
+          unreadMap[row.conversation_id] = true
+        })
+
+        if (mounted) {
+          setUnreadByConversation(unreadMap)
+        }
+      } else {
+        setUnreadByConversation({})
+      }
+
       const profileIds = Array.from(
         new Set(
           nextConversations.flatMap((conversation) => [
@@ -260,15 +284,12 @@ export default function MessagesClient() {
         }
       }
 
-      const initialConversationId =
-        conversationIdFromUrl ||
-        nextConversations[0]?.id ||
-        ""
-
-      setSelectedConversationId(initialConversationId)
-
-      if (initialConversationId) {
+      if (conversationIdFromUrl) {
+        setSelectedConversationId(conversationIdFromUrl)
         setViewMode("thread")
+      } else {
+        setSelectedConversationId("")
+        setViewMode("list")
       }
 
       setLoading(false)
@@ -308,15 +329,31 @@ export default function MessagesClient() {
       }
 
       if (userId && selectedConversationId) {
-        await supabase
-            .from("messages")
-            .update({
-            read_at: new Date().toISOString(),
-            })
-            .eq("conversation_id", selectedConversationId)
-            .neq("sender_id", userId)
-            .is("read_at", null)
+        const readAt = new Date().toISOString()
+
+        const { error: readError } = await supabase
+          .from("messages")
+          .update({
+            read_at: readAt,
+          })
+          .eq("conversation_id", selectedConversationId)
+          .neq("sender_id", userId)
+          .is("read_at", null)
+
+        if (!readError) {
+          setMessages((current) =>
+            current.map((message) =>
+              message.conversation_id === selectedConversationId &&
+              message.sender_id !== userId &&
+              !message.read_at
+                ? { ...message, read_at: readAt }
+                : message
+            )
+          )
+
+          window.dispatchEvent(new Event("decor-encore:messages-read"))
         }
+      }
 
       setThreadLoading(false)
     }
@@ -326,7 +363,7 @@ export default function MessagesClient() {
     return () => {
       mounted = false
     }
-  }, [selectedConversationId, supabase])
+    }, [selectedConversationId, supabase, userId])
 
   function getOtherUserId(conversation: ConversationRow) {
     return conversation.buyer_id === userId
@@ -337,6 +374,11 @@ export default function MessagesClient() {
   function selectConversation(conversationId: string) {
     setSelectedConversationId(conversationId)
     setViewMode("thread")
+
+    setUnreadByConversation((current) => ({
+      ...current,
+      [conversationId]: false,
+    }))
 
     const params = new URLSearchParams(window.location.search)
     params.set("conversationId", conversationId)
@@ -383,11 +425,7 @@ if (
     }
 
     setMessages((current) => [...current, optimisticMessage])
-    //setMessageText("")
-
-    window.setTimeout(() => {
-        setMessageText("")
-      }, 3000)
+    setMessageText("")
 
     const { error: insertError } = await supabase.from("messages").insert({
       conversation_id: selectedConversation.id,
@@ -463,6 +501,7 @@ if (
                 const imageUrl = getListingImage(conversation)
                 const otherUserId = getOtherUserId(conversation)
                 const otherName = getProfileName(profiles[otherUserId])
+                const hasUnread = Boolean(unreadByConversation[conversation.id])
 
                 return (
                   <button
@@ -480,7 +519,10 @@ if (
                     </div>
 
                     <div>
-                      <strong>{otherName}</strong>
+                      <strong className={styles.conversationNameRow}>
+                        <span>{otherName}</span>
+                        {hasUnread ? <em>New</em> : null}
+                      </strong>
                       <span>{listing?.title || "Listing"}</span>
                       <small>{formatShortDate(conversation.updated_at)}</small>
                     </div>
@@ -556,29 +598,29 @@ if (
                 )}
               </div>
               {error ? (
-  <div className={styles.toastWrap} role="alert">
-    <div className={styles.toastError}>{error}</div>
-  </div>
-) : null}
+                <div className={styles.toastWrap} role="alert">
+                  <div className={styles.toastError}>{error}</div>
+                </div>
+              ) : null}
 
-<form className={styles.messageComposer} onSubmit={handleSend}>
-  <input
-    value={messageText}
-    onChange={(event) => {
-      setMessageText(event.target.value)
+              <form className={styles.messageComposer} onSubmit={handleSend}>
+                <input
+                  value={messageText}
+                  onChange={(event) => {
+                    setMessageText(event.target.value)
 
-      if (error) {
-        setError("")
-      }
-    }}
-    placeholder="Write a message..."
-    aria-label="Message"
-  />
+                    if (error) {
+                      setError("")
+                    }
+                  }}
+                  placeholder="Write a message..."
+                  aria-label="Message"
+                />
 
-  <button type="submit" disabled={sending || !messageText.trim()}>
-    <SendIcon />
-  </button>
-</form>
+                <button type="submit" disabled={sending || !messageText.trim()}>
+                  <SendIcon />
+                </button>
+              </form>
             </>
           ) : (
             <div className={styles.stateCard}>
@@ -588,7 +630,26 @@ if (
           )}
         </section>
       </section>
-        <AppBottomNav active="messages" />
+        <AppBottomNav
+          active="messages"
+          items={[
+            {
+              key: "shop",
+              label: "Shop",
+              href: "/marketplace",
+            },
+            {
+              key: "messages",
+              label: "Messages",
+              href: "/messages",
+            },
+            {
+              key: "profile",
+              label: "Profile",
+              href: "/profile",
+            },
+          ]}
+        />
     </main>
   )
 }

@@ -50,6 +50,12 @@ const conditions = [
   { label: "Fair", value: "fair" },
 ]
 
+const ITEM_PHOTO_LIMIT = 5
+const BUNDLE_PHOTO_LIMIT = 10
+const MAX_PHOTO_SIZE_MB = 5
+const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024
+const ACCEPTED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"]
+
 function PhotoIcon() {
   return (
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -165,11 +171,36 @@ export default function NewListingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, supabase])
 
+  useEffect(() => {
+    if (listingKind !== "item" || photos.length <= ITEM_PHOTO_LIMIT) return
+
+    setPhotos((current) => {
+      const keep = current.slice(0, ITEM_PHOTO_LIMIT)
+      const remove = current.slice(ITEM_PHOTO_LIMIT)
+
+      remove.forEach((photo) => URL.revokeObjectURL(photo.url))
+
+      return keep
+    })
+
+    setError(
+      `Single items can only include up to ${ITEM_PHOTO_LIMIT} photos. Extra photos were removed.`
+    )
+
+    if (previewPhotoIndex !== null && previewPhotoIndex >= ITEM_PHOTO_LIMIT) {
+      setPreviewPhotoUrl("")
+      setPreviewPhotoIndex(null)
+    }
+  }, [listingKind, photos.length, previewPhotoIndex])
+
   const isPickup =
     fulfillmentType === "pickup" || fulfillmentType === "pickup_or_shipping"
 
   const isShipping =
     fulfillmentType === "shipping" || fulfillmentType === "pickup_or_shipping"
+
+  const photoLimit =
+    listingKind === "bundle" ? BUNDLE_PHOTO_LIMIT : ITEM_PHOTO_LIMIT
 
   const coreDetailsReady =
     photos.length > 0 &&
@@ -205,18 +236,63 @@ export default function NewListingPage() {
     pickupDetailsReady &&
     shippingDetailsReady &&
     bundleDetailsReady
+    
 
   function handlePhotoChange(files: FileList | null) {
     if (!files) return
 
-    const incoming = Array.from(files)
-      .filter((file) => file.type.startsWith("image/"))
-      .slice(0, Math.max(0, 10 - photos.length))
-      .map((file) => ({
-        id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
-        file,
-        url: URL.createObjectURL(file),
-      }))
+    setError("")
+
+    const remainingSlots = Math.max(0, photoLimit - photos.length)
+
+    if (remainingSlots <= 0) {
+      setError(
+        listingKind === "bundle"
+          ? `Bundles can only include up to ${BUNDLE_PHOTO_LIMIT} photos.`
+          : `Single items can only include up to ${ITEM_PHOTO_LIMIT} photos.`
+      )
+
+      window.setTimeout(() => {
+        setError("")
+      }, 5000)
+      return
+    }
+
+    const selectedFiles = Array.from(files)
+
+    const validImages = selectedFiles.filter((file) => {
+      const isAcceptedType = ACCEPTED_PHOTO_TYPES.includes(file.type)
+      const isAcceptedSize = file.size <= MAX_PHOTO_SIZE_BYTES
+
+      return isAcceptedType && isAcceptedSize
+    })
+
+    const incoming = validImages.slice(0, remainingSlots).map((file) => ({
+      id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
+      file,
+      url: URL.createObjectURL(file),
+    }))
+
+    if (incoming.length === 0) {
+      setError(
+        `Please upload JPG, PNG, or WebP images under ${MAX_PHOTO_SIZE_MB}MB each.`
+      )
+      return
+    }
+
+    if (selectedFiles.length > incoming.length) {
+      setError(
+        `Some photos were skipped. ${
+          listingKind === "bundle"
+            ? `Bundles can only include up to ${BUNDLE_PHOTO_LIMIT} photos`
+            : `Single items can only include up to ${ITEM_PHOTO_LIMIT} photos`
+        }, and each image must be a JPG, PNG, or WebP under ${MAX_PHOTO_SIZE_MB}MB.`
+      )
+
+      window.setTimeout(() => {
+        setError("")
+      }, 7000)
+    }
 
     setPhotos((current) => [...current, ...incoming])
   }
@@ -412,7 +488,7 @@ export default function NewListingPage() {
             <label className={styles.addPhotoBox} aria-label="Add listing photos">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 multiple
                 onChange={(event) => {
                   handlePhotoChange(event.target.files)
@@ -857,31 +933,38 @@ export default function NewListingPage() {
 
         {error ? <p className={styles.sellerError}>{error}</p> : null}
 
-{!publishReady ? (
-  <p className={styles.publishHint}>
-    Complete all required details before publishing. Shipping listings need an
-    origin ZIP, package weight, and package dimensions.
-  </p>
-) : null}
+        {!publishReady ? (
+          <p className={styles.publishHint}>
+            Complete all required details before publishing. Shipping listings need an
+            origin ZIP, package weight, and package dimensions.
+          </p>
+        ) : null}
 
-<section className={styles.publishBar}>
-  <button
-    type="button"
-    className={styles.draftButton}
-    onClick={() => saveListing("draft")}
-    disabled={saving}
-  >
-    Draft
-  </button>
+        <p className={styles.publishHint}>
+            By publishing this listing, you agree to Decor Encore’s{" "}
+            <Link href="/terms" style={{ color: "var(--mauve)" }}>T&Cs</Link>{" "}
+            and{" "}
+            <Link href="/privacy" style={{ color: "var(--mauve)" }}>Privacy Policy.</Link>
+          </p>
 
-  <button
-    type="submit"
-    className={styles.publishButton}
-    disabled={saving || !publishReady}
-  >
-    {saving ? "Saving..." : "Publish"}
-  </button>
-</section>
+        <section className={styles.publishBar}>
+          <button
+            type="button"
+            className={styles.draftButton}
+            onClick={() => saveListing("draft")}
+            disabled={saving}
+          >
+            Save as Draft
+          </button>
+
+          <button
+            type="submit"
+            className={styles.publishButton}
+            disabled={saving || !publishReady}
+          >
+            {saving ? "Saving..." : "Publish"}
+          </button>
+        </section>
       </form>
 
       {previewPhotoUrl ? (

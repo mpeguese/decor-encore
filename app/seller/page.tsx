@@ -18,6 +18,12 @@ type SellerListing = {
   created_at: string
 }
 
+type PayoutRow = {
+  onboarding_status: string | null
+  charges_enabled: boolean | null
+  payouts_enabled: boolean | null
+}
+
 export default function SellerDashboardPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -25,6 +31,7 @@ export default function SellerDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [sellerName, setSellerName] = useState("")
   const [listings, setListings] = useState<SellerListing[]>([])
+  const [payoutRow, setPayoutRow] = useState<PayoutRow | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -69,9 +76,21 @@ export default function SellerDashboardPage() {
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false })
 
+
       if (!mounted) return
 
       setListings((data || []) as SellerListing[])
+
+      const { data: payoutData } = await supabase
+        .from("seller_payout_accounts")
+        .select("onboarding_status, charges_enabled, payouts_enabled")
+        .eq("seller_id", user.id)
+        .maybeSingle()
+
+      if (!mounted) return
+
+      setPayoutRow((payoutData || null) as PayoutRow | null)
+
       setLoading(false)
     }
 
@@ -86,6 +105,21 @@ export default function SellerDashboardPage() {
   const draftCount = listings.filter((item) => item.status === "draft").length
   const pausedCount = listings.filter((item) => item.status === "paused").length
   const soldCount = listings.filter((item) => item.status === "sold").length
+
+  const payoutsConnected =
+    Boolean(payoutRow?.charges_enabled) && Boolean(payoutRow?.payouts_enabled)
+
+  const payoutStatusLabel = payoutsConnected
+    ? "Connected"
+    : payoutRow?.onboarding_status === "pending_review"
+      ? "Pending review"
+      : payoutRow?.onboarding_status === "needs_more_info"
+        ? "Needs more info"
+        : payoutRow?.onboarding_status === "restricted"
+          ? "Action needed"
+          : payoutRow?.onboarding_status === "onboarding_started"
+            ? "In progress"
+            : "Not started"
 
   if (loading) {
     return (
@@ -118,6 +152,21 @@ export default function SellerDashboardPage() {
           Create
         </Link>
       </section>
+
+      {!payoutsConnected ? (
+      <section className={styles.payoutWarningCard}>
+        <div>
+          <p>Payout setup required</p>
+          <h2>Your listings cannot be purchased yet.</h2>
+          <span>
+            Buyers can browse and message you, but checkout stays unavailable until
+            your Stripe payout setup is complete.
+          </span>
+        </div>
+
+        <Link href="/seller/payouts">Set up payouts</Link>
+      </section>
+    ) : null}
 
       <section className={styles.statsGrid}>
         <article>
@@ -172,23 +221,25 @@ export default function SellerDashboardPage() {
         )}
       </section>
 
-      <section className={styles.payoutCard}>
-        <div>
-          <h2>Payout setup</h2>
-          <p>Connect Stripe to receive payments from your sales.</p>
-        </div>
+      {payoutsConnected ? (
+        <section className={styles.payoutCard}>
+          <div>
+            <h2>Payout setup</h2>
+            <p>Your Stripe payout account is connected and ready.</p>
+          </div>
 
-        <Link href="/seller/payouts" className={styles.payoutLink}>
-          Setup
-        </Link>
-      </section>
+          <Link href="/seller/payouts" className={styles.payoutLink}>
+            Manage
+          </Link>
+        </section>
+      ) : null}
 
       <AppBottomNav
         active="sell"
         items={[
           {
             key: "sell",
-            label: "Sell",
+            label: "Seller",
             href: "/seller",
           },
           {

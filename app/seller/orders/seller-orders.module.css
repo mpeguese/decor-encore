@@ -1406,3 +1406,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+.buttonSpinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  display: inline-block;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.payoutActions a {
+  gap: 8px;
+}

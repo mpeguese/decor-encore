@@ -40,7 +40,7 @@ export function checkOffPlatformContact(value: unknown): ModerationResult {
     },
     {
       reason: "email_provider",
-      pattern: /\b(gmail|yahoo|hotmail|icloud|outlook|msn|aol)\b/i,
+      pattern: /\b(gmail|yahoo|hotmail|icloud|outlook|msn|aol|proton|zoho)\b/i,
     },
     {
       reason: "contact_request",
@@ -48,11 +48,11 @@ export function checkOffPlatformContact(value: unknown): ModerationResult {
     },
     {
       reason: "social",
-      pattern: /\b(instagram|insta|ig|facebook|fb|tiktok|snapchat|snap|whatsapp|telegram|messenger)\b/i,
+      pattern: /\b(instagram|insta|ig|facebook|fb|tiktok|snapchat|snap|whatsapp|telegram|messenger|whats app)\b/i,
     },
     {
       reason: "payment",
-      pattern: /\b(venmo|cashapp|cash app|zelle|paypal|apple cash|cash)\b/i,
+      pattern: /\b(venmo|cashapp|cash app|zelle|paypal|apple cash|cash|pay pal|ven mo)\b/i,
     },
   ]
 

@@ -192,7 +192,6 @@ export default function EditListingPage() {
   const [price, setPrice] = useState("")
   const [fulfillmentType, setFulfillmentType] =
     useState<FulfillmentType>("pickup")
-  //const [shippingPrice, setShippingPrice] = useState("")
   const [shippingRateMode, setShippingRateMode] =
     useState<ShippingRateMode>("seller_flat")
   const [shippingOriginZip, setShippingOriginZip] = useState("")
@@ -200,7 +199,6 @@ export default function EditListingPage() {
   const [packageLengthIn, setPackageLengthIn] = useState("")
   const [packageWidthIn, setPackageWidthIn] = useState("")
   const [packageHeightIn, setPackageHeightIn] = useState("")
-  //const [shippingHandlingFee, setShippingHandlingFee] = useState("")
   const [shippingNotes, setShippingNotes] = useState("")
   const [pickupZip, setPickupZip] = useState("")
   const [pickupCity, setPickupCity] = useState("")
@@ -357,6 +355,10 @@ export default function EditListingPage() {
   const isShipping =
     fulfillmentType === "shipping" || fulfillmentType === "pickup_or_shipping"
 
+  const isSoldListing = status === "sold"
+  const isRemovedListing = status === "removed"
+  const isLockedListing = isSoldListing || isRemovedListing
+
   const finalPhotoCount = existingImages.length + newPhotos.length
 
   const coreDetailsReady =
@@ -395,7 +397,7 @@ export default function EditListingPage() {
     bundleDetailsReady
 
   function handlePhotoChange(files: FileList | null) {
-    if (!files) return
+    if (!files || isLockedListing) return
 
     const availableSlots = Math.max(0, 10 - finalPhotoCount)
 
@@ -425,6 +427,8 @@ export default function EditListingPage() {
   }
 
   function removeExistingImage(imageId: string) {
+    if (isLockedListing) return
+
     setExistingImages((current) => {
       const image = current.find((item) => item.id === imageId)
       const nextExisting = current.filter((item) => item.id !== imageId)
@@ -442,6 +446,8 @@ export default function EditListingPage() {
   }
 
   function removeNewPhoto(photoId: string) {
+    if (isLockedListing) return
+
     setNewPhotos((current) => {
       const photo = current.find((item) => item.id === photoId)
       const nextPhotos = current.filter((item) => item.id !== photoId)
@@ -460,6 +466,11 @@ export default function EditListingPage() {
 
       return nextPhotos
     })
+  }
+
+  function updatePrimaryTarget(nextPrimaryTarget: PrimaryTarget) {
+    if (isLockedListing) return
+    setPrimaryTarget(nextPrimaryTarget)
   }
 
   function openPhotoPreview(photoUrl: string, label: string) {
@@ -600,6 +611,11 @@ export default function EditListingPage() {
   async function saveListing(nextStatus?: ListingStatus) {
     if (!listingId || !userId || saving) return
 
+    if (isLockedListing) {
+      setError("This listing has been sold and can no longer be edited.")
+      return
+    }
+
     const intendedStatus = nextStatus || status
 
     if (intendedStatus === "published" && !publishReady) {
@@ -668,7 +684,7 @@ export default function EditListingPage() {
       setMessage("Listing updated.")
 
       window.setTimeout(() => {
-          setMessage("")
+        setMessage("")
       }, 5000)
 
       router.refresh()
@@ -719,62 +735,92 @@ export default function EditListingPage() {
 
       <section className={styles.createHero}>
         <p>Edit listing</p>
-        <h1>Keep it accurate.</h1>
+        <h1>{isLockedListing ? "View listing details." : "Keep it accurate."}</h1>
       </section>
 
       <section className={`${styles.formPanel} ${styles.editStatusPanel}`}>
         <div className={styles.editStatusHeader}>
-            <div>
+          <div>
             <span>Status</span>
             <strong>{status === "published" ? "Published" : status}</strong>
-            </div>
+          </div>
 
+          {isLockedListing ? (
             <div className={styles.editStatusSwitch}>
-                <Link href="/seller" className={styles.editStatusSwitchOption}>
-                    Listings
-                </Link>
+              <Link href="/seller" className={styles.editStatusSwitchOption}>
+                Listings
+              </Link>
 
-                {status === "published" ? (
-                    <button
-                    type="button"
-                    className={styles.editStatusSwitchOption}
-                    onClick={() => saveListing("paused")}
-                    disabled={saving}
-                    >
-                    Pause
-                    </button>
-                ) : (
-                    <button
-                    type="button"
-                    className={styles.editStatusSwitchOption}
-                    onClick={() => saveListing("published")}
-                    disabled={!publishReady || saving}
-                    >
-                    Publish
-                    </button>
-                )}
+              <Link href="/seller/orders" className={styles.editStatusSwitchOption}>
+                Orders
+              </Link>
 
-                <button
-                    type="button"
-                    className={`${styles.editStatusSwitchOption} ${styles.editStatusDanger}`}
-                    onClick={() => saveListing("removed")}
-                    disabled={saving}
-                >
-                    Remove
-                </button>
+              <button
+                type="button"
+                className={styles.editStatusSwitchOption}
+                disabled
+              >
+                Locked
+              </button>
 
-                <span
-                    className={`${styles.editStatusSwitchSlider} ${
-                    status === "published"
-                        ? styles.editStatusSliderMiddle
-                        : status === "removed"
-                        ? styles.editStatusSliderRight
-                        : styles.editStatusSliderLeft
-                    }`}
-                />
+              <span
+                className={`${styles.editStatusSwitchSlider} ${styles.editStatusSliderRight}`}
+              />
             </div>
+          ) : (
+            <div className={styles.editStatusSwitch}>
+              <Link href="/seller" className={styles.editStatusSwitchOption}>
+                Listings
+              </Link>
+
+              {status === "published" ? (
+                <button
+                  type="button"
+                  className={styles.editStatusSwitchOption}
+                  onClick={() => saveListing("paused")}
+                  disabled={saving}
+                >
+                  Pause
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.editStatusSwitchOption}
+                  onClick={() => saveListing("published")}
+                  disabled={!publishReady || saving}
+                >
+                  Publish
+                </button>
+              )}
+
+              <button
+                type="button"
+                className={`${styles.editStatusSwitchOption} ${styles.editStatusDanger}`}
+                onClick={() => saveListing("removed")}
+                disabled={saving}
+              >
+                Remove
+              </button>
+
+              <span
+                className={`${styles.editStatusSwitchSlider} ${
+                  status === "published"
+                    ? styles.editStatusSliderMiddle
+                    : styles.editStatusSliderLeft
+                }`}
+              />
+            </div>
+          )}
         </div>
-        </section>
+
+        {isLockedListing ? (
+          <p className={styles.publishHint}>
+            This listing has been {isSoldListing ? "sold" : "removed"} and is
+            locked for edits. You can still view the details, but changes
+            can no longer be made. Go to orders for full purchase details.
+          </p>
+        ) : null}
+      </section>
 
       <form className={styles.createForm} onSubmit={handleSubmit}>
         <section className={styles.photoSection}>
@@ -783,18 +829,20 @@ export default function EditListingPage() {
               finalPhotoCount === 0 ? styles.photoGridEmpty : ""
             }`}
           >
-            <label className={styles.addPhotoBox} aria-label="Add listing photos">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(event) => {
-                  handlePhotoChange(event.target.files)
-                  event.target.value = ""
-                }}
-              />
-              <PhotoIcon />
-            </label>
+            {!isLockedListing ? (
+              <label className={styles.addPhotoBox} aria-label="Add listing photos">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(event) => {
+                    handlePhotoChange(event.target.files)
+                    event.target.value = ""
+                  }}
+                />
+                <PhotoIcon />
+              </label>
+            ) : null}
 
             {existingImages.map((image, index) => {
               const isPrimary =
@@ -820,29 +868,33 @@ export default function EditListingPage() {
                     />
                   </button>
 
-                  <button
-                    type="button"
-                    className={styles.photoRemoveButton}
-                    onClick={() => removeExistingImage(image.id)}
-                    aria-label="Remove photo"
-                  >
-                    ×
-                  </button>
+                  {!isLockedListing ? (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.photoRemoveButton}
+                        onClick={() => removeExistingImage(image.id)}
+                        aria-label="Remove photo"
+                      >
+                        ×
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`${styles.primaryPhotoButton} ${
-                      isPrimary ? styles.primaryPhotoActive : ""
-                    }`}
-                    onClick={() =>
-                      setPrimaryTarget({
-                        kind: "existing",
-                        id: image.id,
-                      })
-                    }
-                  >
-                    {isPrimary ? "Primary" : "Make primary"}
-                  </button>
+                      <button
+                        type="button"
+                        className={`${styles.primaryPhotoButton} ${
+                          isPrimary ? styles.primaryPhotoActive : ""
+                        }`}
+                        onClick={() =>
+                          updatePrimaryTarget({
+                            kind: "existing",
+                            id: image.id,
+                          })
+                        }
+                      >
+                        {isPrimary ? "Primary" : "Make primary"}
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               )
             })}
@@ -864,29 +916,33 @@ export default function EditListingPage() {
                     <img src={photo.url} alt={`New listing preview ${index + 1}`} />
                   </button>
 
-                  <button
-                    type="button"
-                    className={styles.photoRemoveButton}
-                    onClick={() => removeNewPhoto(photo.id)}
-                    aria-label="Remove photo"
-                  >
-                    ×
-                  </button>
+                  {!isLockedListing ? (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.photoRemoveButton}
+                        onClick={() => removeNewPhoto(photo.id)}
+                        aria-label="Remove photo"
+                      >
+                        ×
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`${styles.primaryPhotoButton} ${
-                      isPrimary ? styles.primaryPhotoActive : ""
-                    }`}
-                    onClick={() =>
-                      setPrimaryTarget({
-                        kind: "new",
-                        id: photo.id,
-                      })
-                    }
-                  >
-                    {isPrimary ? "Primary" : "Make primary"}
-                  </button>
+                      <button
+                        type="button"
+                        className={`${styles.primaryPhotoButton} ${
+                          isPrimary ? styles.primaryPhotoActive : ""
+                        }`}
+                        onClick={() =>
+                          updatePrimaryTarget({
+                            kind: "new",
+                            id: photo.id,
+                          })
+                        }
+                      >
+                        {isPrimary ? "Primary" : "Make primary"}
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               )
             })}
@@ -898,9 +954,12 @@ export default function EditListingPage() {
             <button
               type="button"
               className={listingKind === "item" ? styles.switchActive : ""}
-              onClick={() => setListingKind("item")}
+              onClick={() => {
+                if (!isLockedListing) setListingKind("item")
+              }}
               role="tab"
               aria-selected={listingKind === "item"}
+              disabled={isLockedListing}
             >
               Item
             </button>
@@ -908,9 +967,12 @@ export default function EditListingPage() {
             <button
               type="button"
               className={listingKind === "bundle" ? styles.switchActive : ""}
-              onClick={() => setListingKind("bundle")}
+              onClick={() => {
+                if (!isLockedListing) setListingKind("bundle")
+              }}
               role="tab"
               aria-selected={listingKind === "bundle"}
+              disabled={isLockedListing}
             >
               Bundle
             </button>
@@ -929,6 +991,7 @@ export default function EditListingPage() {
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Gold charger plates, flower wall, full decor bundle..."
               required
+              disabled={isLockedListing}
             />
           </label>
 
@@ -940,6 +1003,7 @@ export default function EditListingPage() {
               placeholder="Condition, what is included, measurements, pickup notes..."
               rows={5}
               required
+              disabled={isLockedListing}
             />
           </label>
 
@@ -950,6 +1014,7 @@ export default function EditListingPage() {
                 value={categoryId}
                 onChange={(event) => setCategoryId(event.target.value)}
                 required
+                disabled={isLockedListing}
               >
                 <option value="">Select</option>
                 {categories.map((category) => (
@@ -965,6 +1030,7 @@ export default function EditListingPage() {
               <select
                 value={eventType}
                 onChange={(event) => setEventType(event.target.value)}
+                disabled={isLockedListing}
               >
                 {eventTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -981,6 +1047,7 @@ export default function EditListingPage() {
               <select
                 value={condition}
                 onChange={(event) => setCondition(event.target.value)}
+                disabled={isLockedListing}
               >
                 {conditions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -999,6 +1066,7 @@ export default function EditListingPage() {
                 min="1"
                 inputMode="numeric"
                 required
+                disabled={isLockedListing}
               />
             </label>
           </div>
@@ -1011,6 +1079,7 @@ export default function EditListingPage() {
                 onChange={(event) => setPrimaryColor(event.target.value)}
                 placeholder="Blush, gold, sage..."
                 required
+                disabled={isLockedListing}
               />
             </label>
 
@@ -1020,6 +1089,7 @@ export default function EditListingPage() {
                 value={secondaryColor}
                 onChange={(event) => setSecondaryColor(event.target.value)}
                 placeholder="Optional"
+                disabled={isLockedListing}
               />
             </label>
           </div>
@@ -1032,6 +1102,7 @@ export default function EditListingPage() {
                 onChange={(event) => setStyleValue(event.target.value)}
                 placeholder="Modern, glam, vintage..."
                 required
+                disabled={isLockedListing}
               />
             </label>
 
@@ -1046,6 +1117,7 @@ export default function EditListingPage() {
                 inputMode="decimal"
                 placeholder="0.00"
                 required
+                disabled={isLockedListing}
               />
             </label>
           </div>
@@ -1062,6 +1134,7 @@ export default function EditListingPage() {
                   inputMode="numeric"
                   placeholder="100"
                   required
+                  disabled={isLockedListing}
                 />
               </label>
 
@@ -1073,6 +1146,7 @@ export default function EditListingPage() {
                   placeholder="100 charger plates, 12 centerpieces, welcome sign, card box..."
                   rows={4}
                   required
+                  disabled={isLockedListing}
                 />
               </label>
             </>
@@ -1088,9 +1162,12 @@ export default function EditListingPage() {
             <button
               type="button"
               className={fulfillmentType === "pickup" ? styles.switchActive : ""}
-              onClick={() => setFulfillmentType("pickup")}
+              onClick={() => {
+                if (!isLockedListing) setFulfillmentType("pickup")
+              }}
               role="tab"
               aria-selected={fulfillmentType === "pickup"}
+              disabled={isLockedListing}
             >
               Pickup
             </button>
@@ -1098,9 +1175,12 @@ export default function EditListingPage() {
             <button
               type="button"
               className={fulfillmentType === "shipping" ? styles.switchActive : ""}
-              onClick={() => setFulfillmentType("shipping")}
+              onClick={() => {
+                if (!isLockedListing) setFulfillmentType("shipping")
+              }}
               role="tab"
               aria-selected={fulfillmentType === "shipping"}
+              disabled={isLockedListing}
             >
               Shipping
             </button>
@@ -1110,9 +1190,12 @@ export default function EditListingPage() {
               className={
                 fulfillmentType === "pickup_or_shipping" ? styles.switchActive : ""
               }
-              onClick={() => setFulfillmentType("pickup_or_shipping")}
+              onClick={() => {
+                if (!isLockedListing) setFulfillmentType("pickup_or_shipping")
+              }}
               role="tab"
               aria-selected={fulfillmentType === "pickup_or_shipping"}
+              disabled={isLockedListing}
             >
               Both
             </button>
@@ -1138,6 +1221,7 @@ export default function EditListingPage() {
                     onChange={(event) => setPickupCity(event.target.value)}
                     placeholder="Tampa"
                     required={isPickup}
+                    disabled={isLockedListing}
                   />
                 </label>
 
@@ -1151,6 +1235,7 @@ export default function EditListingPage() {
                     placeholder="FL"
                     maxLength={2}
                     required={isPickup}
+                    disabled={isLockedListing}
                   />
                 </label>
               </div>
@@ -1163,26 +1248,11 @@ export default function EditListingPage() {
                   placeholder="33602"
                   inputMode="numeric"
                   required={isPickup}
+                  disabled={isLockedListing}
                 />
               </label>
             </>
           ) : null}
-
-          {/* {isShipping ? (
-            <label className={`${styles.sellerField} ${styles.shippingField}`}>
-              <span>Shipping price</span>
-              <input
-                value={shippingPrice}
-                onChange={(event) => setShippingPrice(event.target.value)}
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                placeholder="0.00"
-                required={isShipping}
-              />
-            </label>
-          ) : null} */}
 
           {isShipping ? (
             <>
@@ -1190,9 +1260,12 @@ export default function EditListingPage() {
                 <button
                   type="button"
                   className={shippingRateMode === "seller_flat" ? styles.switchActive : ""}
-                  onClick={() => setShippingRateMode("seller_flat")}
+                  onClick={() => {
+                    if (!isLockedListing) setShippingRateMode("seller_flat")
+                  }}
                   role="tab"
                   aria-selected={shippingRateMode === "seller_flat"}
+                  disabled={isLockedListing}
                 >
                   Package info
                 </button>
@@ -1200,11 +1273,14 @@ export default function EditListingPage() {
                 <button
                   type="button"
                   className={shippingRateMode === "calculated" ? styles.switchActive : ""}
-                  onClick={() => setShippingRateMode("seller_flat")}
+                  onClick={() => {
+                    if (!isLockedListing) setShippingRateMode("seller_flat")
+                  }}
                   role="tab"
                   aria-selected={shippingRateMode === "calculated"}
                   aria-disabled="true"
                   title="Calculated shipping is coming soon."
+                  disabled={isLockedListing}
                 >
                   Calculated
                 </button>
@@ -1226,6 +1302,7 @@ export default function EditListingPage() {
                   inputMode="numeric"
                   placeholder="Ships from ZIP"
                   required={isShipping}
+                  disabled={isLockedListing}
                 />
               </label>
 
@@ -1241,6 +1318,7 @@ export default function EditListingPage() {
                     inputMode="decimal"
                     placeholder="Pounds"
                     required={isShipping}
+                    disabled={isLockedListing}
                   />
                 </label>
 
@@ -1255,6 +1333,7 @@ export default function EditListingPage() {
                     inputMode="decimal"
                     placeholder="Inches"
                     required={isShipping}
+                    disabled={isLockedListing}
                   />
                 </label>
               </div>
@@ -1271,6 +1350,7 @@ export default function EditListingPage() {
                     inputMode="decimal"
                     placeholder="Inches"
                     required={isShipping}
+                    disabled={isLockedListing}
                   />
                 </label>
 
@@ -1285,6 +1365,7 @@ export default function EditListingPage() {
                     inputMode="decimal"
                     placeholder="Inches"
                     required={isShipping}
+                    disabled={isLockedListing}
                   />
                 </label>
               </div>
@@ -1295,6 +1376,7 @@ export default function EditListingPage() {
                   value={shippingNotes}
                   onChange={(event) => setShippingNotes(event.target.value)}
                   placeholder="Optional"
+                  disabled={isLockedListing}
                 />
               </label>
             </>
@@ -1303,23 +1385,26 @@ export default function EditListingPage() {
 
         {error ? <p className={styles.sellerError}>{error}</p> : null}
         {message ? <p className={styles.sellerSuccess}>{message}</p> : null}
+
         {status === "published" && !publishReady ? (
-              <p className={styles.publishHint}>
-                Complete all required details before saving a published listing. Shipping
-                listings need a flat shipping price, origin ZIP, package weight, and package
-                dimensions.
-              </p>
-            ) : null}
-        <section className={`${styles.publishBar} ${styles.editSaveBar}`}>
+          <p className={styles.publishHint}>
+            Complete all required details before saving a published listing. Shipping
+            listings need a flat shipping price, origin ZIP, package weight, and package
+            dimensions.
+          </p>
+        ) : null}
+
+        {!isLockedListing ? (
+          <section className={`${styles.publishBar} ${styles.editSaveBar}`}>
             <button
-                type="submit"
-                className={styles.publishButton}
-                disabled={saving || (status === "published" && !publishReady)}
+              type="submit"
+              className={styles.publishButton}
+              disabled={saving || (status === "published" && !publishReady)}
             >
-                {saving ? "Saving..." : "Save changes"}
+              {saving ? "Saving..." : "Save changes"}
             </button>
-            
-        </section>
+          </section>
+        ) : null}
       </form>
 
       {previewPhotoUrl ? (

@@ -1020,7 +1020,47 @@ export default function MarketplacePage() {
         </div>
       ) : null}
 
-      <AppBottomNav active={view === "nearby" ? "nearby" : "shop"} />
+      <AppBottomNav
+        active={view === "nearby" ? "nearby" : "shop"}
+        items={[
+          {
+            key: "shop",
+            label: "Shop",
+            href: "/marketplace",
+            onClick: (event) => {
+              event.preventDefault()
+              setView("for-you")
+              window.history.replaceState(null, "", "/marketplace")
+            },
+          },
+          {
+            key: "nearby",
+            label: "Nearby",
+            href: "/marketplace?view=nearby",
+            onClick: (event) => {
+              event.preventDefault()
+              setView("nearby")
+              window.history.replaceState(null, "", "/marketplace?view=nearby")
+            },
+          },
+          {
+            key: "sell",
+            label: "Sell",
+            href: "/seller/listings/new",
+            variant: "sell",
+          },
+          {
+            key: "messages",
+            label: "Messages",
+            href: "/messages",
+          },
+          {
+            key: "profile",
+            label: "Profile",
+            href: "/profile",
+          },
+        ]}
+      />
     </main>
   )
 }

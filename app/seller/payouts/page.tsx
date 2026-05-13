@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/app/lib/supabase/client"
 import styles from "../orders/seller-orders.module.css"
+import AppBottomNav from "@/app/components/AppBottomNav"
 
 type PayoutRow = {
   stripe_account_id: string | null
@@ -42,6 +43,7 @@ export default function SellerPayoutsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [helpOpen, setHelpOpen] = useState(false)
+  const [redirectingToStripe, setRedirectingToStripe] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -132,24 +134,36 @@ export default function SellerPayoutsPage() {
           {error ? <p>{error}</p> : null}
 
           {!loading && !error ? (
-            requirements.length > 0 ? (
-              <p>
-                Stripe needs a little more information before payouts are fully
-                enabled. Missing: {requirements.join(", ")}.
-              </p>
-            ) : (
-              <p>
-                {status === "Connected"
-                  ? "Your payout account is connected and ready to receive funds from sales."
-                  : "Set up your payout account so Decor Encore can send seller earnings through Stripe."}
-              </p>
-            )
+            <p>
+              {status === "Connected"
+                ? "Your payout account is connected and ready to receive funds from sales."
+                : status === "Pending review"
+                  ? "Stripe is reviewing your payout setup. You can keep managing listings, but purchases may stay unavailable until review is complete."
+                  : status === "Action needed"
+                    ? "Stripe needs an update before your listings can be purchased. Continue setup to review the required steps securely with Stripe."
+                    : status === "Needs more info" || requirements.length > 0
+                      ? "Stripe needs a little more information before buyers can purchase your listings. Continue setup to finish the required payout steps securely with Stripe."
+                      : "Set up your payout account so buyers can purchase your listings and Decor Encore can send your seller earnings through Stripe."}
+            </p>
           ) : null}
 
           {!loading ? (
             <>
                 <div className={styles.payoutActions}>
-                <a href="/api/stripe/connect/onboard">{actionLabel}</a>
+                <a
+                  href="/api/stripe/connect/onboard"
+                  aria-busy={redirectingToStripe}
+                  onClick={() => setRedirectingToStripe(true)}
+                >
+                  {redirectingToStripe ? (
+                    <>
+                      <span className={styles.buttonSpinner} aria-hidden="true" />
+                      Redirecting to Stripe...
+                    </>
+                  ) : (
+                    actionLabel
+                  )}
+                </a>
 
                 <button type="button" onClick={() => setHelpOpen(true)}>
                     Setup help
@@ -235,6 +249,26 @@ export default function SellerPayoutsPage() {
           
         </div>
       ) : null}
+      <AppBottomNav
+          active="shop"
+          items={[
+            {
+              key: "shop",
+              label: "Shop",
+              href: "/marketplace",
+            },
+            {
+              key: "sell",
+              label: "Seller",
+              href: "/seller",
+            },
+            {
+              key: "profile",
+              label: "Profile",
+              href: "/profile",
+            },
+          ]}
+        />
     </main>
   )
 }

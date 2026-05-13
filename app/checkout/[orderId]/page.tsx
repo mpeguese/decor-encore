@@ -949,42 +949,58 @@ export default function CheckoutPage() {
               <span>Preparing Stripe checkout.</span>
             </div>
           </section>
-        ) : clientSecret && stripePromise ? (
-          <Elements
-            stripe={stripePromise}
-            options={{
-              clientSecret,
-              appearance: {
-                theme: "stripe",
-                variables: {
-                  colorPrimary: "#512d38",
-                  colorText: "#512d38",
-                  colorDanger: "#9f1239",
-                  colorBackground: "rgba(255, 255, 255, 0.72)",
-                  borderRadius: "18px",
-                  fontFamily:
-                    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-                },
+        ) : error ? (
+        <section className={styles.paymentCard}>
+          <div>
+            <p>Checkout unavailable</p>
+            <h2>This item cannot be purchased yet</h2>
+            <span>
+              Please check back soon or message the seller with questions or to advise you can't purchase their listing.
+            </span>
+          </div>
+        </section>
+      ) : clientSecret && stripePromise ? (
+        <Elements
+          stripe={stripePromise}
+          options={{
+            clientSecret,
+            appearance: {
+              theme: "stripe",
+              variables: {
+                colorPrimary: "#512d38",
+                colorText: "#512d38",
+                colorDanger: "#9f1239",
+                colorBackground: "rgba(255, 255, 255, 0.72)",
+                borderRadius: "18px",
+                fontFamily:
+                  'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
               },
-            }}
-          >
-            <StripeCheckoutForm
-              order={order}
-              listing={listing}
-              clientSecret={clientSecret}
-            />
-          </Elements>
-        ) : (
-          <section className={styles.paymentCard}>
-            <div>
-              <p>Payment unavailable</p>
-              <h2>Stripe could not load</h2>
-              <span>
-                Check that NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is configured.
-              </span>
-            </div>
-          </section>
-        )}
+            },
+          }}
+        >
+          <StripeCheckoutForm
+            order={order}
+            listing={listing}
+            clientSecret={clientSecret}
+          />
+        </Elements>
+      ) : !stripePromise ? (
+        <section className={styles.paymentCard}>
+          <div>
+            <p>Payment unavailable</p>
+            <h2>Checkout is temporarily unavailable</h2>
+            <span>Please try again later.</span>
+          </div>
+        </section>
+      ) : (
+        <section className={styles.paymentCard}>
+          <div>
+            <p>Secure payment</p>
+            <h2>Preparing checkout</h2>
+            <span>Please wait while we prepare your payment form.</span>
+          </div>
+        </section>
+      )}
       </section>
       <AppBottomNav
           active="shop"

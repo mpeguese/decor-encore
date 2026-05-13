@@ -21,6 +21,7 @@ type AppBottomNavItem = {
   label: string
   href: string
   variant?: "default" | "sell"
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 type AppBottomNavProps = {
@@ -119,8 +120,11 @@ export default function AppBottomNav({
 
     loadUnreadMessages()
 
+    window.addEventListener("decor-encore:messages-read", loadUnreadMessages)
+
     return () => {
       mounted = false
+      window.removeEventListener("decor-encore:messages-read", loadUnreadMessages)
     }
   }, [supabase, pathname])
 
@@ -138,6 +142,7 @@ export default function AppBottomNav({
           <Link
             key={item.key}
             href={item.href}
+            onClick={item.onClick}
             className={`${styles.navLink} ${
               isSellVariant ? styles.sellLink : ""
             } ${
