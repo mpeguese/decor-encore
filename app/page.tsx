@@ -209,69 +209,71 @@ export default function HomePage() {
         <p className="de-section-kicker">How it works</p>
 
         <div className="de-story-grid">
-  <div className="de-story-card">
-    <span>01</span>
-    <h2>Discover pieces with a past</h2>
-    <p>
-      Every celebration starts with a feeling. Browse once-loved event
-      decor that has already been part of someone’s beautiful moment —
-      and is ready to bring yours to life.
-    </p>
-  </div>
+          <div className="de-story-card">
+            <span>01</span>
+            <h2>Discover pieces with a past</h2>
+            <p>
+              Every celebration starts with a feeling. Browse once-loved event
+              decor that has already been part of someone’s beautiful moment —
+              and is ready to bring yours to life.
+            </p>
+          </div>
 
-  <div className="de-story-card">
-    <span>02</span>
-    <h2>Bring your vision to life</h2>
-    <p>
-      Create a polished look by combining pieces you love — without
-      buying everything new or figuring it all out from scratch.
-    </p>
-  </div>
+          <div className="de-story-card">
+            <span>02</span>
+            <h2>Bring your vision to life</h2>
+            <p>
+              Create a polished look by combining pieces you love — without
+              buying everything new or figuring it all out from scratch.
+            </p>
+          </div>
 
-  <div className="de-story-card">
-    <span>03</span>
-    <h2>Let the story continue</h2>
-    <p>
-      When the day has passed, give your decor another chapter by
-      listing it here <b><u>first</u></b>. Inspire someone planning
-      their own unforgettable moment.
-    </p>
-  </div>
-</div>
+          <div className="de-story-card">
+            <span>03</span>
+            <h2>Let the story continue</h2>
+            <p>
+              When the day has passed, give your decor another chapter by
+              listing it here <b><u>first</u></b>. Inspire someone planning
+              their own unforgettable moment.
+            </p>
+          </div>
+        </div>
 
-<div
-  className="de-story-grid"
-  style={{ marginTop: "22px" }}
->
-  <div className="de-story-card">
-    <span>Protection</span>
-    <h2>Secure checkout</h2>
-    <p>
-      Payments stay inside Decor Encore for a smoother experience with
-      protected checkout, order tracking, and clear purchase records.
-    </p>
-  </div>
+        <div
+          className="de-story-grid"
+          style={{ marginTop: "22px" }}
+        >
+          {/* <p className="de-section-kicker">How </p> */}
+          
+          <div className="de-story-card">
+            <span>Protection</span>
+            <h2>Secure checkout</h2>
+            <p>
+              Payments stay inside Decor Encore for a smoother experience with
+              protected checkout, order tracking, and clear purchase records.
+            </p>
+          </div>
 
-  <div className="de-story-card">
-    <span>Messaging</span>
-    <h2>Built-in communication</h2>
-    <p>
-      Keep conversations connected to the listing and order so buyers
-      and sellers can stay organized from first message to final pickup
-      or delivery.
-    </p>
-  </div>
+          <div className="de-story-card">
+            <span>Messaging</span>
+            <h2>Built-in communication</h2>
+            <p>
+              Keep conversations connected to the listing and order so buyers
+              and sellers can stay organized from first message to final pickup
+              or delivery.
+            </p>
+          </div>
 
-  <div className="de-story-card">
-    <span>Support</span>
-    <h2>Order history & protection</h2>
-    <p>
-      View purchases, sales, and order updates in one place with tools
-      designed to help both sides feel more confident throughout the
-      transaction.
-    </p>
-  </div>
-</div>
+          <div className="de-story-card">
+            <span>Support</span>
+            <h2>Order history & protection</h2>
+            <p>
+              View purchases, sales, and order updates in one place with tools
+              designed to help both sides feel more confident throughout the
+              transaction.
+            </p>
+          </div>
+        </div>
       </section>
 
       <footer className="de-footer">
