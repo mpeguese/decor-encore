@@ -74,6 +74,27 @@ a {
 }
 
 .de-hero {
+  /*
+    Landing hero layout controls.
+    Adjust these values instead of editing the same logo/content/panel
+    classes in several different places.
+  */
+  --hero-logo-width: min(84vw, 520px);
+  --hero-logo-top: 24px;
+  --hero-logo-margin-top: -8px;
+
+  --hero-content-max-width: 520px;
+  --hero-content-justify: end;
+  --hero-content-align: stretch;
+  --hero-content-gap: 16px;
+  --hero-content-padding: 28px 0 34px;
+  --hero-content-text-align: left;
+
+  --hero-panel-width: 100%;
+  --hero-panel-max-width: none;
+  --hero-panel-margin: 0;
+  --hero-panel-lift: -18px;
+
   position: relative;
   min-height: 100dvh;
   padding: 16px;
@@ -219,13 +240,15 @@ a {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 520px;
+  max-width: var(--hero-content-max-width);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: end;
-  gap: 16px;
-  padding: 54px 0 34px;
+  justify-content: var(--hero-content-justify);
+  align-items: var(--hero-content-align);
+  gap: var(--hero-content-gap);
+  padding: var(--hero-content-padding);
+  text-align: var(--hero-content-text-align);
 }
 
 .de-story-section {
@@ -335,13 +358,13 @@ a {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 36px;
-  margin-top: -8px;
+  padding-top: var(--hero-logo-top);
+  margin-top: var(--hero-logo-margin-top);
   pointer-events: none;
 }
 
 .de-hero-logo-image {
-  width: min(84vw, 520px);
+  width: var(--hero-logo-width);
   height: auto;
   display: block;
   filter: drop-shadow(0 18px 44px rgba(81, 45, 56, 0.32));
@@ -357,7 +380,7 @@ a {
 }
 
 .de-subtitle {
-  margin: 20px 0 0;
+  /* margin: 20px 0 0; */
   max-width: 34ch;
   font-size: 16px;
   line-height: 1.42;
@@ -366,11 +389,15 @@ a {
 }
 
 .de-action-panel {
+  width: var(--hero-panel-width);
+  max-width: var(--hero-panel-max-width);
+  margin: var(--hero-panel-margin);
   padding: 12px;
   border-radius: 30px;
   background: rgba(255, 233, 243, 0.34);
   border: 1px solid rgba(255, 255, 255, 0.42);
   box-shadow: 0 24px 70px rgba(81, 45, 56, 0.24);
+  transform: translateY(var(--hero-panel-lift));
   backdrop-filter: blur(26px);
   -webkit-backdrop-filter: blur(26px);
 }
@@ -1208,15 +1235,23 @@ a {
 
 @media (min-width: 760px) {
   .de-hero {
+    --hero-logo-width: min(42vw, 480px);
+    --hero-logo-top: clamp(10px, 2.5vh, 28px);
+    --hero-logo-margin-top: -8px;
+
+    --hero-content-max-width: 620px;
+    --hero-content-justify: start;
+    --hero-content-align: center;
+    --hero-content-gap: 16px;
+    --hero-content-padding: clamp(8px, 2vh, 24px) 0 40px;
+    --hero-content-text-align: center;
+
+    --hero-panel-width: min(100%, 420px);
+    --hero-panel-max-width: 420px;
+    --hero-panel-margin: 0 auto;
+    --hero-panel-lift: 0px;
+
     grid-template-rows: auto auto 1fr;
-  }
-
-  .de-floating-logo {
-    padding-top: clamp(20px, 4vh, 46px);
-  }
-
-  .de-hero-logo-image {
-    width: min(42vw, 480px);
   }
 
   .de-video-shell {
@@ -1258,20 +1293,8 @@ a {
     justify-content: flex-end;
   }
 
-  /* .de-hero-logo-image {
-  width: min(52vw, 520px);
-} */
-
   .de-hero-content {
-    max-width: 620px;
     min-height: auto;
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
-    align-items: center;
-    gap: 16px;
-    padding: clamp(20px, 5vh, 58px) 0 40px;
-    text-align: center;
   }
 
   .de-copy {
@@ -1296,9 +1319,6 @@ a {
   }
 
   .de-action-panel {
-    width: min(100%, 420px);
-    max-width: 420px;
-    margin: 0 auto;
     background: rgba(255, 233, 243, 0.34);
     border-color: rgba(255, 255, 255, 0.42);
   }
@@ -1411,6 +1431,11 @@ a {
 
 @media (max-width: 390px) {
   .de-hero {
+    --hero-logo-width: min(90vw, 360px);
+    --hero-logo-top: 16px;
+    --hero-content-padding: 18px 0 30px;
+    --hero-panel-lift: -14px;
+
     padding: 12px;
   }
 
@@ -1861,3 +1886,4 @@ a {
   font-size: 13px;
   font-weight: 700;
 }
+

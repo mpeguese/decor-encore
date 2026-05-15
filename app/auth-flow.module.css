@@ -6,7 +6,8 @@
 .authPage {
   position: relative;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: var(--plum);
   background:
     radial-gradient(circle at 16% 0%, rgba(244, 191, 219, 0.74), transparent 34%),
@@ -42,11 +43,16 @@
 }
 
 .authShell {
+  --auth-logo-width: min(82vw, 390px);
+  --auth-logo-top: 6px;
+  --auth-logo-lift: -14px;
+  --auth-card-margin: -18px auto 18px;
+
   position: relative;
   z-index: 1;
   min-height: 100dvh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto minmax(0, 1fr);
   padding: 16px;
 }
 
@@ -109,10 +115,10 @@
 }
 
 .authCard {
-  align-self: end;
+  align-self: start;
   width: 100%;
   max-width: 470px;
-  margin: 0 auto 18px;
+  margin: var(--auth-card-margin);
   padding: 14px;
   border-radius: 34px;
   background: rgba(255, 233, 243, 0.36);
@@ -158,12 +164,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: clamp(18px, 5vh, 46px);
+  padding-top: var(--auth-logo-top);
+  transform: translateY(var(--auth-logo-lift));
   pointer-events: none;
 }
 
 .authLogoImage {
-  width: min(82vw, 420px);
+  width: var(--auth-logo-width);
   max-width: 100%;
   height: auto;
   display: block;
@@ -674,26 +681,22 @@
     box-shadow: none;
   }
 
-   .authShell {
+  .authShell {
+    --auth-logo-width: min(42vw, 460px);
+    --auth-logo-top: clamp(12px, 3vh, 32px);
+    --auth-logo-lift: 0px;
+    --auth-card-margin: clamp(12px, 3vh, 34px) 0 0;
+
     min-height: 100dvh;
     display: grid;
     grid-template-rows: auto auto 1fr;
     padding: 24px;
   }
 
-  .authFloatingLogo {
-    padding-top: clamp(18px, 4vh, 42px);
-  }
-
-  .authLogoImage {
-    width: min(42vw, 460px);
-  }
-
   .authCard {
     align-self: start;
     justify-self: center;
     width: min(100%, 470px);
-    margin: clamp(20px, 5vh, 48px) 0 0;
   }
 
   .authCopy {
@@ -751,6 +754,13 @@
 
   .brand span:last-child {
     display: none;
+  }
+
+  .authShell {
+    --auth-logo-width: min(84vw, 360px);
+    --auth-logo-top: 2px;
+    --auth-logo-lift: -18px;
+    --auth-card-margin: -24px auto 16px;
   }
 
   .authCopy h1 {
