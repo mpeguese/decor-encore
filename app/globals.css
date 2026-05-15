@@ -119,7 +119,7 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.82;
+  opacity: 0.92;
   transform: scale(1.01);
 }
 
@@ -127,8 +127,8 @@ a {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(81, 45, 56, 0.22) 0%, rgba(81, 45, 56, 0.08) 34%, rgba(81, 45, 56, 0.52) 100%),
-    radial-gradient(circle at 50% 100%, rgba(255, 233, 243, 0.68), transparent 44%);
+    linear-gradient(180deg, rgba(81, 45, 56, 0.04) 0%, rgba(81, 45, 56, 0.04) 34%, rgba(81, 45, 56, 0.24) 100%),
+    radial-gradient(circle at 50% 100%, rgba(255, 233, 243, 0.34), transparent 44%);
 }
 
 .de-topbar {
@@ -1265,9 +1265,9 @@ a {
   }
 
   .de-video-wash {
-    background:
-      linear-gradient(180deg, rgba(81, 45, 56, 0.16) 0%, rgba(81, 45, 56, 0.02) 38%, rgba(81, 45, 56, 0.42) 100%);
-  }
+  background:
+    linear-gradient(180deg, rgba(81, 45, 56, 0.08) 0%, rgba(81, 45, 56, 0.01) 38%, rgba(81, 45, 56, 0.22) 100%);
+}
 
   .de-topbar {
     max-width: 1180px;
