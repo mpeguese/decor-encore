@@ -373,6 +373,7 @@ export default function ListingDetailPage() {
       .select("id")
       .eq("listing_id", listing.id)
       .eq("buyer_id", userId)
+      .eq("seller_id", listing.seller_id)
       .maybeSingle()
 
     if (existingConversation?.id) {
@@ -390,11 +391,30 @@ export default function ListingDetailPage() {
       .select("id")
       .single()
 
-    if (conversationError || !conversation?.id) {
+    if (conversation?.id) {
+      router.push(`/messages?conversationId=${conversation.id}`)
       return
     }
 
-    router.push(`/messages?conversationId=${conversation.id}`)
+    if (conversationError?.code === "23505") {
+      const { data: fallbackConversation } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", listing.id)
+        .eq("buyer_id", userId)
+        .eq("seller_id", listing.seller_id)
+        .maybeSingle()
+
+      if (fallbackConversation?.id) {
+        router.push(`/messages?conversationId=${fallbackConversation.id}`)
+      }
+
+      return
+    }
+
+    if (conversationError) {
+      console.error("Unable to create conversation:", conversationError.message)
+    }
   }
 
   async function handleBuyNow() {

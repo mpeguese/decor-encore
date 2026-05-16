@@ -4,6 +4,13 @@ import { requireAdmin } from "@/app/lib/admin/requireAdmin"
 import { createAdminSupabaseClient } from "@/app/lib/admin/supabaseAdmin"
 import styles from "../admin.module.css"
 
+type PageProps = {
+  searchParams?: Promise<{
+    filter?: string
+    status?: string
+  }>
+}
+
 type OrderRow = {
   id: string
   listing_id: string | null
@@ -15,12 +22,19 @@ type OrderRow = {
   shipping_amount: number | null
   platform_fee: number | null
   total: number | null
+  refund_status: string | null
   created_at: string
 }
 
 type ListingRow = {
   id: string
   title: string
+}
+
+type SupportRequestRow = {
+  id: string
+  order_id: string | null
+  status: string
 }
 
 type ProfileRow = {
@@ -64,7 +78,7 @@ function buildConfirmationNumber(orderId: string) {
   return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
 }
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({ searchParams }: PageProps) {
   const { admin } = await requireAdmin("/admin/orders")
 
   if (!admin) {
@@ -82,15 +96,64 @@ export default async function AdminOrdersPage() {
 
   const supabase = createAdminSupabaseClient()
 
-  const { data: orderData, error } = await supabase
+  const params = await searchParams
+  const activeFilter = params?.filter || ""
+  const activeStatus = params?.status || ""
+  const needsReviewOnly = activeFilter === "needs_review"
+
+    let orderQuery = supabase
     .from("orders")
     .select(
-      "id, listing_id, buyer_id, seller_id, status, fulfillment_method, subtotal, shipping_amount, platform_fee, total, created_at"
+      "id, listing_id, buyer_id, seller_id, status, fulfillment_method, subtotal, shipping_amount, platform_fee, total, refund_status, created_at"
     )
     .order("created_at", { ascending: false })
-    .limit(50)
+    .limit(75)
 
-  const orders = (orderData || []) as OrderRow[]
+  if (activeStatus) {
+    orderQuery = orderQuery.eq("status", activeStatus)
+  }
+
+  const { data: orderData, error } = await orderQuery
+
+  const allLoadedOrders = (orderData || []) as OrderRow[]
+
+  const loadedOrderIds = allLoadedOrders.map((order) => order.id)
+
+  const { data: supportData } =
+    loadedOrderIds.length > 0
+      ? await supabase
+          .from("order_support_requests")
+          .select("id, order_id, status")
+          .in("order_id", loadedOrderIds)
+          .in("status", ["open", "in_review"])
+      : { data: [] }
+
+  const openSupportRequests = (supportData || []) as SupportRequestRow[]
+
+  const openSupportOrderIds = new Set(
+    openSupportRequests
+      .map((request) => request.order_id)
+      .filter((value): value is string => Boolean(value))
+  )
+
+  const reviewStatuses = [
+    "pending",
+    "cancel_requested",
+    "cancellation_requested",
+    "refund_requested",
+    "disputed",
+    "support_open",
+  ]
+
+  const orders = needsReviewOnly
+    ? allLoadedOrders.filter((order) => {
+        return (
+          reviewStatuses.includes(order.status) ||
+          Boolean(order.refund_status) ||
+          openSupportOrderIds.has(order.id)
+        )
+      })
+    : allLoadedOrders
 
   const listingIds = Array.from(
     new Set(
@@ -142,6 +205,45 @@ export default async function AdminOrdersPage() {
             Review the latest orders, payments, shipping method, fulfillment
             state, and support context.
           </span>
+        </section>
+
+        <section className={styles.adminFilterBar} aria-label="Order filters">
+          <Link
+            href="/admin/orders"
+            className={
+              !activeFilter && !activeStatus ? styles.adminFilterActive : ""
+            }
+          >
+            All
+          </Link>
+
+          <Link
+            href="/admin/orders?filter=needs_review"
+            className={needsReviewOnly ? styles.adminFilterActive : ""}
+          >
+            Needs review
+          </Link>
+
+          <Link
+            href="/admin/orders?status=pending"
+            className={activeStatus === "pending" ? styles.adminFilterActive : ""}
+          >
+            Pending
+          </Link>
+
+          <Link
+            href="/admin/orders?status=completed"
+            className={activeStatus === "completed" ? styles.adminFilterActive : ""}
+          >
+            Completed
+          </Link>
+
+          <Link
+            href="/admin/orders?status=cancelled"
+            className={activeStatus === "cancelled" ? styles.adminFilterActive : ""}
+          >
+            Cancelled
+          </Link>
         </section>
 
         {error ? (

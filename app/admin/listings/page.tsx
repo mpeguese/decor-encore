@@ -4,6 +4,13 @@ import { requireAdmin } from "@/app/lib/admin/requireAdmin"
 import { createAdminSupabaseClient } from "@/app/lib/admin/supabaseAdmin"
 import styles from "../admin.module.css"
 
+type PageProps = {
+  searchParams?: Promise<{
+    filter?: string
+    status?: string
+  }>
+}
+
 type ListingRow = {
   id: string
   seller_id: string
@@ -99,7 +106,7 @@ function getPackageSummary(listing: ListingRow) {
   return `${weight} · ${dimensions}`
 }
 
-export default async function AdminListingsPage() {
+export default async function AdminListingsPage({ searchParams }: PageProps) {
   const { admin } = await requireAdmin("/admin/listings")
 
   if (!admin) {
@@ -116,14 +123,47 @@ export default async function AdminListingsPage() {
   }
 
   const supabase = createAdminSupabaseClient()
+  const params = await searchParams
+  const activeFilter = params?.filter || ""
+  const activeStatus = params?.status || ""
+  const reportsOnly = activeFilter === "reports"
 
-  const { data: listingData, error: listingError } = await supabase
+  const { data: openReportListingData } = reportsOnly
+    ? await supabase
+        .from("listing_reports")
+        .select("listing_id")
+        .in("status", ["open", "in_review"])
+        .limit(200)
+    : { data: [] }
+
+  const openReportedListingIds = Array.from(
+    new Set(
+      ((openReportListingData || []) as { listing_id: string }[]).map(
+        (report) => report.listing_id
+      )
+    )
+  )
+
+  let listingQuery = supabase
     .from("listings")
     .select(
       "id, seller_id, category_id, title, description, price, quantity, status, fulfillment_type, shipping_origin_zip, package_weight_lb, package_length_in, package_width_in, package_height_in, created_at, updated_at"
     )
     .order("updated_at", { ascending: false, nullsFirst: false })
     .limit(75)
+
+  if (activeStatus) {
+    listingQuery = listingQuery.eq("status", activeStatus)
+  }
+
+  if (reportsOnly && openReportedListingIds.length > 0) {
+    listingQuery = listingQuery.in("id", openReportedListingIds)
+  }
+
+  const { data: listingData, error: listingError } =
+    reportsOnly && openReportedListingIds.length === 0
+      ? { data: [], error: null }
+      : await listingQuery
 
   const listings = (listingData || []) as ListingRow[]
 
@@ -214,6 +254,52 @@ export default async function AdminListingsPage() {
             Review marketplace listings, seller details, fulfillment setup,
             package readiness, and report activity.
           </span>
+        </section>
+
+        <section className={styles.adminFilterBar} aria-label="Listing filters">
+          <Link
+            href="/admin/listings"
+            className={
+              !activeFilter && !activeStatus ? styles.adminFilterActive : ""
+            }
+          >
+            All
+          </Link>
+
+          <Link
+            href="/admin/listings?filter=reports"
+            className={reportsOnly ? styles.adminFilterActive : ""}
+          >
+            Open reports
+          </Link>
+
+          <Link
+            href="/admin/listings?status=published"
+            className={activeStatus === "published" ? styles.adminFilterActive : ""}
+          >
+            Published
+          </Link>
+
+          <Link
+            href="/admin/listings?status=paused"
+            className={activeStatus === "paused" ? styles.adminFilterActive : ""}
+          >
+            Paused
+          </Link>
+
+          <Link
+            href="/admin/listings?status=sold"
+            className={activeStatus === "sold" ? styles.adminFilterActive : ""}
+          >
+            Sold
+          </Link>
+
+          <Link
+            href="/admin/listings?status=draft"
+            className={activeStatus === "draft" ? styles.adminFilterActive : ""}
+          >
+            Draft
+          </Link>
         </section>
 
         <section className={styles.adminStatGrid}>

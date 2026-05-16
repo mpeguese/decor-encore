@@ -4,6 +4,12 @@ import { requireAdmin } from "@/app/lib/admin/requireAdmin"
 import { createAdminSupabaseClient } from "@/app/lib/admin/supabaseAdmin"
 import styles from "../admin.module.css"
 
+type PageProps = {
+  searchParams?: Promise<{
+    status?: string
+  }>
+}
+
 type SupportRequestRow = {
   id: string
   order_id: string | null
@@ -71,7 +77,7 @@ function buildConfirmationNumber(orderId: string) {
   return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
 }
 
-export default async function AdminSupportPage() {
+export default async function AdminSupportPage({ searchParams }: PageProps) {
   const { admin } = await requireAdmin("/admin/support")
 
   if (!admin) {
@@ -88,12 +94,22 @@ export default async function AdminSupportPage() {
   }
 
   const supabase = createAdminSupabaseClient()
+  const params = await searchParams
+  const activeStatus = params?.status || ""
 
-  const { data: supportData, error: supportError } = await supabase
+  let supportQuery = supabase
     .from("order_support_requests")
     .select("id, order_id, requester_id, issue_type, status, message, created_at")
     .order("created_at", { ascending: false })
     .limit(50)
+
+  if (activeStatus === "open") {
+    supportQuery = supportQuery.in("status", ["open", "in_review"])
+  } else if (activeStatus) {
+    supportQuery = supportQuery.eq("status", activeStatus)
+  }
+
+  const { data: supportData, error: supportError } = await supportQuery
 
   const supportRequests = (supportData || []) as SupportRequestRow[]
 
@@ -176,6 +192,38 @@ export default async function AdminSupportPage() {
             Review cancellation requests, order help, buyer issues, and seller
             fulfillment problems.
           </span>
+        </section>
+
+        <section className={styles.adminFilterBar} aria-label="Support filters">
+          <Link
+            href="/admin/support"
+            className={!activeStatus ? styles.adminFilterActive : ""}
+          >
+            All
+          </Link>
+
+          <Link
+            href="/admin/support?status=open"
+            className={activeStatus === "open" ? styles.adminFilterActive : ""}
+          >
+            Open / in review
+          </Link>
+
+          <Link
+            href="/admin/support?status=in_review"
+            className={
+              activeStatus === "in_review" ? styles.adminFilterActive : ""
+            }
+          >
+            In review
+          </Link>
+
+          <Link
+            href="/admin/support?status=resolved"
+            className={activeStatus === "resolved" ? styles.adminFilterActive : ""}
+          >
+            Resolved
+          </Link>
         </section>
 
         <section className={styles.adminStatGrid}>

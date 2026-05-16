@@ -1,6 +1,7 @@
 // app/admin/listings/[listingId]/page.tsx
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { revalidatePath } from "next/cache"
 import { requireAdmin } from "@/app/lib/admin/requireAdmin"
 import { createAdminSupabaseClient } from "@/app/lib/admin/supabaseAdmin"
 import styles from "../../admin.module.css"
@@ -59,7 +60,7 @@ type ListingImageRow = {
 
 type ListingReportRow = {
   id: string
-  reporter_id: string | null
+  reported_by: string | null
   listing_id: string
   status: string
   reason: string | null
@@ -76,6 +77,15 @@ type OrderRow = {
   fulfillment_method: string | null
   created_at: string
 }
+
+const allowedListingModerationStatuses = [
+  "published",
+  "under_review",
+  "paused",
+  "removed",
+]
+
+const allowedReportStatuses = ["resolved", "dismissed"]
 
 function formatMoney(value: number | null | undefined) {
   return `$${Number(value || 0).toFixed(2)}`
@@ -197,7 +207,7 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
       .order("sort_order", { ascending: true }),
     supabase
       .from("listing_reports")
-      .select("id, reporter_id, listing_id, status, reason, details, created_at")
+      .select("id, reported_by, listing_id, status, reason, details, created_at")
       .eq("listing_id", listing.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -213,9 +223,81 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
   const reports = (reportData || []) as ListingReportRow[]
   const orders = (orderData || []) as OrderRow[]
 
-  const openReports = reports.filter((report) =>
+  const activeReports = reports.filter((report) =>
     ["open", "in_review"].includes(report.status)
   )
+
+  async function updateListingStatus(formData: FormData) {
+    "use server"
+
+    const listingId = String(formData.get("listingId") || "")
+    const nextStatus = String(formData.get("status") || "")
+
+    if (!listingId || !allowedListingModerationStatuses.includes(nextStatus)) {
+      return
+    }
+
+    const { admin } = await requireAdmin(`/admin/listings/${listingId}`)
+
+    if (!admin) {
+      return
+    }
+
+    const supabase = createAdminSupabaseClient()
+
+    const updatePayload: {
+      status: string
+      updated_at: string
+      published_at?: string
+    } = {
+      status: nextStatus,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (nextStatus === "published") {
+      updatePayload.published_at = new Date().toISOString()
+    }
+
+    await supabase.from("listings").update(updatePayload).eq("id", listingId)
+
+    revalidatePath("/admin")
+    revalidatePath("/admin/listings")
+    revalidatePath(`/admin/listings/${listingId}`)
+    revalidatePath(`/listing/${listingId}`)
+  }
+
+  async function updateReportStatus(formData: FormData) {
+    "use server"
+
+    const reportId = String(formData.get("reportId") || "")
+    const listingId = String(formData.get("listingId") || "")
+    const nextStatus = String(formData.get("status") || "")
+
+    if (!reportId || !listingId || !allowedReportStatuses.includes(nextStatus)) {
+      return
+    }
+
+    const { admin } = await requireAdmin(`/admin/listings/${listingId}`)
+
+    if (!admin) {
+      return
+    }
+
+    const supabase = createAdminSupabaseClient()
+
+    await supabase
+      .from("listing_reports")
+      .update({
+        status: nextStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", reportId)
+      .eq("listing_id", listingId)
+
+    revalidatePath("/admin")
+    revalidatePath("/admin/listings")
+    revalidatePath(`/admin/listings/${listingId}`)
+  }
 
   return (
     <main className={styles.adminPage}>
@@ -249,10 +331,64 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
           </article>
 
           <article className={styles.adminDetailCard}>
-            <span>Reports</span>
-            <strong>{openReports.length}</strong>
+            <span>Active reports</span>
+            <strong>{activeReports.length}</strong>
             <p>{reports.length} total report records</p>
           </article>
+        </section>
+
+        <section className={styles.adminPanel}>
+          <div className={styles.adminPanelHeader}>
+            <span>Listing moderation</span>
+            <strong>{formatLabel(listing.status)}</strong>
+          </div>
+
+          <p>
+            Use these controls to change how this listing behaves publicly.
+            Phase 2 should notify the seller by email and clearly mark the
+            listing status inside the seller dashboard.
+          </p>
+
+          <div className={styles.adminActionButtonGrid}>
+            <form action={updateListingStatus}>
+              <input type="hidden" name="listingId" value={listing.id} />
+              <input type="hidden" name="status" value="published" />
+              <button type="submit" disabled={listing.status === "published"}>
+                Publish
+              </button>
+            </form>
+
+            <form action={updateListingStatus}>
+              <input type="hidden" name="listingId" value={listing.id} />
+              <input type="hidden" name="status" value="under_review" />
+              <button
+                type="submit"
+                disabled={listing.status === "under_review"}
+              >
+                Under Review
+              </button>
+            </form>
+
+            <form action={updateListingStatus}>
+              <input type="hidden" name="listingId" value={listing.id} />
+              <input type="hidden" name="status" value="paused" />
+              <button type="submit" disabled={listing.status === "paused"}>
+                Pause Listing
+              </button>
+            </form>
+
+            <form action={updateListingStatus}>
+              <input type="hidden" name="listingId" value={listing.id} />
+              <input type="hidden" name="status" value="removed" />
+              <button
+                type="submit"
+                className={styles.adminDangerButton}
+                disabled={listing.status === "removed"}
+              >
+                Remove Listing
+              </button>
+            </form>
+          </div>
         </section>
 
         <section className={styles.adminTwoColumn}>
@@ -356,10 +492,39 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
               {reports.map((report) => (
                 <article key={report.id}>
                   <span>
-                    {formatLabel(report.status)} · {formatDateTime(report.created_at)}
+                    {formatLabel(report.status)} ·{" "}
+                    {formatDateTime(report.created_at)}
                   </span>
+
                   <strong>{report.reason || "No reason provided"}</strong>
+
                   {report.details ? <p>{report.details}</p> : null}
+
+                  <div className={styles.adminInlineActions}>
+                    <form action={updateReportStatus}>
+                      <input type="hidden" name="reportId" value={report.id} />
+                      <input type="hidden" name="listingId" value={listing.id} />
+                      <input type="hidden" name="status" value="resolved" />
+                      <button
+                        type="submit"
+                        disabled={report.status === "resolved"}
+                      >
+                        Resolve
+                      </button>
+                    </form>
+
+                    <form action={updateReportStatus}>
+                      <input type="hidden" name="reportId" value={report.id} />
+                      <input type="hidden" name="listingId" value={listing.id} />
+                      <input type="hidden" name="status" value="dismissed" />
+                      <button
+                        type="submit"
+                        disabled={report.status === "dismissed"}
+                      >
+                        Dismiss
+                      </button>
+                    </form>
+                  </div>
                 </article>
               ))}
             </div>

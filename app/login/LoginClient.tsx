@@ -99,6 +99,17 @@ export default function LoginClient() {
   const next = searchParams.get("next") || "/marketplace"
   const reason = searchParams.get("reason")
 
+  const reasonNoticeText =
+    reason === "favorite"
+      ? "Please log in to save favorites."
+      : reason === "message"
+        ? "Please log in to view or send messages."
+        : reason === "sell"
+          ? "Please log in or create an account to start selling decor."
+          : reason === "profile"
+            ? "Please log in to view your profile."
+            : ""
+
   const [mode, setMode] = useState<AuthMode>("signin")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -108,6 +119,9 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [showReasonNotice, setShowReasonNotice] = useState(
+    Boolean(reasonNoticeText)
+  )
 
   const isLargeScreen = useIsLargeScreen()
 
@@ -115,6 +129,23 @@ export default function LoginClient() {
     isLargeScreen === true
       ? "/videos/decor-hero-desktop.mp4"
       : "/videos/decor-hero.mp4"
+
+  useEffect(() => {
+    if (!reasonNoticeText) {
+      setShowReasonNotice(false)
+      return
+    }
+
+    setShowReasonNotice(true)
+
+    const timer = window.setTimeout(() => {
+      setShowReasonNotice(false)
+    }, 5000)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [reasonNoticeText])
 
   async function routeAfterLogin(userId: string) {
     const { data: profile } = await supabase
@@ -290,14 +321,8 @@ export default function LoginClient() {
           <p>Decor Encore</p>
             <h1>{mode === "signin" ? "Welcome back." : "Start your encore."}</h1>
 
-            {reason === "favorite" ? (
-              <span className={styles.authNotice}>
-                Please log in to save favorites.
-              </span>
-            ) : reason === "message" ? (
-              <span className={styles.authNotice}>
-                Please log in to contact sellers.
-              </span>
+            {showReasonNotice && reasonNoticeText ? (
+              <span className={styles.authNotice}>{reasonNoticeText}</span>
             ) : null}
           </div>
 

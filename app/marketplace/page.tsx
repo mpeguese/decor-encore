@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { MouseEvent, useEffect, useMemo, useState } from "react"
 import { createClient } from "@/app/lib/supabase/client"
 import {
   Coordinates,
@@ -585,6 +585,34 @@ export default function MarketplacePage() {
     setFiltersOpen(false)
   }
 
+  function handleProtectedRouteClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    nextPath: string,
+    reason: string
+  ) {
+    if (userId) {
+      return
+    }
+
+    event.preventDefault()
+
+    window.location.href = `/login?next=${encodeURIComponent(
+      nextPath
+    )}&reason=${encodeURIComponent(reason)}`
+  }
+
+  function handleSellClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (userId) {
+      return
+    }
+
+    event.preventDefault()
+
+    window.location.href = `/login?next=${encodeURIComponent(
+      "/seller/listings/new"
+    )}&reason=sell`
+  }
+
   async function toggleSaved(id: string) {
     if (!userId) {
       window.location.href = `/login?next=${encodeURIComponent(
@@ -639,7 +667,14 @@ export default function MarketplacePage() {
             <span>Decor Encore</span>
           </Link>
 
-          <Link href="/profile" className="mk-avatar" aria-label="Open profile">
+          <Link
+            href="/profile"
+            className="mk-avatar"
+            aria-label="Open profile"
+            onClick={(event) =>
+              handleProtectedRouteClick(event, "/profile", "profile")
+            }
+          >
             {profileInitials}
           </Link>
         </div>
@@ -724,7 +759,13 @@ export default function MarketplacePage() {
           <h2>A Story in Every Piece.</h2>
         </div>
 
-        <Link href="/seller/listings/new" className="mk-sell-cta">
+        <Link
+          href="/seller/listings/new"
+          className="mk-sell-cta"
+          onClick={(event) =>
+            handleProtectedRouteClick(event, "/seller/listings/new", "sell")
+          }
+        >
           Sell
         </Link>
       </section>
@@ -1048,16 +1089,22 @@ export default function MarketplacePage() {
             label: "Sell",
             href: "/seller/listings/new",
             variant: "sell",
+            onClick: (event) =>
+              handleProtectedRouteClick(event, "/seller/listings/new", "sell"),
           },
           {
             key: "messages",
             label: "Messages",
             href: "/messages",
+            onClick: (event) =>
+              handleProtectedRouteClick(event, "/messages", "message"),
           },
           {
             key: "profile",
             label: "Profile",
             href: "/profile",
+            onClick: (event) =>
+              handleProtectedRouteClick(event, "/profile", "profile"),
           },
         ]}
       />
