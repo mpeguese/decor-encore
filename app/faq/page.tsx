@@ -242,8 +242,8 @@ export default function FAQPage() {
           </Link> */}
 
           <div className={styles.heroCard}>
-            <p className={styles.eyebrow}>Help Center</p>
-            <h1>Frequently Asked Questions</h1>
+            <p className={styles.eyebrow}>Frequently Asked Questions</p>
+            {/* <h1>Frequently Asked Questions</h1> */}
             <p className={styles.heroText}>
               Find quick answers about buying, selling, payments, messaging,
               and orders on Decor Encore.

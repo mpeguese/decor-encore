@@ -425,83 +425,115 @@ export default function ListingDetailPage() {
 
       window.setTimeout(() => {
         setPurchaseToast("")
-    }, 3000)
+      }, 3000)
 
-    return
+      return
+    }
+
+    if (!userId) {
+      setPurchaseToast("Please sign in or create an account to purchase this item.")
+
+      window.setTimeout(() => {
+        setPurchaseToast("")
+      }, 3000)
+
+      return
+    }
+
+    if (userId === listing.seller_id) {
+      setPurchaseToast("You cannot purchase your own listing.")
+
+      window.setTimeout(() => {
+        setPurchaseToast("")
+      }, 3000)
+
+      return
+    }
+
+    setBuySubmitting(true)
+
+    const { data: latestListing, error: latestListingError } = await supabase
+      .from("listings")
+      .select("id, status, quantity")
+      .eq("id", listing.id)
+      .single()
+
+    if (latestListingError || !latestListing) {
+      setBuySubmitting(false)
+      setPurchaseToast("This listing is no longer available.")
+
+      window.setTimeout(() => {
+        setPurchaseToast("")
+      }, 3000)
+
+      return
+    }
+
+    if (
+      latestListing.status !== "published" ||
+      Number(latestListing.quantity || 0) <= 0
+    ) {
+      setBuySubmitting(false)
+
+      setListing({
+        ...listing,
+        status: latestListing.status || "sold",
+        quantity: Number(latestListing.quantity || 0),
+      })
+
+      setPurchaseToast(
+        latestListing.status === "sold"
+          ? "This listing has already been sold."
+          : "This listing is no longer available."
+      )
+
+      window.setTimeout(() => {
+        setPurchaseToast("")
+      }, 3000)
+
+      return
+    }
+
+    const subtotal = Number(Number(listing.price || 0).toFixed(2))
+
+    const initialFulfillmentMethod =
+      listing.fulfillment_type === "shipping" ? "shipping" : "pickup"
+
+    const shippingAmount = 0
+    const platformFee = Number((subtotal * 0.08).toFixed(2))
+    const total = Number((subtotal + shippingAmount + platformFee).toFixed(2))
+
+    const { data: order, error } = await supabase
+      .from("orders")
+      .insert({
+        listing_id: listing.id,
+        buyer_id: userId,
+        seller_id: listing.seller_id,
+        status: "pending",
+        subtotal,
+        shipping_amount: shippingAmount,
+        platform_fee: platformFee,
+        total,
+        fulfillment_method: initialFulfillmentMethod,
+        fulfillment_selected_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single()
+
+    setBuySubmitting(false)
+
+    if (error || !order?.id) {
+      setPurchaseToast(error?.message || "Unable to start checkout.")
+
+      window.setTimeout(() => {
+        setPurchaseToast("")
+      }, 3000)
+
+      return
+    }
+
+    router.push(`/checkout/${order.id}`)
   }
-
-  if (!userId) {
-    setPurchaseToast("Please sign in or create an account to purchase this item.")
-
-    window.setTimeout(() => {
-      setPurchaseToast("")
-    }, 3000)
-
-    return
-  }
-
-  if (userId === listing.seller_id) {
-    setPurchaseToast("You cannot purchase your own listing.")
-
-    window.setTimeout(() => {
-      setPurchaseToast("")
-    }, 3000)
-
-    return
-  }
-
-  setBuySubmitting(true)
-
-  // const subtotal = Number(listing.price || 0)
-  // const shipping =
-  //   listing.fulfillment_type === "shipping" ||
-  //   listing.fulfillment_type === "pickup_or_shipping"
-  //     ? Number(listing.shipping_price || 0)
-  //     : 0
-
-  // const platformFee = Math.round(subtotal * 0.08 * 100) / 100
-  // const total = subtotal + shipping + platformFee
-
-  const subtotal = Number(Number(listing.price || 0).toFixed(2))
-
-  const initialFulfillmentMethod =
-    listing.fulfillment_type === "shipping" ? "shipping" : "pickup"
-
-  const shippingAmount = 0
-  const platformFee = Number((subtotal * 0.08).toFixed(2))
-  const total = Number((subtotal + shippingAmount + platformFee).toFixed(2))
-
-  const { data: order, error } = await supabase
-    .from("orders")
-    .insert({
-      listing_id: listing.id,
-      buyer_id: userId,
-      seller_id: listing.seller_id,
-      status: "pending",
-      subtotal,
-      shipping_amount: shippingAmount,
-      platform_fee: platformFee,
-      total,
-      fulfillment_method: initialFulfillmentMethod,
-      fulfillment_selected_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single()
-
-  setBuySubmitting(false)
-
-  if (error || !order?.id) {
-    setPurchaseToast(error?.message || "Unable to start checkout.")
-
-    window.setTimeout(() => {
-      setPurchaseToast("")
-    }, 3000)
-
-    return
-  }
-
-  router.push(`/checkout/${order.id}`)
-}
 
   function openReportSheet() {
     setReportOpen(true)

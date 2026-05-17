@@ -28,6 +28,8 @@ type SellerPayoutAccountRow = {
 
 type ListingRow = {
   id: string
+  status: string
+  quantity: number | null
   fulfillment_type: string
 }
 
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     const { data: listingData, error: listingError } = await supabaseAdmin
       .from("listings")
-      .select("id, fulfillment_type")
+      .select("id, status, quantity, fulfillment_type")
       .eq("id", order.listing_id)
       .single()
 
@@ -150,6 +152,25 @@ export async function POST(request: NextRequest) {
     }
 
     const listing = listingData as ListingRow
+
+    if (listing.status !== "published") {
+      return NextResponse.json(
+        {
+          error:
+            listing.status === "sold"
+              ? "This item has already been sold."
+              : "This listing is no longer available.",
+        },
+        { status: 409 }
+      )
+    }
+
+    if (Number(listing.quantity || 0) <= 0) {
+      return NextResponse.json(
+        { error: "This item is no longer available." },
+        { status: 409 }
+      )
+    }
 
     const pickupAllowed =
       listing.fulfillment_type === "pickup" ||

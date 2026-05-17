@@ -953,7 +953,7 @@ export default function CheckoutPage() {
         <section className={styles.paymentCard}>
           <div>
             <p>Checkout unavailable</p>
-            <h2>This item cannot be purchased yet</h2>
+            <h2>This item cannot be purchased</h2>
             <span>
               Please check back soon or message the seller with questions or to advise you can't purchase their listing.
             </span>
