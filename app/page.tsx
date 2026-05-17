@@ -280,6 +280,7 @@ export default function HomePage() {
         <p>© {new Date().getFullYear()} Decor Encore. All rights reserved.</p>
 
         <div className="de-footer-links">
+          <Link href="/faq">FAQ</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>
         </div>

@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { requireAdmin } from "@/app/lib/admin/requireAdmin"
 import { createAdminSupabaseClient } from "@/app/lib/admin/supabaseAdmin"
+import AdminRevenueCharts from "./AdminRevenueCharts"
 import styles from "./admin.module.css"
 
 type ListingReportRow = {
@@ -53,6 +54,18 @@ type ListingSummaryRow = {
   title: string
 }
 
+type MonthlyRevenuePoint = {
+  month: string
+  grossSales: number
+  platformFees: number
+  refunds: number
+}
+
+type OrderStatusPoint = {
+  name: string
+  value: number
+}
+
 const revenueEligibleStatuses = [
   "paid",
   "confirmed",
@@ -92,7 +105,12 @@ function formatLabel(value: string | null | undefined) {
 }
 
 function formatMoney(value: number | null | undefined) {
-  return `$${Number(value || 0).toFixed(2)}`
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0))
 }
 
 function buildConfirmationNumber(orderId: string) {
@@ -114,6 +132,78 @@ function isRevenueEligibleOrder(order: OrderRow) {
   }
 
   return Boolean(order.stripe_payment_intent_id)
+}
+
+function getMonthKey(value: string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown"
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+}
+
+function formatMonthKey(value: string) {
+  if (value === "Unknown") return "Unknown"
+
+  const [year, month] = value.split("-")
+  const date = new Date(Number(year), Number(month) - 1, 1)
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    year: "2-digit",
+  }).format(date)
+}
+
+function buildMonthlyRevenueData(orders: OrderRow[]) {
+  const monthlyMap = new Map<
+    string,
+    {
+      grossSales: number
+      platformFees: number
+      refunds: number
+    }
+  >()
+
+  orders.forEach((order) => {
+    const monthKey = getMonthKey(order.created_at)
+    const current = monthlyMap.get(monthKey) || {
+      grossSales: 0,
+      platformFees: 0,
+      refunds: 0,
+    }
+
+    monthlyMap.set(monthKey, {
+      grossSales: current.grossSales + Number(order.total || 0),
+      platformFees: current.platformFees + Number(order.platform_fee || 0),
+      refunds: current.refunds + Number(order.refund_amount || 0),
+    })
+  })
+
+  return Array.from(monthlyMap.entries())
+    .sort(([monthA], [monthB]) => monthA.localeCompare(monthB))
+    .slice(-12)
+    .map(([month, values]) => ({
+      month: formatMonthKey(month),
+      grossSales: Number(values.grossSales.toFixed(2)),
+      platformFees: Number(values.platformFees.toFixed(2)),
+      refunds: Number(values.refunds.toFixed(2)),
+    }))
+}
+
+function buildOrderStatusData(orders: OrderRow[]) {
+  const statusMap = new Map<string, number>()
+
+  orders.forEach((order) => {
+    const label = formatLabel(order.status)
+    statusMap.set(label, (statusMap.get(label) || 0) + 1)
+  })
+
+  return Array.from(statusMap.entries())
+    .sort(([, countA], [, countB]) => countB - countA)
+    .slice(0, 6)
+    .map(([name, value]) => ({ name, value }))
 }
 
 export default async function AdminDashboardPage() {
@@ -246,6 +336,13 @@ export default async function AdminDashboardPage() {
 
   const pendingOrderValue = sumMoney(pendingRevenueOrders, (order) => order.total)
 
+  const monthlyRevenueData: MonthlyRevenuePoint[] =
+    buildMonthlyRevenueData(revenueOrders)
+
+  const orderStatusData: OrderStatusPoint[] = buildOrderStatusData(
+    revenueOrdersAll
+  )
+
   const recentReportedListingIds = Array.from(
     new Set(openReports.map((report) => report.listing_id))
   ).slice(0, 6)
@@ -348,61 +445,120 @@ export default async function AdminDashboardPage() {
           </Link>
         </section>
 
-        <section className={styles.adminPanel}>
-          <div className={styles.adminPanelHeader}>
-            <span>Marketplace revenue</span>
-            <strong>{formatMoney(grossSales)}</strong>
+        <section className={styles.adminAnalyticsPanel}>
+          <div className={styles.adminAnalyticsHeader}>
+            <div>
+              <span>Marketplace revenue</span>
+              <h2>{formatMoney(grossSales)}</h2>
+              <p>
+                Gross sales from eligible paid/completed orders. Pending checkout
+                value is tracked separately so it does not inflate recognized
+                sales.
+              </p>
+            </div>
+
+            <Link href="/admin/orders" className={styles.adminAnalyticsLink}>
+              View orders
+            </Link>
           </div>
 
-          <p>
-            First-pass revenue view based on eligible paid/completed order
-            statuses and orders with payment intent data. Pending checkout value
-            is shown separately so it does not inflate recognized sales.
+          <section className={styles.adminRevenueSummaryGrid}>
+            <article className={styles.adminRevenueSummaryCard}>
+              <h3>Sales Breakdown</h3>
+
+              <div className={styles.adminMetricRows}>
+                <div>
+                  <span>Gross sales</span>
+                  <strong>{formatMoney(grossSales)}</strong>
+                </div>
+
+                <div>
+                  <span>Item sales</span>
+                  <strong>{formatMoney(itemSales)}</strong>
+                </div>
+
+                <div>
+                  <span>Shipping collected</span>
+                  <strong>{formatMoney(shippingCollected)}</strong>
+                </div>
+              </div>
+            </article>
+
+            <article
+              className={`${styles.adminRevenueSummaryCard} ${styles.adminRevenueFeaturedCard}`}
+            >
+              <h3>Platform Revenue</h3>
+
+              <div className={styles.adminMetricRows}>
+                <div>
+                  <span>Platform fees</span>
+                  <strong>{formatMoney(platformFees)}</strong>
+                </div>
+
+                <div>
+                  <span>Refunded amount</span>
+                  <strong>{formatMoney(refundedAmount)}</strong>
+                </div>
+
+                <div>
+                  <span>Eligible orders</span>
+                  <strong>{revenueOrders.length}</strong>
+                </div>
+              </div>
+            </article>
+
+            <article className={styles.adminRevenueSummaryCard}>
+              <h3>Order Activity</h3>
+
+              <div className={styles.adminMetricRows}>
+                <div>
+                  <span>Needs review</span>
+                  <strong>{ordersNeedingReview.length}</strong>
+                </div>
+
+                <div>
+                  <span>Pending orders</span>
+                  <strong>{pendingRevenueOrders.length}</strong>
+                </div>
+
+                <div>
+                  <span>Pending value</span>
+                  <strong>{formatMoney(pendingOrderValue)}</strong>
+                </div>
+              </div>
+            </article>
+
+            <article className={styles.adminRevenueSummaryCard}>
+              <h3>Marketplace Health</h3>
+
+              <div className={styles.adminMetricRows}>
+                <div>
+                  <span>Published listings</span>
+                  <strong>{publishedListings.length}</strong>
+                </div>
+
+                <div>
+                  <span>Open reports</span>
+                  <strong>{openReports.length}</strong>
+                </div>
+
+                <div>
+                  <span>Support queue</span>
+                  <strong>{openSupportRequests.length}</strong>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <AdminRevenueCharts
+            monthlyData={monthlyRevenueData}
+            statusData={orderStatusData}
+          />
+
+          <p className={styles.adminRevenueScope}>
+            Showing latest 1,000 orders for revenue calculations. Pending orders
+            are excluded from recognized sales.
           </p>
-
-          <div className={styles.adminRevenueGrid}>
-            <article className={styles.adminRevenueCard}>
-              <span>Gross sales</span>
-              <strong>{formatMoney(grossSales)}</strong>
-              <p>Eligible order total value.</p>
-            </article>
-
-            <article className={styles.adminRevenueCard}>
-              <span>Platform fees</span>
-              <strong>{formatMoney(platformFees)}</strong>
-              <p>Decor Encore fee revenue before refund adjustments.</p>
-            </article>
-
-            <article className={styles.adminRevenueCard}>
-              <span>Item sales</span>
-              <strong>{formatMoney(itemSales)}</strong>
-              <p>Subtotal value of sold decor.</p>
-            </article>
-
-            <article className={styles.adminRevenueCard}>
-              <span>Shipping collected</span>
-              <strong>{formatMoney(shippingCollected)}</strong>
-              <p>Shipping amounts collected through checkout.</p>
-            </article>
-
-            <article className={styles.adminRevenueCard}>
-              <span>Refunded amount</span>
-              <strong>{formatMoney(refundedAmount)}</strong>
-              <p>Total refund amount recorded on eligible orders.</p>
-            </article>
-
-            <article className={styles.adminRevenueCard}>
-              <span>Paid / eligible orders</span>
-              <strong>{revenueOrders.length}</strong>
-              <p>{pendingRevenueOrders.length} pending orders not counted.</p>
-            </article>
-
-            <article className={styles.adminRevenueCard}>
-              <span>Pending checkout value</span>
-              <strong>{formatMoney(pendingOrderValue)}</strong>
-              <p>Pending orders excluded from recognized sales.</p>
-            </article>
-          </div>
         </section>
 
         <section className={styles.adminDashboardGrid}>

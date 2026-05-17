@@ -252,6 +252,11 @@ export default function SellerDashboardPage() {
             label: "Profile",
             href: "/profile",
           },
+          {
+      key: "faq",
+      label: "FAQ",
+      href: "/faq",
+    },
         ]}
       />
     </main>

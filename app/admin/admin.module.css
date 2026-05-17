@@ -9,7 +9,7 @@
 }
 
 .adminShell {
-  width: min(100%, 980px);
+  width: min(100%, 1180px);
   margin: 0 auto;
 }
 
@@ -318,12 +318,6 @@
   line-height: 1.45;
 }
 
-@media (min-width: 720px) {
-  .adminGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 .adminStatGrid {
   margin-top: 16px;
   display: grid;
@@ -623,43 +617,6 @@
   overflow-wrap: anywhere;
 }
 
-@media (min-width: 700px) {
-  .adminStatGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .adminSupportMeta {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .adminSupportParties,
-  .adminMoneyGrid,
-  .adminTwoColumn {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .adminDetailGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  .adminSupportTop,
-  .adminPanelHeader,
-  .adminTimeline article div {
-    display: grid;
-    gap: 8px;
-  }
-
-  .adminPanelHeader strong {
-    text-align: left;
-  }
-
-  .adminSupportTop > strong {
-    justify-self: start;
-  }
-}
-
 .adminImageGrid {
   margin-top: 14px;
   display: grid;
@@ -699,13 +656,6 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-
-@media (min-width: 700px) {
-  .adminImageGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
 
 /* =========================================================
    Admin Action Center
@@ -795,16 +745,6 @@
   margin-top: 16px;
   display: grid;
   gap: 14px;
-}
-
-@media (min-width: 720px) {
-  .adminActionGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .adminDashboardGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* =========================================================
@@ -906,62 +846,369 @@
   gap: 8px;
 }
 
-@media (min-width: 700px) {
-  .adminActionButtonGrid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .adminInlineActions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 /* =========================================================
-   Admin Revenue Dashboard
+   Admin Analytics + Revenue
    ========================================================= */
 
-.adminRevenueGrid {
-  margin-top: 14px;
+.adminAnalyticsPanel {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(135, 186, 171, 0.26), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 233, 243, 0.56));
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  box-shadow: 0 24px 80px rgba(81, 45, 56, 0.12);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+}
+
+.adminAnalyticsHeader {
   display: grid;
-  gap: 10px;
+  gap: 14px;
 }
 
-.adminRevenueCard {
-  min-width: 0;
-  padding: 14px;
-  border-radius: 22px;
-  background: rgba(255, 233, 243, 0.5);
-  border: 1px solid rgba(81, 45, 56, 0.08);
-}
-
-.adminRevenueCard span {
-  color: rgba(81, 45, 56, 0.52);
-  font-size: 10px;
+.adminAnalyticsHeader span,
+.adminRevenueSummaryCard h3,
+.adminChartHeader span {
+  margin: 0;
+  color: rgba(81, 45, 56, 0.54);
+  font-size: 11px;
   font-weight: 950;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
 
-.adminRevenueCard strong {
-  display: block;
-  margin-top: 7px;
+.adminAnalyticsHeader h2 {
+  margin: 8px 0 0;
   color: var(--plum, #512d38);
-  font-size: clamp(24px, 6vw, 34px);
+  font-size: clamp(44px, 11vw, 82px);
+  line-height: 0.88;
+  letter-spacing: -0.085em;
+}
+
+.adminAnalyticsHeader p {
+  max-width: 690px;
+  margin: 12px 0 0;
+  color: rgba(81, 45, 56, 0.66);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.adminAnalyticsLink {
+  min-height: 42px;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--plum, #512d38);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 14px 34px rgba(81, 45, 56, 0.18);
+}
+
+.adminRevenueSummaryGrid {
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.adminRevenueSummaryCard {
+  min-width: 0;
+  padding: 18px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: 0 16px 44px rgba(81, 45, 56, 0.08);
+}
+
+.adminRevenueSummaryCard h3 {
+  margin: 0;
+}
+
+.adminRevenueFeaturedCard {
+  color: #fff;
+  background:
+    radial-gradient(circle at 22% 0%, rgba(244, 191, 219, 0.26), transparent 34%),
+    linear-gradient(145deg, #512d38, #b27092);
+}
+
+.adminRevenueFeaturedCard h3,
+.adminRevenueFeaturedCard .adminMetricRows span,
+.adminRevenueFeaturedCard .adminMetricRows strong {
+  color: #fff;
+}
+
+.adminRevenueFeaturedCard .adminMetricRows div {
+  border-color: rgba(255, 255, 255, 0.18);
+  /* background: rgba(255, 255, 255, 0.12); */
+}
+
+.adminMetricRows {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.adminMetricRows div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  border-bottom: 1px solid rgba(81, 45, 56, 0.08);
+}
+
+.adminMetricRows div:last-child {
+  border-bottom: 0;
+}
+
+.adminMetricRows span {
+  color: rgba(81, 45, 56, 0.64);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.adminMetricRows strong {
+  color: var(--plum, #512d38);
+  font-size: clamp(18px, 4.5vw, 24px);
   line-height: 1;
-  letter-spacing: -0.065em;
+  letter-spacing: -0.05em;
+  text-align: right;
   overflow-wrap: anywhere;
 }
 
-.adminRevenueCard p {
-  margin: 8px 0 0;
-  color: rgba(81, 45, 56, 0.64);
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.35;
+.adminChartGrid {
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
 }
 
+.adminChartCard {
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 54px rgba(81, 45, 56, 0.09);
+}
+
+.adminChartHeader {
+  display: grid;
+  gap: 12px;
+}
+
+.adminChartHeader h3 {
+  margin: 7px 0 0;
+  color: var(--plum, #512d38);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.adminChartKey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adminChartKey span {
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  color: rgba(81, 45, 56, 0.68);
+  background: rgba(255, 233, 243, 0.72);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.adminDonutLayout {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.adminDonutChart,
+.adminBarChart {
+  min-width: 0;
+  width: 100%;
+}
+
+.adminChartLegend {
+  display: grid;
+  gap: 8px;
+}
+
+.adminChartLegend div {
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 0 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 233, 243, 0.56);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+}
+
+.adminChartLegend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.adminChartLegend span {
+  min-width: 0;
+  color: rgba(81, 45, 56, 0.72);
+  font-size: 12px;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adminChartLegend strong {
+  color: var(--plum, #512d38);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.adminChartEmpty {
+  min-height: 220px;
+  margin-top: 14px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: rgba(81, 45, 56, 0.62);
+  background: rgba(255, 233, 243, 0.48);
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.adminRevenueScope {
+  margin: 14px 2px 0;
+  color: rgba(81, 45, 56, 0.56);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
 @media (min-width: 700px) {
-  .adminRevenueGrid {
+  .adminStatGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .adminSupportMeta {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .adminSupportParties,
+  .adminMoneyGrid,
+  .adminTwoColumn {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adminDetailGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .adminImageGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .adminActionButtonGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .adminInlineActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 720px) {
+  .adminGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .adminActionGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .adminDashboardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adminRevenueSummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adminAnalyticsHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+}
+
+@media (min-width: 980px) {
+  .adminRevenueSummaryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .adminChartGrid {
+    grid-template-columns: 0.95fr 1.35fr;
+    align-items: stretch;
+  }
+
+  .adminDonutLayout {
+    grid-template-columns: minmax(220px, 0.95fr) minmax(150px, 0.75fr);
+    align-items: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .adminSupportTop,
+  .adminPanelHeader,
+  .adminTimeline article div {
+    display: grid;
+    gap: 8px;
+  }
+
+  .adminPanelHeader strong {
+    text-align: left;
+  }
+
+  .adminSupportTop > strong {
+    justify-self: start;
+  }
+
+  .adminAnalyticsHeader h2 {
+    font-size: 44px;
+  }
+
+  .adminMetricRows div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding-bottom: 10px;
+  }
+
+  .adminMetricRows strong {
+    text-align: left;
   }
 }

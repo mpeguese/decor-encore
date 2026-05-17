@@ -270,6 +270,11 @@ export default function ProfilePage() {
             label: "Profile",
             href: "/profile",
           },
+          {
+            key: "faq",
+            label: "FAQ",
+            href: "/faq",
+          },
         ]}
       />
     </main>

@@ -15,6 +15,7 @@ type NavKey =
   | "profile"
   | "orders"
   | "support"
+  | "faq"
 
 type AppBottomNavItem = {
   key: NavKey
@@ -52,6 +53,11 @@ const defaultItems: AppBottomNavItem[] = [
     href: "/messages",
   },
   {
+    key: "faq",
+    label: "FAQ",
+    href: "/faq",
+  },
+  {
     key: "profile",
     label: "Profile",
     href: "/profile",
@@ -66,6 +72,7 @@ function hasActivePath(pathname: string, target: NavKey) {
   if (target === "profile") return pathname.startsWith("/profile")
   if (target === "orders") return pathname.startsWith("/orders")
   if (target === "support") return pathname.startsWith("/support")
+  if (target === "faq") return pathname.startsWith("/faq")
   return false
 }
 
