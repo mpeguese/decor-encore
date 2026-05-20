@@ -1212,3 +1212,250 @@
     text-align: left;
   }
 }
+
+
+/* =========================================================
+   Admin Conversation 
+   ========================================================= */
+
+.adminConversationDetails {
+  width: 100%;
+}
+
+.adminConversationDetails summary {
+  list-style: none;
+}
+
+.adminConversationDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.adminConversationSummary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.adminConversationSummary div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.adminConversationSummary span {
+  color: rgba(81, 45, 56, 0.68);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adminConversationSummary strong {
+  color: #512d38;
+  font-size: 1.2rem;
+}
+
+.adminConversationSummary em {
+  border: 1px solid rgba(81, 45, 56, 0.14);
+  border-radius: 999px;
+  color: #512d38;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 800;
+  padding: 0.45rem 0.75rem;
+}
+
+.adminConversationDetails[open] .adminConversationSummary em {
+  color: rgba(81, 45, 56, 0.72);
+}
+
+.adminConversationDetails[open] .adminConversationSummary em::before {
+  content: "Collapse";
+}
+
+.adminConversationDetails[open] .adminConversationSummary em {
+  font-size: 0;
+}
+
+.adminConversationDetails[open] .adminConversationSummary em::before {
+  font-size: 0.8rem;
+}
+
+.adminConversationBody {
+  margin-top: 1rem;
+}
+
+
+/* =========================================================
+   Admin Refund 
+   ========================================================= */
+
+
+.adminRefundBox {
+  margin-top: 1rem;
+  border: 1px solid rgba(150, 54, 72, 0.16);
+  border-radius: 1.25rem;
+  background: rgba(255, 245, 248, 0.78);
+  padding: 1rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.adminRefundBox span {
+  display: block;
+  color: rgba(81, 45, 56, 0.65);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adminRefundBox strong {
+  display: block;
+  color: #512d38;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+}
+
+.adminRefundBox p {
+  color: rgba(81, 45, 56, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0.45rem 0 0;
+}
+
+.adminDangerButton {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7f1d1d, #be123c);
+  color: white;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 900;
+  padding: 0.8rem 1rem;
+  width: fit-content;
+  box-shadow: 0 14px 28px rgba(127, 29, 29, 0.18);
+}
+
+.adminDangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
+}
+
+.adminSuccessText {
+  color: #166534 !important;
+  font-size: 0.85rem !important;
+  font-weight: 800;
+  margin: 0 !important;
+}
+
+.adminErrorText {
+  color: #991b1b !important;
+  font-size: 0.85rem !important;
+  font-weight: 800;
+  margin: 0 !important;
+}
+
+.adminRefundActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.adminPartialRefundDetails {
+  border: 1px solid rgba(81, 45, 56, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.58);
+  overflow: hidden;
+}
+
+.adminPartialRefundDetails summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  list-style: none;
+  padding: 0.85rem 1rem;
+}
+
+.adminPartialRefundDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.adminPartialRefundDetails summary span {
+  color: rgba(81, 45, 56, 0.62);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adminPartialRefundDetails summary strong {
+  color: #512d38;
+  font-size: 0.92rem;
+}
+
+.adminPartialRefundForm {
+  border-top: 1px solid rgba(81, 45, 56, 0.1);
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.adminPartialRefundForm label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.adminPartialRefundForm label span {
+  color: rgba(81, 45, 56, 0.68);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adminPartialRefundForm input,
+.adminPartialRefundForm select,
+.adminPartialRefundForm textarea {
+  width: 100%;
+  border: 1px solid rgba(81, 45, 56, 0.14);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.86);
+  color: #512d38;
+  font: inherit;
+  outline: none;
+  padding: 0.75rem 0.85rem;
+}
+
+.adminPartialRefundForm textarea {
+  resize: vertical;
+}
+
+.adminPartialRefundForm input:focus,
+.adminPartialRefundForm select:focus,
+.adminPartialRefundForm textarea:focus {
+  border-color: rgba(178, 112, 146, 0.62);
+  box-shadow: 0 0 0 4px rgba(178, 112, 146, 0.12);
+}
+
+.adminSecondaryDangerButton {
+  border: 1px solid rgba(190, 18, 60, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 245, 248, 0.92);
+  color: #9f1239;
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 900;
+  padding: 0.75rem 1rem;
+  width: fit-content;
+}
+
+.adminSecondaryDangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}

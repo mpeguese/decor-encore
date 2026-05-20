@@ -75,6 +75,7 @@ const revenueEligibleStatuses = [
   "picked_up",
   "shipped",
   "completed",
+  "partially_refunded"
 ]
 
 const excludedRevenueStatuses = [
@@ -174,9 +175,15 @@ function buildMonthlyRevenueData(orders: OrderRow[]) {
       refunds: 0,
     }
 
+    const revenueEligible = isRevenueEligibleOrder(order)
+
     monthlyMap.set(monthKey, {
-      grossSales: current.grossSales + Number(order.total || 0),
-      platformFees: current.platformFees + Number(order.platform_fee || 0),
+      grossSales: revenueEligible
+        ? current.grossSales + Number(order.total || 0)
+        : current.grossSales,
+      platformFees: revenueEligible
+        ? current.platformFees + Number(order.platform_fee || 0)
+        : current.platformFees,
       refunds: current.refunds + Number(order.refund_amount || 0),
     })
   })
@@ -325,6 +332,10 @@ export default async function AdminDashboardPage() {
     (order) => order.status === "pending"
   )
 
+  const refundedOrders = revenueOrdersAll.filter(
+  (order) => Number(order.refund_amount || 0) > 0
+)
+
   const grossSales = sumMoney(revenueOrders, (order) => order.total)
   const itemSales = sumMoney(revenueOrders, (order) => order.subtotal)
   const platformFees = sumMoney(revenueOrders, (order) => order.platform_fee)
@@ -332,12 +343,12 @@ export default async function AdminDashboardPage() {
     revenueOrders,
     (order) => order.shipping_amount
   )
-  const refundedAmount = sumMoney(revenueOrders, (order) => order.refund_amount)
+  const refundedAmount = sumMoney(refundedOrders, (order) => order.refund_amount)
 
   const pendingOrderValue = sumMoney(pendingRevenueOrders, (order) => order.total)
 
   const monthlyRevenueData: MonthlyRevenuePoint[] =
-    buildMonthlyRevenueData(revenueOrders)
+    buildMonthlyRevenueData(revenueOrdersAll)
 
   const orderStatusData: OrderStatusPoint[] = buildOrderStatusData(
     revenueOrdersAll

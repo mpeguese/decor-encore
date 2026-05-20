@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { requireAdmin } from "@/app/lib/admin/requireAdmin"
 import { createAdminSupabaseClient } from "@/app/lib/admin/supabaseAdmin"
 import styles from "../../admin.module.css"
+import AdminRefundButton from "./AdminRefundButton"
 
 type PageProps = {
   params: Promise<{
@@ -74,6 +75,24 @@ type SupportRequestRow = {
   created_at: string
 }
 
+type ConversationRow = {
+  id: string
+  listing_id: string | null
+  buyer_id: string
+  seller_id: string
+  order_id: string | null
+  created_at: string
+  updated_at: string | null
+}
+
+type MessageRow = {
+  id: string
+  conversation_id: string
+  sender_id: string
+  body: string
+  created_at: string
+}
+
 function formatMoney(value: number | null | undefined) {
   return `$${Number(value || 0).toFixed(2)}`
 }
@@ -104,6 +123,23 @@ function getProfileName(profile: ProfileRow | null | undefined) {
   const name = [profile.first_name, profile.last_name].filter(Boolean).join(" ")
 
   return name || profile.full_name || profile.email || "Unknown"
+}
+
+function getMessageSenderLabel(
+  senderId: string,
+  buyer: ProfileRow | null,
+  seller: ProfileRow | null,
+  order: OrderRow
+) {
+  if (senderId === order.buyer_id) {
+    return `Buyer · ${getProfileName(buyer)}`
+  }
+
+  if (senderId === order.seller_id) {
+    return `Seller · ${getProfileName(seller)}`
+  }
+
+  return "Unknown sender"
 }
 
 function buildConfirmationNumber(orderId: string) {
@@ -182,6 +218,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
     { data: sellerData },
     { data: eventData },
     { data: supportData },
+    { data: conversationData },
   ] = await Promise.all([
     order.listing_id
       ? supabase
@@ -190,26 +227,46 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
           .eq("id", order.listing_id)
           .single()
       : Promise.resolve({ data: null }),
+
     supabase
       .from("profiles")
       .select("id, first_name, last_name, full_name, email")
       .eq("id", order.buyer_id)
       .maybeSingle(),
+
     supabase
       .from("profiles")
       .select("id, first_name, last_name, full_name, email")
       .eq("id", order.seller_id)
       .maybeSingle(),
+
     supabase
       .from("order_events")
       .select("id, order_id, event_type, note, created_at")
       .eq("order_id", order.id)
       .order("created_at", { ascending: true }),
+
     supabase
       .from("order_support_requests")
       .select("id, order_id, requester_id, issue_type, status, message, created_at")
       .eq("order_id", order.id)
       .order("created_at", { ascending: false }),
+
+    order.listing_id
+      ? supabase
+          .from("conversations")
+          .select("id, listing_id, buyer_id, seller_id, order_id, created_at, updated_at")
+          .or(
+            `order_id.eq.${order.id},and(listing_id.eq.${order.listing_id},buyer_id.eq.${order.buyer_id},seller_id.eq.${order.seller_id})`
+          )
+          .order("created_at", { ascending: false })
+          .limit(1)
+      : supabase
+          .from("conversations")
+          .select("id, listing_id, buyer_id, seller_id, order_id, created_at, updated_at")
+          .eq("order_id", order.id)
+          .order("created_at", { ascending: false })
+          .limit(1),
   ])
 
   const listing = (listingData || null) as ListingRow | null
@@ -217,11 +274,23 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
   const seller = (sellerData || null) as ProfileRow | null
   const events = (eventData || []) as OrderEventRow[]
   const supportRequests = (supportData || []) as SupportRequestRow[]
+  const conversations = (conversationData || []) as ConversationRow[]
+  const conversation = conversations[0] || null
   const shipToLines = buildShipToLines(order)
 
   const selectedService = [order.shipping_carrier, order.shipping_service]
     .filter(Boolean)
     .join(" ")
+
+  const { data: messageData } = conversation
+  ? await supabase
+      .from("messages")
+      .select("id, conversation_id, sender_id, body, created_at")
+      .eq("conversation_id", conversation.id)
+      .order("created_at", { ascending: true })
+  : { data: [] }
+
+const messages = (messageData || []) as MessageRow[]
 
   return (
     <main className={styles.adminPage}>
@@ -311,6 +380,20 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
                 <strong>{formatMoney(order.refund_amount)}</strong>
               </div>
             </div>
+
+            <AdminRefundButton
+              orderId={order.id}
+              total={Number(order.total || 0)}
+              refundStatus={order.refund_status}
+              stripeRefundId={order.stripe_refund_id}
+              disabled={
+                !order.stripe_payment_intent_id ||
+                order.status === "refunded" ||
+                order.status === "cancelled" ||
+                order.refund_status === "succeeded"
+                //Boolean(order.stripe_refund_id)
+              }
+            />
           </article>
 
           <article className={styles.adminPanel}>
@@ -353,6 +436,39 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
               ))}
             </div>
           )}
+        </section>
+
+        <section className={styles.adminPanel}>
+          <details className={styles.adminConversationDetails}>
+            <summary className={styles.adminConversationSummary}>
+              <div>
+                <span>Order conversation</span>
+                <strong>{messages.length} Messages</strong>
+              </div>
+
+              <em>Expand</em>
+            </summary>
+
+            <div className={styles.adminConversationBody}>
+              {!conversation ? (
+                <p>No buyer-seller conversation found for this order.</p>
+              ) : messages.length === 0 ? (
+                <p>This conversation exists, but no messages have been sent yet.</p>
+              ) : (
+                <div className={styles.adminMiniList}>
+                  {messages.map((message) => (
+                    <article key={message.id}>
+                      <span>
+                        {getMessageSenderLabel(message.sender_id, buyer, seller, order)}
+                      </span>
+                      <strong>{formatDateTime(message.created_at)}</strong>
+                      <p>{message.body}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
         </section>
 
         <section className={styles.adminPanel}>
