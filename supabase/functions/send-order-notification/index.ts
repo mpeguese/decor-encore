@@ -5,6 +5,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1"
 
+type RecipientRole = "buyer" | "seller"
+
 type OrderEventRecord = {
   id: string
   order_id: string
@@ -27,6 +29,10 @@ type OrderRow = {
   buyer_id: string
   seller_id: string
   status: string
+  refund_status: string | null
+  refund_amount: number | null
+  stripe_refund_id: string | null
+  refunded_at: string | null
   subtotal: number | null
   shipping_amount: number | null
   platform_fee: number | null
@@ -45,6 +51,19 @@ type ProfileRow = {
 type ListingRow = {
   id: string
   title: string
+}
+
+type EmailContent = {
+  subject: string
+  preview: string
+  heading: string
+  eyebrow: string
+  body: string
+  ctaText: string
+  ctaPath: string
+  detailTotalLabel: string
+  detailTotalValue: string
+  footerNote: string
 }
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || ""
@@ -71,6 +90,15 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   })
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+}
+
 function getProfileName(profile: ProfileRow | null) {
   if (!profile) return "there"
 
@@ -88,13 +116,12 @@ function buildConfirmationNumber(orderId: string) {
   return `DE-${clean.slice(0, 4)}-${clean.slice(-6)}`
 }
 
-function getNotificationTarget(eventType: string) {
+function getNotificationTargets(eventType: string): RecipientRole[] {
   const buyerEvents = new Set([
     "seller_confirmed",
     "pickup_delivery_arranged",
     "seller_marked_shipped",
     "order_cancelled",
-    "refund_processed",
   ])
 
   const sellerEvents = new Set([
@@ -104,10 +131,16 @@ function getNotificationTarget(eventType: string) {
     "cancellation_requested",
   ])
 
-  if (buyerEvents.has(eventType)) return "buyer"
-  if (sellerEvents.has(eventType)) return "seller"
+  const bothEvents = new Set([
+    "refund_processed",
+    "partial_refund_processed",
+  ])
 
-  return ""
+  if (bothEvents.has(eventType)) return ["buyer", "seller"]
+  if (buyerEvents.has(eventType)) return ["buyer"]
+  if (sellerEvents.has(eventType)) return ["seller"]
+
+  return []
 }
 
 function getEmailContent({
@@ -123,24 +156,32 @@ function getEmailContent({
   listing: ListingRow | null
   buyer: ProfileRow | null
   seller: ProfileRow | null
-  recipientRole: "buyer" | "seller"
-}) {
+  recipientRole: RecipientRole
+}): EmailContent {
   const listingTitle = listing?.title || "your Decor Encore order"
   const confirmationNumber = buildConfirmationNumber(order.id)
   const buyerName = getProfileName(buyer)
   const sellerName = getProfileName(seller)
   const orderTotal = formatMoney(order.total)
-
+  const refundAmount = formatMoney(order.refund_amount)
   const basePreview = `Order ${confirmationNumber} · ${listingTitle}`
 
-  if (event.event_type === "mock_payment_completed" || event.event_type === "payment_received") {
+  if (
+    event.event_type === "mock_payment_completed" ||
+    event.event_type === "payment_received"
+  ) {
     return {
       subject: `New sale on Decor Encore: ${listingTitle}`,
       preview: basePreview,
+      eyebrow: "Order update",
       heading: "You made a sale",
       body: `Great news — ${buyerName} purchased "${listingTitle}" for ${orderTotal}. Open your sales page to confirm the order and coordinate fulfillment.`,
       ctaText: "View sale",
       ctaPath: `/seller/orders/${order.id}`,
+      detailTotalLabel: "Total",
+      detailTotalValue: orderTotal,
+      footerNote:
+        "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
     }
   }
 
@@ -148,10 +189,15 @@ function getEmailContent({
     return {
       subject: `Your Decor Encore order was confirmed`,
       preview: basePreview,
+      eyebrow: "Order update",
       heading: "Your order was confirmed",
       body: `${sellerName} confirmed your order for "${listingTitle}". You can now coordinate pickup or delivery in Decor Encore messages.`,
       ctaText: "View order",
       ctaPath: `/orders/${order.id}/confirmation`,
+      detailTotalLabel: "Total",
+      detailTotalValue: orderTotal,
+      footerNote:
+        "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
     }
   }
 
@@ -159,10 +205,15 @@ function getEmailContent({
     return {
       subject: `Pickup or delivery was arranged`,
       preview: basePreview,
+      eyebrow: "Order update",
       heading: "Fulfillment details were arranged",
       body: `Pickup or delivery details were marked arranged for "${listingTitle}". Check your order timeline and messages for details.`,
       ctaText: "View order",
       ctaPath: `/orders/${order.id}/confirmation`,
+      detailTotalLabel: "Total",
+      detailTotalValue: orderTotal,
+      footerNote:
+        "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
     }
   }
 
@@ -170,10 +221,15 @@ function getEmailContent({
     return {
       subject: `Your Decor Encore order is on the way`,
       preview: basePreview,
+      eyebrow: "Order update",
       heading: "Your order is on the way",
       body: `${sellerName} marked "${listingTitle}" as shipped. Check your order timeline and messages for fulfillment updates.`,
       ctaText: "View order",
       ctaPath: `/orders/${order.id}/confirmation`,
+      detailTotalLabel: "Total",
+      detailTotalValue: orderTotal,
+      footerNote:
+        "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
     }
   }
 
@@ -181,10 +237,15 @@ function getEmailContent({
     return {
       subject: `Buyer confirmed receipt`,
       preview: basePreview,
+      eyebrow: "Order update",
       heading: "The buyer confirmed receipt",
       body: `${buyerName} confirmed that "${listingTitle}" was received. This order is now marked complete.`,
       ctaText: "View sale",
       ctaPath: `/seller/orders/${order.id}`,
+      detailTotalLabel: "Total",
+      detailTotalValue: orderTotal,
+      footerNote:
+        "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
     }
   }
 
@@ -192,10 +253,15 @@ function getEmailContent({
     return {
       subject: `Cancellation requested for ${listingTitle}`,
       preview: basePreview,
+      eyebrow: "Order update",
       heading: "Buyer requested cancellation",
       body: `${buyerName} requested cancellation for "${listingTitle}". Review the order, message the buyer, or cancel the order if it cannot be fulfilled.`,
       ctaText: "View sale",
       ctaPath: `/seller/orders/${order.id}`,
+      detailTotalLabel: "Total",
+      detailTotalValue: orderTotal,
+      footerNote:
+        "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
     }
   }
 
@@ -203,10 +269,79 @@ function getEmailContent({
     return {
       subject: `Your Decor Encore order was cancelled`,
       preview: basePreview,
+      eyebrow: "Order update",
       heading: "Order cancelled",
       body: `Your order for "${listingTitle}" was cancelled. If payment was already made, refund handling may require Decor Encore support review.`,
       ctaText: "View order",
       ctaPath: `/orders/${order.id}/confirmation`,
+      detailTotalLabel: "Total",
+      detailTotalValue: orderTotal,
+      footerNote:
+        "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
+    }
+  }
+
+  if (event.event_type === "refund_processed") {
+    if (recipientRole === "buyer") {
+      return {
+        subject: `Your Decor Encore refund has been issued`,
+        preview: `${basePreview} · Refund ${refundAmount}`,
+        eyebrow: "Refund update",
+        heading: "Your refund was issued",
+        body: `We issued a full refund for "${listingTitle}" in the amount of ${refundAmount}. The refund has been submitted back to your original payment method. Your bank or card issuer may take a few business days to show the funds on your statement.`,
+        ctaText: "View order",
+        ctaPath: `/orders/${order.id}/confirmation`,
+        detailTotalLabel: "Refund amount",
+        detailTotalValue: refundAmount,
+        footerNote:
+          "Refund timing depends on your bank or card issuer. Decor Encore keeps order, payment, and support details together so issues can be reviewed clearly.",
+      }
+    }
+
+    return {
+      subject: `A refund was issued for a Decor Encore order`,
+      preview: `${basePreview} · Refund ${refundAmount}`,
+      eyebrow: "Refund update",
+      heading: "A refund was issued",
+      body: `A full refund was issued for "${listingTitle}" in the amount of ${refundAmount}. Because the buyer was refunded, the seller payout or transfer connected to this order may be reversed or reduced by Stripe. You can review the order details from your seller account.`,
+      ctaText: "View sale",
+      ctaPath: `/seller/orders/${order.id}`,
+      detailTotalLabel: "Refund amount",
+      detailTotalValue: refundAmount,
+      footerNote:
+        "Refunds are handled through Stripe. Depending on the original payment structure, the related payout or transfer may be reversed or adjusted.",
+    }
+  }
+
+  if (event.event_type === "partial_refund_processed") {
+    if (recipientRole === "buyer") {
+      return {
+        subject: `A partial refund was issued for your Decor Encore order`,
+        preview: `${basePreview} · Refund ${refundAmount}`,
+        eyebrow: "Refund update",
+        heading: "A partial refund was issued",
+        body: `We issued a partial refund for "${listingTitle}". The total refunded amount recorded for this order is ${refundAmount}. The refund has been submitted back to your original payment method. Your bank or card issuer may take a few business days to show the funds on your statement.`,
+        ctaText: "View order",
+        ctaPath: `/orders/${order.id}/confirmation`,
+        detailTotalLabel: "Refund amount",
+        detailTotalValue: refundAmount,
+        footerNote:
+          "Refund timing depends on your bank or card issuer. Decor Encore keeps order, payment, and support details together so issues can be reviewed clearly.",
+      }
+    }
+
+    return {
+      subject: `A partial refund was issued for a Decor Encore order`,
+      preview: `${basePreview} · Refund ${refundAmount}`,
+      eyebrow: "Refund update",
+      heading: "A partial refund was issued",
+      body: `A partial refund was issued for "${listingTitle}". The total refunded amount recorded for this order is ${refundAmount}. This may reduce the payout associated with the order based on the refunded amount. You can review the order details from your seller account.`,
+      ctaText: "View sale",
+      ctaPath: `/seller/orders/${order.id}`,
+      detailTotalLabel: "Refund amount",
+      detailTotalValue: refundAmount,
+      footerNote:
+        "Refunds are handled through Stripe. Depending on the original payment structure, the related payout or transfer may be reversed or adjusted.",
     }
   }
 
@@ -216,6 +351,7 @@ function getEmailContent({
         ? `Update on your Decor Encore sale`
         : `Update on your Decor Encore order`,
     preview: basePreview,
+    eyebrow: "Order update",
     heading: "Order update",
     body:
       event.note ||
@@ -225,26 +361,47 @@ function getEmailContent({
       recipientRole === "seller"
         ? `/seller/orders/${order.id}`
         : `/orders/${order.id}/confirmation`,
+    detailTotalLabel: "Total",
+    detailTotalValue: orderTotal,
+    footerNote:
+      "Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.",
   }
 }
 
 function buildEmailHtml({
+  eyebrow,
   heading,
   body,
   ctaText,
   ctaUrl,
   confirmationNumber,
   listingTitle,
-  orderTotal,
+  detailTotalLabel,
+  detailTotalValue,
+  footerNote,
 }: {
+  eyebrow: string
   heading: string
   body: string
   ctaText: string
   ctaUrl: string
   confirmationNumber: string
   listingTitle: string
-  orderTotal: string
+  detailTotalLabel: string
+  detailTotalValue: string
+  footerNote: string
 }) {
+  const safeEyebrow = escapeHtml(eyebrow)
+  const safeHeading = escapeHtml(heading)
+  const safeBody = escapeHtml(body)
+  const safeCtaText = escapeHtml(ctaText)
+  const safeCtaUrl = escapeHtml(ctaUrl)
+  const safeConfirmationNumber = escapeHtml(confirmationNumber)
+  const safeListingTitle = escapeHtml(listingTitle)
+  const safeDetailTotalLabel = escapeHtml(detailTotalLabel)
+  const safeDetailTotalValue = escapeHtml(detailTotalValue)
+  const safeFooterNote = escapeHtml(footerNote)
+
   return `
 <!doctype html>
 <html>
@@ -267,14 +424,14 @@ function buildEmailHtml({
 
             <tr>
               <td style="padding:8px 24px 4px;">
-                <p style="margin:0;color:#b27092;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;">Order update</p>
-                <h1 style="margin:8px 0 0;font-size:34px;line-height:0.96;letter-spacing:-0.06em;color:#512d38;">${heading}</h1>
+                <p style="margin:0;color:#b27092;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;">${safeEyebrow}</p>
+                <h1 style="margin:8px 0 0;font-size:34px;line-height:0.96;letter-spacing:-0.06em;color:#512d38;">${safeHeading}</h1>
               </td>
             </tr>
 
             <tr>
               <td style="padding:12px 24px 4px;">
-                <p style="margin:0;color:rgba(81,45,56,0.72);font-size:15px;line-height:1.5;font-weight:700;">${body}</p>
+                <p style="margin:0;color:rgba(81,45,56,0.72);font-size:15px;line-height:1.5;font-weight:700;">${safeBody}</p>
               </td>
             </tr>
 
@@ -283,15 +440,15 @@ function buildEmailHtml({
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid rgba(81,45,56,0.12);border-bottom:1px solid rgba(81,45,56,0.12);padding:12px 0;">
                   <tr>
                     <td style="padding:8px 0;color:rgba(81,45,56,0.56);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;">Confirmation</td>
-                    <td align="right" style="padding:8px 0;color:#512d38;font-size:13px;font-weight:900;">${confirmationNumber}</td>
+                    <td align="right" style="padding:8px 0;color:#512d38;font-size:13px;font-weight:900;">${safeConfirmationNumber}</td>
                   </tr>
                   <tr>
                     <td style="padding:8px 0;color:rgba(81,45,56,0.56);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;">Item</td>
-                    <td align="right" style="padding:8px 0;color:#512d38;font-size:13px;font-weight:900;">${listingTitle}</td>
+                    <td align="right" style="padding:8px 0;color:#512d38;font-size:13px;font-weight:900;">${safeListingTitle}</td>
                   </tr>
                   <tr>
-                    <td style="padding:8px 0;color:rgba(81,45,56,0.56);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;">Total</td>
-                    <td align="right" style="padding:8px 0;color:#512d38;font-size:16px;font-weight:900;">${orderTotal}</td>
+                    <td style="padding:8px 0;color:rgba(81,45,56,0.56);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;">${safeDetailTotalLabel}</td>
+                    <td align="right" style="padding:8px 0;color:#512d38;font-size:16px;font-weight:900;">${safeDetailTotalValue}</td>
                   </tr>
                 </table>
               </td>
@@ -302,8 +459,8 @@ function buildEmailHtml({
                 <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;">
                   <tr>
                     <td align="center" bgcolor="#512d38" style="border-radius:999px;background:#512d38;box-shadow:0 16px 34px rgba(81,45,56,0.22);">
-                      <a href="${ctaUrl}" style="display:block;padding:16px 26px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:900;line-height:1;letter-spacing:-0.01em;border-radius:999px;">
-                        ${ctaText}
+                      <a href="${safeCtaUrl}" style="display:block;padding:16px 26px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:900;line-height:1;letter-spacing:-0.01em;border-radius:999px;">
+                        ${safeCtaText}
                       </a>
                     </td>
                   </tr>
@@ -314,7 +471,7 @@ function buildEmailHtml({
             <tr>
               <td style="padding:16px 24px;background:rgba(255,233,243,0.56);">
                 <p style="margin:0;color:rgba(81,45,56,0.56);font-size:12px;line-height:1.45;font-weight:700;">
-                  Decor Encore helps once-loved event decor live again. If you did not expect this email, you can ignore it.
+                  ${safeFooterNote}
                 </p>
               </td>
             </tr>
@@ -332,14 +489,16 @@ function buildEmailText({
   ctaUrl,
   confirmationNumber,
   listingTitle,
-  orderTotal,
+  detailTotalLabel,
+  detailTotalValue,
 }: {
   heading: string
   body: string
   ctaUrl: string
   confirmationNumber: string
   listingTitle: string
-  orderTotal: string
+  detailTotalLabel: string
+  detailTotalValue: string
 }) {
   return `${heading}
 
@@ -347,11 +506,94 @@ ${body}
 
 Confirmation: ${confirmationNumber}
 Item: ${listingTitle}
-Total: ${orderTotal}
+${detailTotalLabel}: ${detailTotalValue}
 
 View in Decor Encore:
 ${ctaUrl}
 `
+}
+
+async function sendEmail({
+  event,
+  recipientRole,
+  recipientEmail,
+  content,
+  ctaUrl,
+  confirmationNumber,
+  listingTitle,
+}: {
+  event: OrderEventRecord
+  recipientRole: RecipientRole
+  recipientEmail: string
+  content: EmailContent
+  ctaUrl: string
+  confirmationNumber: string
+  listingTitle: string
+}) {
+  const html = buildEmailHtml({
+    eyebrow: content.eyebrow,
+    heading: content.heading,
+    body: content.body,
+    ctaText: content.ctaText,
+    ctaUrl,
+    confirmationNumber,
+    listingTitle,
+    detailTotalLabel: content.detailTotalLabel,
+    detailTotalValue: content.detailTotalValue,
+    footerNote: content.footerNote,
+  })
+
+  const text = buildEmailText({
+    heading: content.heading,
+    body: content.body,
+    ctaUrl,
+    confirmationNumber,
+    listingTitle,
+    detailTotalLabel: content.detailTotalLabel,
+    detailTotalValue: content.detailTotalValue,
+  })
+
+  const resendResponse = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: RESEND_FROM_EMAIL,
+      to: [recipientEmail],
+      subject: content.subject,
+      html,
+      text,
+      headers: {
+        "X-Entity-Ref-ID": `${event.id}-${recipientRole}`,
+      },
+    }),
+  })
+
+  const resendPayload = await resendResponse.json().catch(() => null)
+
+  if (!resendResponse.ok) {
+    console.error("Resend error", {
+      event_id: event.id,
+      event_type: event.event_type,
+      recipient_role: recipientRole,
+      resend: resendPayload,
+    })
+
+    return {
+      ok: false,
+      recipient_role: recipientRole,
+      error: "Resend send failed.",
+      details: resendPayload,
+    }
+  }
+
+  return {
+    ok: true,
+    recipient_role: recipientRole,
+    resend: resendPayload,
+  }
 }
 
 serve(async (request) => {
@@ -391,9 +633,9 @@ serve(async (request) => {
       return jsonResponse({ error: "Invalid webhook payload." }, 400)
     }
 
-    const recipientRole = getNotificationTarget(event.event_type)
+    const recipientRoles = getNotificationTargets(event.event_type)
 
-    if (!recipientRole) {
+    if (recipientRoles.length === 0) {
       return jsonResponse({
         ok: true,
         skipped: true,
@@ -404,7 +646,7 @@ serve(async (request) => {
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select(
-        "id, listing_id, buyer_id, seller_id, status, subtotal, shipping_amount, platform_fee, total, created_at"
+        "id, listing_id, buyer_id, seller_id, status, refund_status, refund_amount, stripe_refund_id, refunded_at, subtotal, shipping_amount, platform_fee, total, created_at"
       )
       .eq("id", event.order_id)
       .single()
@@ -441,94 +683,68 @@ serve(async (request) => {
     const typedBuyer = (buyer || null) as ProfileRow | null
     const typedSeller = (seller || null) as ProfileRow | null
 
-    const recipientProfile = recipientRole === "buyer" ? typedBuyer : typedSeller
-    const recipientEmail = recipientProfile?.email || ""
-
-    if (!recipientEmail) {
-      return jsonResponse({
-        ok: true,
-        skipped: true,
-        reason: `No email found for ${recipientRole}.`,
-      })
-    }
-
     const siteUrl =
       Deno.env.get("SITE_URL") ||
       Deno.env.get("NEXT_PUBLIC_SITE_URL") ||
       "https://decor-encore.com"
 
-    const content = getEmailContent({
-      event,
-      order: typedOrder,
-      listing: typedListing,
-      buyer: typedBuyer,
-      seller: typedSeller,
-      recipientRole,
-    })
-
     const listingTitle = typedListing?.title || "Decor Encore order"
     const confirmationNumber = buildConfirmationNumber(typedOrder.id)
-    const orderTotal = formatMoney(typedOrder.total)
-    const ctaUrl = `${siteUrl}${content.ctaPath}`
 
-    const html = buildEmailHtml({
-      heading: content.heading,
-      body: content.body,
-      ctaText: content.ctaText,
-      ctaUrl,
-      confirmationNumber,
-      listingTitle,
-      orderTotal,
-    })
+    const results = []
 
-    const text = buildEmailText({
-      heading: content.heading,
-      body: content.body,
-      ctaUrl,
-      confirmationNumber,
-      listingTitle,
-      orderTotal,
-    })
+    for (const recipientRole of recipientRoles) {
+      const recipientProfile =
+        recipientRole === "buyer" ? typedBuyer : typedSeller
+      const recipientEmail = recipientProfile?.email || ""
 
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM_EMAIL,
-        to: [recipientEmail],
-        subject: content.subject,
-        html,
-        text,
-        headers: {
-          "X-Entity-Ref-ID": event.id,
-        },
-      }),
-    })
+      if (!recipientEmail) {
+        results.push({
+          ok: true,
+          skipped: true,
+          recipient_role: recipientRole,
+          reason: `No email found for ${recipientRole}.`,
+        })
 
-    const resendPayload = await resendResponse.json().catch(() => null)
+        continue
+      }
 
-    if (!resendResponse.ok) {
-      console.error("Resend error", resendPayload)
+      const content = getEmailContent({
+        event,
+        order: typedOrder,
+        listing: typedListing,
+        buyer: typedBuyer,
+        seller: typedSeller,
+        recipientRole,
+      })
 
-      return jsonResponse(
-        {
-          error: "Resend send failed.",
-          details: resendPayload,
-        },
-        502
-      )
+      const ctaUrl = `${siteUrl}${content.ctaPath}`
+
+      const result = await sendEmail({
+        event,
+        recipientRole,
+        recipientEmail,
+        content,
+        ctaUrl,
+        confirmationNumber,
+        listingTitle,
+      })
+
+      results.push(result)
     }
 
-    return jsonResponse({
-      ok: true,
-      event_id: event.id,
-      event_type: event.event_type,
-      recipient_role: recipientRole,
-      resend: resendPayload,
-    })
+    const hasFailure = results.some((result) => result.ok === false)
+
+    return jsonResponse(
+      {
+        ok: !hasFailure,
+        event_id: event.id,
+        event_type: event.event_type,
+        recipient_roles: recipientRoles,
+        results,
+      },
+      hasFailure ? 502 : 200
+    )
   } catch (error) {
     console.error(error)
 

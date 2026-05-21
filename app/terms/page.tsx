@@ -29,7 +29,11 @@ export default function TermsPage() {
           </p>
 
           <p>
-            These Terms incorporate our <Link href="/seller-policy">Seller Policy</Link>, <Link href="/prohibited-items">Prohibited Items Policy</Link>, <Link href="/payments">Payments Policy</Link>, and <Link href="/privacy">Privacy Policy</Link>, where applicable.
+            These Terms incorporate our{" "}
+            <Link href="/seller-policy">Seller Policy</Link>,{" "}
+            <Link href="/prohibited-items">Prohibited Items Policy</Link>,{" "}
+            <Link href="/payments">Payments Policy</Link>, and{" "}
+            <Link href="/privacy">Privacy Policy</Link>, where applicable.
           </p>
 
           <p>
@@ -100,6 +104,14 @@ export default function TermsPage() {
             are available.
           </p>
 
+          <p>
+            Buyers are responsible for asking questions before checkout if an
+            item’s condition, size, color, quantity, pickup details, shipping
+            details, or included pieces are unclear. Buyer change-of-mind,
+            failure to review listing details, missed pickup arrangements, or
+            incomplete communication may affect refund eligibility.
+          </p>
+
           <h2>5. Seller Responsibilities</h2>
           <p>
             Sellers are responsible for every listing they create. Listings must
@@ -113,6 +125,14 @@ export default function TermsPage() {
             shipping details, item condition, quantity, measurements, included
             pieces, and any limitations or defects. Sellers must promptly update
             or remove listings that are no longer available.
+          </p>
+
+          <p>
+            If a seller cannot fulfill an order, if an item is unavailable, or if
+            an item is materially different from the listing, Decor Encore may
+            review the order and may issue a full or partial refund to the buyer.
+            Any seller payout, transfer, or pending payout associated with that
+            order may be reversed, reduced, delayed, or adjusted.
           </p>
 
           <h2>6. Listings and Photos</h2>
@@ -157,6 +177,13 @@ export default function TermsPage() {
             make Decor Encore a party to the transaction.
           </p>
 
+          <p>
+            Decor Encore may, in its discretion, review order records,
+            communications, payment records, support requests, and marketplace
+            activity to assist with disputes, cancellations, refunds, account
+            actions, or policy enforcement.
+          </p>
+
           <h2>9. Keeping Transactions on Decor Encore</h2>
           <p>
             To protect users and the integrity of the marketplace, users may not
@@ -170,6 +197,12 @@ export default function TermsPage() {
             exchange contact information for the purpose of avoiding platform
             processes, or otherwise bypass Decor Encore may result in listing
             removal, account restrictions, suspension, or termination.
+          </p>
+
+          <p>
+            Off-platform communication or payment may limit Decor Encore’s
+            ability to verify what happened, assist with an order issue, review a
+            refund request, or protect either party.
           </p>
 
           <h2>10. Payments and Fees</h2>
@@ -187,6 +220,32 @@ export default function TermsPage() {
             terms.
           </p>
 
+          <p>
+            Decor Encore may charge or collect platform fees to support secure
+            checkout, marketplace tools, seller features, order tracking,
+            support, trust and safety, and platform operations. Platform fees may
+            be refunded when Decor Encore determines that a seller, item,
+            fulfillment, or order-related issue caused the refund. Platform fees
+            are not automatically refunded for buyer-caused issues, buyer
+            change-of-mind situations, missed pickup arrangements, or courtesy
+            adjustments unless Decor Encore approves otherwise.
+          </p>
+
+          <p>
+            If a refund is issued, any seller payout, transfer, or pending payout
+            connected to the order may be reversed, reduced, delayed, or adjusted
+            by Stripe or another payment provider based on the refund amount,
+            payment structure, and provider rules.
+          </p>
+
+          <p>
+            Payment processing fees, card network fees, bank fees, or other
+            third-party charges may not be returned by the payment provider when
+            a refund is issued. Decor Encore may treat those costs as operating
+            costs, may account for them in its policies, or may handle them as
+            required by applicable law.
+          </p>
+
           <h2>11. Pickup, Shipping, and Fulfillment</h2>
           <p>
             Sellers are responsible for accurately describing fulfillment options
@@ -196,16 +255,18 @@ export default function TermsPage() {
           </p>
 
           <p>
-            Shipping rates shown at checkout are based on information provided by 
-            the seller, buyer shipping information, package details, and third-party 
-            carrier or shipping-rate providers. Rates may be estimates and may differ 
-            from the final cost a seller pays when purchasing postage or shipping an item.
+            Shipping rates shown at checkout are based on information provided by
+            the seller, buyer shipping information, package details, and
+            third-party carrier or shipping-rate providers. Rates may be
+            estimates and may differ from the final cost a seller pays when
+            purchasing postage or shipping an item.
           </p>
 
           <p>
-            Sellers are responsible for properly packing shipped items, purchasing or arranging 
-            shipment, using the selected or reasonably comparable shipping service, and providing 
-            truthful fulfillment updates.
+            Sellers are responsible for properly packing shipped items,
+            purchasing or arranging shipment, using the selected or reasonably
+            comparable shipping service, and providing truthful fulfillment
+            updates.
           </p>
 
           <p>
@@ -215,18 +276,88 @@ export default function TermsPage() {
             users.
           </p>
 
+          <p>
+            Fulfillment issues may affect refund eligibility. If an order cannot
+            be completed because an item is unavailable, the seller cannot
+            fulfill the order, an item is materially not as described, or another
+            seller or fulfillment issue occurs, Decor Encore may review the order
+            and may issue a full or partial refund.
+          </p>
+
           <h2>12. Returns, Refunds, and Disputes</h2>
           <p>
             Unless otherwise stated by the seller or required by applicable law,
             sales may be final. Refunds, returns, cancellations, and exchanges
-            are primarily handled between buyers and sellers.
+            are not automatic and may depend on the listing, seller activity,
+            buyer activity, payment status, communication history, support
+            requests, and Decor Encore’s review.
+          </p>
+
+          <p>
+            Decor Encore may review and process refunds or payment adjustments
+            when an order cannot be completed as expected, when an item is
+            unavailable, when a seller is unable to fulfill an order, when an
+            item is materially not as described, when fulfillment fails, or when
+            Decor Encore determines that a refund or adjustment is appropriate
+            based on the order circumstances.
+          </p>
+
+          <p>
+            Refunds may be full or partial. Partial refunds may be issued when
+            only part of an order is affected, when an agreed adjustment is
+            appropriate, or when Decor Encore determines that a full refund is
+            not required. Refunds are generally returned to the buyer’s original
+            payment method. The timing of a refund depends on the buyer’s payment
+            provider, bank, card issuer, or other financial institution.
+          </p>
+
+          <p>
+            Buyer change-of-mind requests, missed pickup arrangements, failure to
+            review listing details, failure to ask questions before purchase, or
+            other buyer-caused issues are not automatically eligible for a refund
+            and may be reviewed at Decor Encore’s discretion.
+          </p>
+
+          <p>
+            If a refund is issued, any seller payout, transfer, or pending payout
+            associated with the order may be reversed, reduced, delayed, or
+            adjusted. Platform fees may be refunded when Decor Encore determines
+            that the seller, item, fulfillment process, or order issue caused the
+            refund. Platform fees are not automatically refunded for buyer-caused
+            issues or courtesy adjustments unless Decor Encore approves
+            otherwise.
+          </p>
+
+          <p>
+            Refunds do not automatically relist an item. A refunded item may
+            remain marked as sold unless the seller or Decor Encore determines
+            that the item is available and appropriate to list again. This helps
+            prevent unavailable, damaged, disputed, or incorrectly fulfilled
+            items from being returned to the marketplace automatically.
+          </p>
+
+          <p>
+            To support fair review, buyers and sellers should keep order
+            communication, payment, fulfillment coordination, and support
+            requests inside Decor Encore. Off-platform communications or
+            transactions may limit Decor Encore’s ability to review or resolve a
+            dispute.
           </p>
 
           <p>
             Decor Encore may choose to assist with disputes, investigate user
-            behavior, review platform records, restrict accounts, or reverse
-            certain platform actions, but we are not obligated to resolve
-            disputes or guarantee any outcome.
+            behavior, review platform records, restrict accounts, process or deny
+            refunds, reverse or adjust certain platform actions, or take other
+            steps we believe are appropriate. We are not obligated to resolve
+            disputes, issue refunds, or guarantee any outcome unless required by
+            applicable law.
+          </p>
+
+          <p>
+            Decor Encore reserves the right to approve, deny, modify, or reverse
+            refund requests based on order records, messages, payment status,
+            seller activity, buyer activity, support requests, listing details,
+            platform policies, and applicable law.
           </p>
 
           <h2>13. Messaging and Communication</h2>
@@ -240,7 +371,8 @@ export default function TermsPage() {
           <p>
             We may review, moderate, restrict, or retain communications where
             permitted by law and necessary for safety, enforcement, support,
-            fraud prevention, or platform operation.
+            fraud prevention, refund review, dispute review, or platform
+            operation.
           </p>
 
           <h2>14. User Content</h2>
@@ -365,7 +497,7 @@ export default function TermsPage() {
           <h2>26. Contact</h2>
           <p>
             Questions about these Terms may be sent to:{" "}
-            <strong>info@decor-ecore.com</strong>
+            <strong>info@decor-encore.com</strong>
           </p>
         </div>
       </section>

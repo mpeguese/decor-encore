@@ -117,6 +117,13 @@ const faqs: FAQItem[] = [
     answer:
       "Yes. Sellers can manage listings from their account. If an item is no longer available, you should pause or remove it so buyers do not try to purchase something you can no longer fulfill.",
   },
+  {
+    id: "seller-responsibility-for-accurate-listings",
+    category: "Selling",
+    question: "What are sellers responsible for?",
+    answer:
+      "Sellers are responsible for keeping listings accurate, available, and fulfillable. If an item is unavailable, materially different from the listing, or cannot be fulfilled as agreed, Decor Encore may review the order and may issue a full or partial refund to the buyer.",
+  },
 
   {
     id: "how-payments-work",
@@ -145,6 +152,41 @@ const faqs: FAQItem[] = [
     question: "Does Decor Encore charge a platform fee?",
     answer:
       "Decor Encore may apply a platform fee to support secure checkout, marketplace tools, order tracking, seller features, and customer support. Any applicable costs should be reviewed during the checkout or seller flow.",
+  },
+  {
+    id: "refund-policy",
+    category: "Payments",
+    question: "What is Decor Encore’s refund policy?",
+    answer:
+      "Decor Encore reviews refund requests based on the order details, listing accuracy, seller fulfillment, buyer communication, and any support request submitted through the platform. If an order cannot be completed because of a seller issue, item availability problem, or another order-related issue, Decor Encore may issue a full or partial refund to the buyer’s original payment method. Refunds are not automatic for buyer change-of-mind situations, missed pickup arrangements, or issues caused by incomplete communication. These situations are reviewed case by case.",
+  },
+  {
+    id: "how-long-refund-takes",
+    category: "Payments",
+    question: "How long does a refund take?",
+    answer:
+      "Once Decor Encore issues a refund, it is submitted back to the buyer’s original payment method. The time it takes to appear depends on the buyer’s bank or card issuer and may take a few business days.",
+  },
+  {
+    id: "partial-refunds",
+    category: "Payments",
+    question: "Can partial refunds be issued?",
+    answer:
+      "Yes. Decor Encore may issue a partial refund when only part of an order is affected, when support approves an adjustment, or when a full refund is not required based on the order details. Partial refunds are reviewed case by case and are tied to the order record.",
+  },
+  {
+    id: "seller-payout-after-refund",
+    category: "Payments",
+    question: "What happens to the seller payout if a refund is issued?",
+    answer:
+      "If a buyer is refunded, the seller payout or transfer connected to that order may be reversed, reduced, delayed, or adjusted by Stripe based on the refund amount and payment structure. For full refunds, the seller payout may be fully reversed. For partial refunds, the seller payout may be reduced based on the refunded amount.",
+  },
+  {
+    id: "platform-fee-refunds",
+    category: "Payments",
+    question: "Are platform fees refunded?",
+    answer:
+      "Platform fees may be refunded when Decor Encore determines that a seller, item, fulfillment, or order issue caused the refund. Platform fees are not automatically refunded for buyer-caused issues, buyer change-of-mind situations, missed pickup arrangements, or courtesy adjustments unless Decor Encore approves otherwise.",
   },
 
   {
@@ -195,14 +237,28 @@ const faqs: FAQItem[] = [
     category: "Orders",
     question: "What if I have a problem with an order?",
     answer:
-      "If there is an issue with an order, use the order help area from your account. Keeping the order, payment, and messages inside Decor Encore gives support the clearest view of what happened.",
+      "If there is an issue with an order, use the order help area from your account. Keeping the order, payment, and messages inside Decor Encore gives support the clearest view of what happened and helps both buyers and sellers resolve issues more confidently.",
   },
   {
     id: "how-order-tracking-works",
     category: "Orders",
     question: "How does order tracking work?",
     answer:
-      "Decor Encore keeps a timeline of important order updates, such as when an order is placed, accepted, ready for pickup, picked up, completed, or canceled. This helps both buyers and sellers understand where the order stands.",
+      "Decor Encore keeps a timeline of important order updates, such as when an order is placed, accepted, ready for pickup, picked up, completed, canceled, or refunded. This helps both buyers and sellers understand where the order stands.",
+  },
+  {
+    id: "does-refund-relist-item",
+    category: "Orders",
+    question: "Does a refunded item automatically go back for sale?",
+    answer:
+      "No. A refund does not automatically relist an item. The listing remains sold unless the seller or Decor Encore determines that the item is still available and appropriate to list again. This helps prevent unavailable, damaged, or disputed items from returning to the marketplace accidentally.",
+  },
+  {
+    id: "why-keep-order-details-inside-platform",
+    category: "Orders",
+    question: "Why should order details stay inside Decor Encore?",
+    answer:
+      "Keeping order communication, support requests, payment records, and fulfillment updates inside Decor Encore gives support the clearest view of what happened if a problem comes up. Off-platform communication or payment can make it harder to review an issue fairly.",
   },
 ];
 
@@ -278,7 +334,7 @@ export default function FAQPage() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 className={styles.searchInput}
-                placeholder="Search payments, pickup, selling, messages..."
+                placeholder="Search payments, refunds, pickup, selling, messages..."
                 aria-label="Search frequently asked questions"
               />
 
@@ -416,8 +472,8 @@ export default function FAQPage() {
                 <p className={styles.emptyIcon}>⌕</p>
                 <h2>No answers found</h2>
                 <p>
-                  Try searching for another word like “payment,” “pickup,”
-                  “seller,” “messages,” or “order.”
+                  Try searching for another word like “payment,” “refund,”
+                  “pickup,” “seller,” “messages,” or “order.”
                 </p>
                 <button
                   type="button"
