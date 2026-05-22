@@ -3,6 +3,7 @@ import Link from "next/link"
 import { requireAdmin } from "@/app/lib/admin/requireAdmin"
 import { createAdminSupabaseClient } from "@/app/lib/admin/supabaseAdmin"
 import AdminRevenueCharts from "./AdminRevenueCharts"
+import AdminUserGrowthChart from "./AdminUsersGrowthChart"
 import styles from "./admin.module.css"
 
 type ListingReportRow = {
@@ -64,6 +65,19 @@ type MonthlyRevenuePoint = {
 type OrderStatusPoint = {
   name: string
   value: number
+}
+
+type UserSignupMetrics = {
+  total_users?: number
+  signed_up_30_days?: number
+  signed_up_60_days?: number
+  signed_up_90_days?: number
+  signed_up_ytd?: number
+}
+
+type UserGrowthPoint = {
+  label: string
+  users: number
 }
 
 const revenueEligibleStatuses = [
@@ -245,6 +259,7 @@ export default async function AdminDashboardPage() {
     { data: orderData },
     { data: listingData },
     { data: revenueOrderData },
+    { data: userSignupMetricData, error: userSignupMetricError },
   ] = await Promise.all([
     supabase
       .from("listing_reports")
@@ -279,6 +294,8 @@ export default async function AdminDashboardPage() {
       )
       .order("created_at", { ascending: false })
       .limit(1000),
+
+    supabase.rpc("admin_user_signup_metrics"),
   ])
 
   const reports = (reportData || []) as ListingReportRow[]
@@ -286,6 +303,39 @@ export default async function AdminDashboardPage() {
   const orders = (orderData || []) as OrderRow[]
   const listings = (listingData || []) as ListingRow[]
   const revenueOrdersAll = (revenueOrderData || []) as OrderRow[]
+
+  if (userSignupMetricError) {
+    console.error("admin_user_signup_metrics error:", userSignupMetricError)
+  }
+
+  const rawUserMetrics = (userSignupMetricData || {}) as UserSignupMetrics
+
+  const userMetrics = {
+    totalUsers: Number(rawUserMetrics.total_users || 0),
+    signedUp30Days: Number(rawUserMetrics.signed_up_30_days || 0),
+    signedUp60Days: Number(rawUserMetrics.signed_up_60_days || 0),
+    signedUp90Days: Number(rawUserMetrics.signed_up_90_days || 0),
+    signedUpYtd: Number(rawUserMetrics.signed_up_ytd || 0),
+  }
+
+  const userGrowthData: UserGrowthPoint[] = [
+    {
+      label: "30 Days",
+      users: userMetrics.signedUp30Days,
+    },
+    {
+      label: "60 Days",
+      users: userMetrics.signedUp60Days,
+    },
+    {
+      label: "90 Days",
+      users: userMetrics.signedUp90Days,
+    },
+    {
+      label: "YTD",
+      users: userMetrics.signedUpYtd,
+    },
+  ]
 
   const openReports = reports.filter((report) =>
     ["open", "in_review"].includes(report.status)
@@ -392,8 +442,8 @@ export default async function AdminDashboardPage() {
           <p>Internal dashboard</p>
           <h1>Action center</h1>
           <span>
-            Review reports, support requests, order issues, revenue, and
-            marketplace moderation work that may need admin attention.
+            Review reports, support requests, order issues, revenue, user growth,
+            and marketplace moderation work that may need admin attention.
           </span>
         </section>
 
@@ -560,6 +610,11 @@ export default async function AdminDashboardPage() {
               </div>
             </article>
           </section>
+
+          <AdminUserGrowthChart
+            totalUsers={userMetrics.totalUsers}
+            data={userGrowthData}
+          />
 
           <AdminRevenueCharts
             monthlyData={monthlyRevenueData}
