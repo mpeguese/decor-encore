@@ -90,7 +90,36 @@ export default function PrivacyPage() {
             policies, prevent fraud, and improve safety.
           </p>
 
-          <h2>7. Payment Information</h2>
+          <h2>7. SMS/Text Message Alerts</h2>
+          <p>
+            If you provide your phone number and choose to opt in to SMS/text
+            message alerts, we may use your phone number to send messages related
+            to your account, listings, purchases, sales, unread messages, pickup
+            or delivery updates, order status, security, support, and other
+            important marketplace activity.
+          </p>
+
+          <p>
+            SMS/text message frequency varies based on your account activity and
+            marketplace activity. Message and data rates may apply. You may opt
+            out of SMS/text message alerts at any time by replying STOP. You may
+            reply HELP for help.
+          </p>
+
+          <p>
+            We may store information related to your SMS/text message consent,
+            including your phone number, opt-in status, opt-in date and time,
+            opt-in source, consent language shown to you, and opt-out date and
+            time, where applicable.
+          </p>
+
+          <p>
+            Decor Encore does not sell or share SMS opt-in consent, SMS consent
+            records, or mobile phone numbers with third parties or affiliates for
+            their marketing or promotional purposes.
+          </p>
+
+          <h2>8. Payment Information</h2>
           <p>
             If payment features are introduced, payment information may be
             collected and processed by third-party payment providers such as
@@ -104,7 +133,7 @@ export default function PrivacyPage() {
             servers.
           </p>
 
-          <h2>8. Device, Usage, and Technical Information</h2>
+          <h2>9. Device, Usage, and Technical Information</h2>
           <p>
             We may collect technical information such as IP address, browser
             type, device type, operating system, referring pages, pages viewed,
@@ -112,7 +141,7 @@ export default function PrivacyPage() {
             crash data, and performance data.
           </p>
 
-          <h2>9. Cookies and Similar Technologies</h2>
+          <h2>10. Cookies and Similar Technologies</h2>
           <p>
             Decor Encore may use cookies, local storage, pixels, analytics tools,
             and similar technologies to keep users signed in, remember
@@ -120,7 +149,7 @@ export default function PrivacyPage() {
             prevent fraud, and support marketing or analytics.
           </p>
 
-          <h2>10. How We Use Information</h2>
+          <h2>11. How We Use Information</h2>
           <p>We may use information to:</p>
           <ul>
             <li>Operate, maintain, and improve Decor Encore</li>
@@ -133,11 +162,11 @@ export default function PrivacyPage() {
             <li>Enforce our Terms and policies</li>
             <li>Analyze platform performance and user behavior</li>
             <li>Develop new features and services</li>
-            <li>Send service updates, notices, and transactional messages</li>
+            <li>Send service updates, notices, transactional messages, and SMS/text message alerts when you have opted in</li>
             <li>Comply with legal obligations</li>
           </ul>
 
-          <h2>11. How Information Is Shared</h2>
+          <h2>12. How Information Is Shared</h2>
           <p>
             We may share information with other users when necessary to operate
             the marketplace. For example, listing details are visible to buyers,
@@ -154,13 +183,21 @@ export default function PrivacyPage() {
           </p>
 
           <p>
+            We may share limited information with SMS/text messaging service
+            providers only as needed to send, manage, deliver, monitor, or
+            support messages that you have opted in to receive. These providers
+            are not permitted to use SMS opt-in consent or mobile phone numbers
+            for their own marketing or promotional purposes.
+          </p>
+
+          <p>
             We may share shipping-related information with shipping-rate, carrier, 
             logistics, or tracking providers, such as Shippo, USPS, UPS, FedEx, or 
             similar providers, to calculate rates, support shipping, provide tracking, 
             or resolve fulfillment issues.
           </p>
 
-          <h2>12. Legal and Safety Sharing</h2>
+          <h2>13. Legal and Safety Sharing</h2>
           <p>
             We may disclose information if we believe it is reasonably necessary
             to comply with law, legal process, or government requests; enforce
@@ -169,7 +206,7 @@ export default function PrivacyPage() {
             disputes.
           </p>
 
-          <h2>13. Business Transfers</h2>
+          <h2>14. Business Transfers</h2>
           <p>
             If Decor Encore is involved in a merger, acquisition, financing,
             reorganization, sale of assets, or similar transaction, information
@@ -177,7 +214,7 @@ export default function PrivacyPage() {
             law.
           </p>
 
-          <h2>14. Data Retention</h2>
+          <h2>15. Data Retention</h2>
           <p>
             We retain information for as long as reasonably necessary to operate
             the platform, provide services, comply with legal obligations,
@@ -191,14 +228,14 @@ export default function PrivacyPage() {
             records even after account deletion.
           </p>
 
-          <h2>15. Security</h2>
+          <h2>16. Security</h2>
           <p>
             We use reasonable administrative, technical, and organizational
             measures to protect information. However, no system is completely
             secure, and we cannot guarantee absolute security of information.
           </p>
 
-          <h2>16. Your Choices</h2>
+          <h2>17. Your Choices</h2>
           <p>
             You may update certain profile information through your account. You
             may also contact us to request account deletion or ask questions
@@ -211,27 +248,27 @@ export default function PrivacyPage() {
             ZIP code.
           </p>
 
-          <h2>17. Marketing Communications</h2>
+          <h2>18. Marketing Communications</h2>
           <p>
             If Decor Encore sends marketing communications, you may opt out where
             required by law. Transactional, account, safety, legal, or service
             messages may still be sent even if you opt out of marketing.
           </p>
 
-          <h2>18. Children’s Privacy</h2>
+          <h2>19. Children’s Privacy</h2>
           <p>
             Decor Encore is not intended for children under 13. We do not
             knowingly collect personal information from children under 13.
           </p>
 
-          <h2>19. State Privacy Rights</h2>
+          <h2>20. State Privacy Rights</h2>
           <p>
             Depending on your location, you may have rights to access, correct,
             delete, or request information about certain personal data. We will
             respond to requests as required by applicable law.
           </p>
 
-          <h2>20. International Users</h2>
+          <h2>21. International Users</h2>
           <p>
             Decor Encore is operated from the United States. If you access the
             platform from outside the United States, you understand that your
@@ -239,7 +276,7 @@ export default function PrivacyPage() {
             where our providers operate.
           </p>
 
-          <h2>21. Changes to This Policy</h2>
+          <h2>22. Changes to This Policy</h2>
           <p>
             We may update this Privacy Policy from time to time. If we make
             material changes, we may provide notice through the platform or by
@@ -247,7 +284,7 @@ export default function PrivacyPage() {
             updated policy becomes effective means you accept the updated policy.
           </p>
 
-          <h2>22. Contact</h2>
+          <h2>23. Contact</h2>
           <p>
             Questions about this Privacy Policy may be sent to:{" "}
             <strong>info@decor-encore.com</strong>

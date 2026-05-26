@@ -375,7 +375,38 @@ export default function TermsPage() {
             operation.
           </p>
 
-          <h2>14. User Content</h2>
+          <h2>14. SMS/Text Message Communications</h2>
+          <p>
+            If you choose to provide your phone number and opt in to SMS/text
+            message alerts, Decor Encore may send you text messages related to
+            your account, listings, purchases, sales, unread messages, pickup or
+            delivery updates, order status, security, support, and other
+            important marketplace activity.
+          </p>
+
+          <p>
+            SMS/text message frequency varies based on your account activity and
+            marketplace activity. Message and data rates may apply. Consent to
+            receive SMS/text messages is not required to buy or sell on Decor
+            Encore.
+          </p>
+
+          <p>
+            You may opt out of SMS/text message alerts at any time by replying
+            STOP to a message. You may reply HELP for help. After opting out, you
+            may still receive non-SMS communications through Decor Encore, such
+            as in-app messages, emails, account notices, order updates, or other
+            communications permitted by law.
+          </p>
+
+          <p>
+            By opting in, you confirm that you are the account holder or
+            authorized user of the phone number provided and that you agree to
+            receive SMS/text messages from Decor Encore as described in these
+            Terms and our Privacy Policy.
+          </p>
+
+          <h2>15. User Content</h2>
           <p>
             You retain ownership of content you submit, including listing
             descriptions, photos, profile content, messages, and other materials.
@@ -392,7 +423,7 @@ export default function TermsPage() {
             the rights of others.
           </p>
 
-          <h2>15. Decor Encore Intellectual Property</h2>
+          <h2>16. Decor Encore Intellectual Property</h2>
           <p>
             Decor Encore owns or licenses the platform, brand, design, software,
             logos, trade names, text, graphics, interfaces, and other materials
@@ -401,21 +432,21 @@ export default function TermsPage() {
             the platform without permission.
           </p>
 
-          <h2>16. Privacy</h2>
+          <h2>17. Privacy</h2>
           <p>
             Our Privacy Policy explains how we collect, use, store, and share
             information. By using Decor Encore, you agree that we may collect and
             process information as described in the Privacy Policy.
           </p>
 
-          <h2>17. Platform Availability</h2>
+          <h2>18. Platform Availability</h2>
           <p>
             We may update, change, suspend, discontinue, or limit any part of the
             platform at any time. We do not guarantee that the platform will be
             uninterrupted, secure, error-free, or available at all times.
           </p>
 
-          <h2>18. Enforcement</h2>
+          <h2>19. Enforcement</h2>
           <p>
             We may investigate suspected violations and take action at our sole
             discretion. Actions may include warning users, removing listings,
@@ -429,7 +460,7 @@ export default function TermsPage() {
             to do so to protect users, the marketplace, and Decor Encore.
           </p>
 
-          <h2>19. Account Suspension or Termination</h2>
+          <h2>20. Account Suspension or Termination</h2>
           <p>
             We may suspend or terminate your account if we believe you violated
             these Terms, created risk for the platform, harmed another user,
@@ -441,7 +472,7 @@ export default function TermsPage() {
             You may not create a new account to bypass suspension or termination.
           </p>
 
-          <h2>20. Disclaimers</h2>
+          <h2>21. Disclaimers</h2>
           <p>
             Decor Encore is provided “as is” and “as available.” To the fullest
             extent permitted by law, we disclaim all warranties, express or
@@ -450,7 +481,7 @@ export default function TermsPage() {
             and reliability.
           </p>
 
-          <h2>21. Limitation of Liability</h2>
+          <h2>22. Limitation of Liability</h2>
           <p>
             To the fullest extent permitted by law, Decor Encore and its owners,
             employees, contractors, affiliates, and partners will not be liable
@@ -461,7 +492,7 @@ export default function TermsPage() {
             or platform use.
           </p>
 
-          <h2>22. Indemnification</h2>
+          <h2>23. Indemnification</h2>
           <p>
             You agree to defend, indemnify, and hold harmless Decor Encore and
             its owners, employees, contractors, affiliates, and partners from any
@@ -471,13 +502,13 @@ export default function TermsPage() {
             these Terms, or your violation of any law or third-party rights.
           </p>
 
-          <h2>23. Governing Law</h2>
+          <h2>24. Governing Law</h2>
           <p>
             These Terms are governed by the laws of the State of Florida, without
             regard to conflict of law principles.
           </p>
 
-          <h2>24. Dispute Resolution</h2>
+          <h2>25. Dispute Resolution</h2>
           <p>
             Before filing a legal claim, you agree to first contact Decor Encore
             and attempt to resolve the dispute informally. If a dispute cannot be
@@ -486,7 +517,7 @@ export default function TermsPage() {
             process applies.
           </p>
 
-          <h2>25. Changes to These Terms</h2>
+          <h2>26. Changes to These Terms</h2>
           <p>
             We may update these Terms from time to time. If we make material
             changes, we may provide notice through the platform or by other
@@ -494,7 +525,7 @@ export default function TermsPage() {
             become effective means you accept the updated Terms.
           </p>
 
-          <h2>26. Contact</h2>
+          <h2>27. Contact</h2>
           <p>
             Questions about these Terms may be sent to:{" "}
             <strong>info@decor-encore.com</strong>

@@ -175,6 +175,8 @@ export default function MessagesClient() {
   const [error, setError] = useState("")
   const [viewMode, setViewMode] = useState<ViewMode>("list")
 
+  const [showMessagingGuidelines, setShowMessagingGuidelines] = useState(false)
+
   const selectedConversation =
     conversations.find((conversation) => conversation.id === selectedConversationId) ||
     null
@@ -234,28 +236,58 @@ export default function MessagesClient() {
       }
 
       const nextConversations = (data || []) as unknown as ConversationRow[]
-      setConversations(nextConversations)
 
       const conversationIds = nextConversations.map((conversation) => conversation.id)
 
+      let visibleConversations = nextConversations
+
       if (conversationIds.length > 0) {
-        const { data: unreadRows } = await supabase
+        const { data: messagePresenceRows } = await supabase
           .from("messages")
           .select("conversation_id")
           .in("conversation_id", conversationIds)
-          .neq("sender_id", user.id)
-          .is("read_at", null)
 
-        const unreadMap: Record<string, boolean> = {}
+        const conversationIdsWithMessages = new Set(
+          ((messagePresenceRows || []) as { conversation_id: string }[]).map(
+            (message) => message.conversation_id
+          )
+        )
 
-        ;((unreadRows || []) as { conversation_id: string }[]).forEach((row) => {
-          unreadMap[row.conversation_id] = true
+        visibleConversations = nextConversations.filter((conversation) => {
+          const hasMessages = conversationIdsWithMessages.has(conversation.id)
+          const isSelectedFromUrl = conversation.id === conversationIdFromUrl
+
+          return hasMessages || isSelectedFromUrl
         })
 
-        if (mounted) {
-          setUnreadByConversation(unreadMap)
+        setConversations(visibleConversations)
+
+        const visibleConversationIds = visibleConversations.map(
+          (conversation) => conversation.id
+        )
+
+        if (visibleConversationIds.length > 0) {
+          const { data: unreadRows } = await supabase
+            .from("messages")
+            .select("conversation_id")
+            .in("conversation_id", visibleConversationIds)
+            .neq("sender_id", user.id)
+            .is("read_at", null)
+
+          const unreadMap: Record<string, boolean> = {}
+
+          ;((unreadRows || []) as { conversation_id: string }[]).forEach((row) => {
+            unreadMap[row.conversation_id] = true
+          })
+
+          if (mounted) {
+            setUnreadByConversation(unreadMap)
+          }
+        } else {
+          setUnreadByConversation({})
         }
       } else {
+        setConversations([])
         setUnreadByConversation({})
       }
 
@@ -366,6 +398,21 @@ export default function MessagesClient() {
     }
     }, [selectedConversationId, supabase, userId])
 
+  useEffect(() => {
+    const hasSeenGuidelines = window.localStorage.getItem(
+      "decor-encore:messaging-guidelines-seen"
+    )
+
+    if (!hasSeenGuidelines) {
+      setShowMessagingGuidelines(true)
+    }
+  }, [])
+
+  function acknowledgeMessagingGuidelines() {
+    window.localStorage.setItem("decor-encore:messaging-guidelines-seen", "true")
+    setShowMessagingGuidelines(false)
+  }
+
   function getOtherUserId(conversation: ConversationRow) {
     return conversation.buyer_id === userId
       ? conversation.seller_id
@@ -406,8 +453,8 @@ if (
   containsOffPlatformContact(combinedMessageText)
 ) {
   setError(
-    "Please keep communication and payment inside Decor Encore. Contact details and off-platform payment references are not allowed."
-  )
+  "Please keep contact details and payment inside Decor Encore. You can still coordinate pickup here — share pickup times, address details, arrival notes, and meeting instructions directly in this chat."
+)
   return
 }
 
@@ -594,7 +641,7 @@ if (
                   })
                 ) : (
                   <div className={styles.threadState}>
-                    Send the first message.
+                    Send the first message to start the conversation.
                   </div>
                 )}
               </div>
@@ -614,7 +661,7 @@ if (
                       setError("")
                     }
                   }}
-                  placeholder="Write a message..."
+                  placeholder="Coordinate pickup, timing, or question listing details..."
                   aria-label="Message"
                 />
 
@@ -651,6 +698,51 @@ if (
             },
           ]}
         />
+
+        {showMessagingGuidelines ? (
+        <div className={styles.guidelinesOverlay} role="dialog" aria-modal="true">
+          <div className={styles.guidelinesModal}>
+            <span className={styles.guidelinesBadge}>Messaging safety</span>
+
+            <h2>Keep conversations protected</h2>
+
+            <p>
+              To help protect buyers and sellers, please keep communication and
+              payment inside Decor Encore.
+            </p>
+
+            <div className={styles.guidelinesGrid}>
+              <div>
+                <h3>You can use messages to:</h3>
+                <ul>
+                  <li>Ask questions about the listing</li>
+                  <li>Coordinate pickup or delivery details</li>
+                  <li>Share pickup times, addresses, and arrival notes</li>
+                  <li>Discuss item condition, quantity, or availability</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3>Please do not share:</h3>
+                <ul>
+                  <li>Phone numbers</li>
+                  <li>Email addresses</li>
+                  <li>Social media handles</li>
+                  <li>Off-platform payment apps like CashApp, Zelle or Venmo</li>
+                </ul>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className={styles.guidelinesButton}
+              onClick={acknowledgeMessagingGuidelines}
+            >
+              I understand
+            </button>
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }

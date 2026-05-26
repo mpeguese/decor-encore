@@ -822,3 +822,199 @@
     color: var(--plum);
   }
 }
+
+/* Onboarding-specific auth layout
+   Keeps login/create layout untouched while centering the onboarding card. */
+
+.onboardingPage .authShell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 16px;
+}
+
+.onboardingPage .authCard {
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 470px);
+  margin: 18px auto;
+}
+
+.onboardingPage .authCopy {
+  padding-bottom: 10px;
+}
+
+.onboardingPage .authCopy h1 {
+  font-size: clamp(44px, 11vw, 64px);
+}
+
+.onboardingPage .authForm {
+  gap: 10px;
+}
+
+/* SMS opt-in
+   Styled to feel like the form fields instead of a separate heavy tile. */
+
+.smsConsentBox {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+
+  margin-top: 2px;
+  padding: 12px 14px;
+
+  border-radius: 20px;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  box-shadow: 0 14px 34px rgba(81, 45, 56, 0.08);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  cursor: pointer;
+}
+
+.smsConsentBox input {
+  appearance: none;
+  width: 21px;
+  height: 21px;
+  margin: 2px 0 0;
+
+  border-radius: 7px;
+  border: 1.5px solid rgba(81, 45, 56, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1px 2px rgba(81, 45, 56, 0.08),
+    0 8px 18px rgba(81, 45, 56, 0.08);
+
+  cursor: pointer;
+}
+
+.smsConsentBox input:checked {
+  border-color: var(--plum);
+  background:
+    linear-gradient(135deg, var(--plum), #7b4257);
+  box-shadow: 0 10px 22px rgba(81, 45, 56, 0.18);
+}
+
+.smsConsentBox input:checked::after {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 10px;
+  margin: 3px auto 0;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.smsConsentBox input:focus-visible {
+  outline: 3px solid rgba(244, 191, 219, 0.5);
+  outline-offset: 2px;
+}
+
+.smsConsentBox span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.smsConsentBox strong {
+  color: var(--plum);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.smsConsentCopy {
+  margin: 0;
+  color: rgba(81, 45, 56, 0.68);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.42;
+}
+
+.smsConsentBox a {
+  color: var(--plum);
+  font-weight: 950;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.onboardingLegalText {
+  margin: 0;
+  padding: 0 10px;
+
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0 8px 24px rgba(81, 45, 56, 0.5);
+}
+
+.onboardingLegalText a {
+  color: #fff;
+  font-weight: 950;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (min-width: 760px) {
+  .onboardingPage .authShell {
+    grid-template-rows: auto minmax(0, 1fr);
+    padding: 24px;
+  }
+
+  .onboardingPage .authCard {
+    align-self: center;
+  }
+
+  .smsConsentBox {
+    background: rgba(255, 255, 255, 0.68);
+    border-color: rgba(81, 45, 56, 0.08);
+  }
+
+  .onboardingLegalText {
+    color: rgba(81, 45, 56, 0.68);
+    text-shadow: none;
+  }
+
+  .onboardingLegalText a {
+    color: var(--plum);
+  }
+}
+
+@media (max-width: 390px) {
+  .onboardingPage .authShell {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .onboardingPage .authCard {
+    margin: 14px auto;
+  }
+
+  .onboardingPage .authCopy h1 {
+    font-size: 42px;
+  }
+
+  .smsConsentBox {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 9px;
+    padding: 11px 12px;
+    border-radius: 18px;
+  }
+
+  .smsConsentBox input {
+    width: 20px;
+    height: 20px;
+  }
+
+  .smsConsentCopy,
+  .onboardingLegalText {
+    font-size: 11px;
+  }
+}

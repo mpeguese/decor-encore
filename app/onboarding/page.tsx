@@ -9,11 +9,42 @@ import styles from "@/app/auth-flow.module.css"
 
 type Intent = "shop" | "sell" | "both"
 
+const SMS_CONSENT_VERSION = "decor-encore-sms-consent-v1"
+
+const SMS_CONSENT_TEXT =
+  "I agree to receive SMS/text message alerts from Decor Encore about my account, listings, purchases, sales, unread messages, pickup or delivery updates, order status, and other important marketplace activity. Message frequency varies. Message and data rates may apply. Reply STOP to opt out and HELP for help. Consent is not required to buy or sell on Decor Encore."
+
 function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/).filter(Boolean)
   const first = parts.shift() || ""
   const last = parts.join(" ")
   return { first, last }
+}
+
+function getDigits(value: string) {
+  return value.replace(/\D/g, "")
+}
+
+function formatPhoneNumber(value: string) {
+  const digits = getDigits(value).slice(0, 10)
+
+  if (digits.length <= 3) {
+    return digits
+  }
+
+  if (digits.length <= 6) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  }
+
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
+function normalizePhoneNumber(value: string) {
+  return getDigits(value).slice(0, 10)
+}
+
+function formatZipCode(value: string) {
+  return getDigits(value).slice(0, 5)
 }
 
 export default function OnboardingPage() {
@@ -27,6 +58,9 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState("")
   const [zipCode, setZipCode] = useState("")
   const [intent, setIntent] = useState<Intent>("shop")
+  const [smsOptIn, setSmsOptIn] = useState(false)
+  const [smsOptInAt, setSmsOptInAt] = useState<string | null>(null)
+  const [profileHadSmsOptIn, setProfileHadSmsOptIn] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
@@ -53,18 +87,34 @@ export default function OnboardingPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name, last_name, full_name, phone, zip_code, can_sell")
+        .select(
+          `
+          first_name,
+          last_name,
+          full_name,
+          phone,
+          zip_code,
+          can_sell,
+          sms_opt_in,
+          sms_opt_in_at
+        `
+        )
         .eq("id", user.id)
         .single()
 
       if (!mounted) return
 
+      const existingSmsOptIn = Boolean(profile?.sms_opt_in)
+
       const fallbackName = splitName(profile?.full_name || "")
       setFirstName(profile?.first_name || fallbackName.first)
       setLastName(profile?.last_name || fallbackName.last)
-      setPhone(profile?.phone || "")
+      setPhone(formatPhoneNumber(profile?.phone || ""))
       setZipCode(profile?.zip_code || "")
       setIntent(profile?.can_sell ? "both" : "shop")
+      setSmsOptIn(existingSmsOptIn)
+      setProfileHadSmsOptIn(existingSmsOptIn)
+      setSmsOptInAt(profile?.sms_opt_in_at || null)
       setLoading(false)
     }
 
@@ -75,31 +125,91 @@ export default function OnboardingPage() {
     }
   }, [router, supabase])
 
+  async function handleSkip() {
+    if (!userId || saving) return
+
+    setSaving(true)
+    setError("")
+
+    const { error: updateError } = await supabase.from("profiles").upsert({
+      id: userId,
+      email,
+      onboarding_complete: true,
+      updated_at: new Date().toISOString(),
+    })
+
+    setSaving(false)
+
+    if (updateError) {
+      setError(updateError.message)
+      return
+    }
+
+    router.push("/marketplace")
+    router.refresh()
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (!userId) return
 
-    setSaving(true)
-    setError("")
-
     const cleanFirstName = firstName.trim()
     const cleanLastName = lastName.trim()
+    const cleanPhone = normalizePhoneNumber(phone)
+    const cleanZipCode = formatZipCode(zipCode)
     const fullName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ")
     const canSell = intent === "sell" || intent === "both"
 
-    const { error: updateError } = await supabase.from("profiles").upsert({
+    if (smsOptIn && !cleanPhone) {
+      setError("Enter your phone number to opt in to SMS/text message alerts.")
+      return
+    }
+
+    if (cleanPhone && cleanPhone.length !== 10) {
+      setError("Enter a valid 10-digit phone number.")
+      return
+    }
+
+    if (cleanZipCode.length !== 5) {
+      setError("Enter a valid 5-digit ZIP code.")
+      return
+    }
+
+    setSaving(true)
+    setError("")
+
+    const now = new Date().toISOString()
+
+    const profileUpdates: Record<string, unknown> = {
       id: userId,
       email,
       first_name: cleanFirstName,
       last_name: cleanLastName,
       full_name: fullName,
-      phone: phone.trim(),
-      zip_code: zipCode.trim(),
+      phone: cleanPhone,
+      zip_code: cleanZipCode,
       can_sell: canSell,
       onboarding_complete: true,
-      updated_at: new Date().toISOString(),
-    })
+      updated_at: now,
+      sms_opt_in: smsOptIn && Boolean(cleanPhone),
+    }
+
+    if (smsOptIn && cleanPhone) {
+      profileUpdates.sms_opt_in_at = smsOptInAt || now
+      profileUpdates.sms_opt_out_at = null
+      profileUpdates.sms_opt_in_source = "onboarding"
+      profileUpdates.sms_opt_in_version = SMS_CONSENT_VERSION
+      profileUpdates.sms_consent_text = SMS_CONSENT_TEXT
+      profileUpdates.sms_consent_phone = cleanPhone
+    } else if (profileHadSmsOptIn) {
+      profileUpdates.sms_opt_in_at = null
+      profileUpdates.sms_opt_out_at = now
+    }
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .upsert(profileUpdates)
 
     setSaving(false)
 
@@ -127,7 +237,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className={styles.authPage}>
+    <main className={`${styles.authPage} ${styles.onboardingPage}`}>
       <section className={styles.authMedia} aria-hidden="true">
         <video
           className={styles.authVideo}
@@ -147,9 +257,14 @@ export default function OnboardingPage() {
             <span>Decor Encore</span>
           </Link>
 
-          <Link href="/marketplace" className={styles.headerLink}>
+          <button
+            type="button"
+            className={styles.headerLink}
+            onClick={handleSkip}
+            disabled={saving}
+          >
             Skip
-          </Link>
+          </button>
         </header>
 
         <div className={styles.authCard}>
@@ -187,10 +302,12 @@ export default function OnboardingPage() {
               <span>Phone</span>
               <input
                 value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                placeholder="Phone number"
+                onChange={(event) => setPhone(formatPhoneNumber(event.target.value))}
+                placeholder="(813) 555-1234"
                 type="tel"
+                inputMode="tel"
                 autoComplete="tel"
+                maxLength={14}
               />
             </label>
 
@@ -198,10 +315,11 @@ export default function OnboardingPage() {
               <span>ZIP</span>
               <input
                 value={zipCode}
-                onChange={(event) => setZipCode(event.target.value)}
+                onChange={(event) => setZipCode(formatZipCode(event.target.value))}
                 placeholder="ZIP code"
                 inputMode="numeric"
                 autoComplete="postal-code"
+                maxLength={5}
                 required
               />
             </label>
@@ -261,6 +379,33 @@ export default function OnboardingPage() {
                 />
               </div>
             </div>
+
+            <label className={styles.smsConsentBox}>
+              <input
+                type="checkbox"
+                checked={smsOptIn}
+                onChange={(event) => setSmsOptIn(event.target.checked)}
+              />
+
+              <span>
+                <strong>Send me SMS alerts</strong>
+                <p className={styles.smsConsentCopy}>
+                  I agree to receive SMS/text message alerts from Decor Encore about my account,
+                  listings, purchases, sales, unread messages, pickup or delivery updates, order
+                  status, and other important marketplace activity. Message frequency varies.
+                  Message and data rates may apply. Reply STOP to opt out and HELP for help.
+                  Consent is not required to buy or sell on Decor Encore. <br></br><br></br> {" "}See our{" "}
+                  <Link href="/terms">T&Cs</Link> and{" "}
+                  <Link href="/privacy">Privacy Policy</Link>.
+                </p>
+              </span>
+            </label>
+
+            {/* <p className={styles.onboardingLegalText}>
+              By continuing, you agree to Decor Encore’s{" "}
+              <Link href="/terms">T&Cs</Link> and{" "}
+              <Link href="/privacy">Privacy Policy</Link>.
+            </p> */}
 
             {error ? <p className={styles.errorText}>{error}</p> : null}
 
