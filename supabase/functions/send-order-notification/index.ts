@@ -125,13 +125,17 @@ function getNotificationTargets(eventType: string): RecipientRole[] {
   ])
 
   const sellerEvents = new Set([
-    "mock_payment_completed",
-    "payment_received",
     "buyer_confirmed_received",
     "cancellation_requested",
   ])
 
   const bothEvents = new Set([
+    "payment_received",
+
+    // Backward compatibility only.
+    // New orders should use payment_received instead.
+    "mock_payment_completed",
+
     "refund_processed",
     "partial_refund_processed",
   ])
@@ -167,13 +171,29 @@ function getEmailContent({
   const basePreview = `Order ${confirmationNumber} · ${listingTitle}`
 
   if (
-    event.event_type === "mock_payment_completed" ||
-    event.event_type === "payment_received"
+    event.event_type === "payment_received" ||
+    event.event_type === "mock_payment_completed"
   ) {
+    if (recipientRole === "buyer") {
+      return {
+        subject: `Your Decor Encore order is confirmed`,
+        preview: basePreview,
+        eyebrow: "Order confirmation",
+        heading: "Your order is confirmed",
+        body: `Your purchase of "${listingTitle}" for ${orderTotal} is confirmed. You can view your order details, track status updates, and coordinate pickup or delivery in Decor Encore messages.`,
+        ctaText: "View order",
+        ctaPath: `/orders/${order.id}/confirmation`,
+        detailTotalLabel: "Total paid",
+        detailTotalValue: orderTotal,
+        footerNote:
+          "Decor Encore keeps your order, payment, and message details together so you can coordinate safely inside the platform.",
+      }
+    }
+
     return {
       subject: `New sale on Decor Encore: ${listingTitle}`,
       preview: basePreview,
-      eyebrow: "Order update",
+      eyebrow: "Sale confirmed",
       heading: "You made a sale",
       body: `Great news — ${buyerName} purchased "${listingTitle}" for ${orderTotal}. Open your sales page to confirm the order and coordinate fulfillment.`,
       ctaText: "View sale",

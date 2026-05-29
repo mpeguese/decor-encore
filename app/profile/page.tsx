@@ -16,6 +16,14 @@ function splitName(fullName: string) {
   return { first, last }
 }
 
+type ProfileSnapshot = {
+  firstName: string
+  lastName: string
+  phone: string
+  zipCode: string
+  canSell: boolean
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -27,12 +35,39 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("")
   const [zipCode, setZipCode] = useState("")
   const [canSell, setCanSell] = useState(false)
+
+  const [originalProfile, setOriginalProfile] = useState<ProfileSnapshot | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
 
   const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
+
+  const currentProfile = useMemo<ProfileSnapshot>(
+    () => ({
+      firstName,
+      lastName,
+      phone,
+      zipCode,
+      canSell,
+    }),
+    [firstName, lastName, phone, zipCode, canSell]
+  )
+
+  const hasChanges = useMemo(() => {
+    if (!originalProfile) return false
+
+    return (
+      currentProfile.firstName !== originalProfile.firstName ||
+      currentProfile.lastName !== originalProfile.lastName ||
+      currentProfile.phone !== originalProfile.phone ||
+      currentProfile.zipCode !== originalProfile.zipCode ||
+      currentProfile.canSell !== originalProfile.canSell
+    )
+  }, [currentProfile, originalProfile])
 
   useEffect(() => {
     let mounted = true
@@ -63,11 +98,22 @@ export default function ProfilePage() {
       if (!mounted) return
 
       const fallbackName = splitName(profile?.full_name || "")
-      setFirstName(profile?.first_name || fallbackName.first)
-      setLastName(profile?.last_name || fallbackName.last)
-      setPhone(profile?.phone || "")
-      setZipCode(profile?.zip_code || "")
-      setCanSell(Boolean(profile?.can_sell))
+
+      const loadedProfile: ProfileSnapshot = {
+        firstName: profile?.first_name || fallbackName.first,
+        lastName: profile?.last_name || fallbackName.last,
+        phone: profile?.phone || "",
+        zipCode: profile?.zip_code || "",
+        canSell: Boolean(profile?.can_sell),
+      }
+
+      setFirstName(loadedProfile.firstName)
+      setLastName(loadedProfile.lastName)
+      setPhone(loadedProfile.phone)
+      setZipCode(loadedProfile.zipCode)
+      setCanSell(loadedProfile.canSell)
+      setOriginalProfile(loadedProfile)
+
       setLoading(false)
     }
 
@@ -78,10 +124,30 @@ export default function ProfilePage() {
     }
   }, [router, supabase])
 
+  function handleEditProfile() {
+    setError("")
+    setMessage("")
+    setIsEditing(true)
+  }
+
+  function handleCancelEdit() {
+    if (!originalProfile) return
+
+    setFirstName(originalProfile.firstName)
+    setLastName(originalProfile.lastName)
+    setPhone(originalProfile.phone)
+    setZipCode(originalProfile.zipCode)
+    setCanSell(originalProfile.canSell)
+
+    setError("")
+    setMessage("")
+    setIsEditing(false)
+  }
+
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!userId) return
+    if (!userId || !isEditing || !hasChanges) return
 
     setSaving(true)
     setError("")
@@ -115,7 +181,21 @@ export default function ProfilePage() {
       return
     }
 
-    setZipCode(cleanZip)
+    const savedProfile: ProfileSnapshot = {
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      phone: phone.trim(),
+      zipCode: cleanZip,
+      canSell,
+    }
+
+    setFirstName(savedProfile.firstName)
+    setLastName(savedProfile.lastName)
+    setPhone(savedProfile.phone)
+    setZipCode(savedProfile.zipCode)
+    setOriginalProfile(savedProfile)
+    setIsEditing(false)
+
     setMessage(
       cleanZip && !zipCoordinates
         ? "Profile updated. ZIP saved, but nearby radius is not available for this ZIP yet."
@@ -185,6 +265,27 @@ export default function ProfilePage() {
       </section>
 
       <form className={styles.profileCard} onSubmit={handleSave}>
+        <div className={styles.profileFormHeader}>
+          <div>
+            <h2>Account details</h2>
+            <p>
+              {isEditing
+                ? "Update the fields below, then save your changes."
+                : "View your account details. Select edit to make changes."}
+            </p>
+          </div>
+
+          {!isEditing ? (
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={handleEditProfile}
+            >
+              Edit profile
+            </button>
+          ) : null}
+        </div>
+
         <div className={styles.nameGrid}>
           <label className={styles.field}>
             <span>First</span>
@@ -192,6 +293,7 @@ export default function ProfilePage() {
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
               placeholder="First name"
+              disabled={!isEditing || saving}
             />
           </label>
 
@@ -201,6 +303,7 @@ export default function ProfilePage() {
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}
               placeholder="Last name"
+              disabled={!isEditing || saving}
             />
           </label>
         </div>
@@ -208,6 +311,7 @@ export default function ProfilePage() {
         <label className={styles.field}>
           <span>Email</span>
           <input value={email} disabled />
+          <small>Email is used for login, orders, receipts, and account support.</small>
         </label>
 
         <label className={styles.field}>
@@ -217,6 +321,7 @@ export default function ProfilePage() {
             onChange={(event) => setPhone(event.target.value)}
             placeholder="Phone number"
             type="tel"
+            disabled={!isEditing || saving}
           />
         </label>
 
@@ -228,6 +333,7 @@ export default function ProfilePage() {
             placeholder="ZIP code"
             inputMode="numeric"
             maxLength={10}
+            disabled={!isEditing || saving}
           />
         </label>
 
@@ -241,15 +347,33 @@ export default function ProfilePage() {
             type="checkbox"
             checked={canSell}
             onChange={(event) => setCanSell(event.target.checked)}
+            disabled={!isEditing || saving}
           />
         </label>
 
         {error ? <p className={styles.errorText}>{error}</p> : null}
         {message ? <p className={styles.messageText}>{message}</p> : null}
 
-        <button type="submit" className={styles.primaryButton} disabled={saving}>
-          {saving ? "Saving..." : "Save profile"}
-        </button>
+        {isEditing ? (
+          <div className={styles.profileActionRow}>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={handleCancelEdit}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={saving || !hasChanges}
+            >
+              {saving ? "Saving..." : "Save profile"}
+            </button>
+          </div>
+        ) : null}
       </form>
 
       <AppBottomNav

@@ -175,11 +175,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const listing = listingData as ListingRow
 
     const { error: completeOrderError } = await authSupabase.rpc(
-      "complete_mock_order",
-      {
-        p_order_id: order.id,
-        p_payment_intent_id: paymentIntentId,
-      }
+        "complete_paid_order",
+        {
+            p_order_id: order.id,
+            p_payment_intent_id: paymentIntentId,
+        }
     )
 
     if (completeOrderError) {
