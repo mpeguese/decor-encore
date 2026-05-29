@@ -38,6 +38,9 @@ type ProfileRow = {
   first_name: string | null
   last_name: string | null
   full_name: string | null
+  phone: string | null
+  sms_opt_in: boolean | null
+  sms_opt_out_at: string | null
 }
 
 type ListingRow = {
@@ -52,6 +55,11 @@ const NOTIFICATION_WEBHOOK_SECRET =
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || ""
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+
+const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID") || ""
+const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN") || ""
+const TWILIO_MESSAGING_SERVICE_SID =
+  Deno.env.get("TWILIO_MESSAGING_SERVICE_SID") || ""
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: {
@@ -92,6 +100,310 @@ function getMessagePreview(value: string) {
   if (cleaned.length <= 140) return cleaned
 
   return `${cleaned.slice(0, 137)}...`
+}
+
+function normalizePhoneForTwilio(phone: string | null | undefined) {
+  if (!phone) return null
+
+  const trimmed = phone.trim()
+
+  if (!trimmed) return null
+
+  if (trimmed.startsWith("+")) {
+    return trimmed
+  }
+
+  const digitsOnly = trimmed.replace(/\D/g, "")
+
+  if (digitsOnly.length === 10) {
+    return `+1${digitsOnly}`
+  }
+
+  if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
+    return `+${digitsOnly}`
+  }
+
+  return null
+}
+
+function trimSmsBody(body: string) {
+  return body.replace(/\s+/g, " ").trim().slice(0, 480)
+}
+
+function buildSmsBody({
+  senderName,
+  listingTitle,
+  ctaUrl,
+}: {
+  senderName: string
+  listingTitle: string
+  ctaUrl: string
+}) {
+  return trimSmsBody(
+    `Decor Encore: You have an unread message from ${senderName} about "${listingTitle}". Reply here: ${ctaUrl} Reply STOP to opt out.`
+  )
+}
+
+async function logSmsNotificationEvent(input: {
+  userId: string
+  recipient?: string | null
+  body: string
+  status: "sent" | "skipped" | "failed"
+  providerMessageId?: string | null
+  errorMessage?: string | null
+  relatedListingId?: string | null
+  relatedOrderId?: string | null
+  relatedConversationId?: string | null
+  relatedMessageId?: string | null
+  metadata?: Record<string, unknown>
+}) {
+  const { error } = await supabase.from("notification_events").insert({
+    user_id: input.userId,
+    channel: "sms",
+    event_type: "unread_message_reminder",
+    recipient: input.recipient || null,
+    subject: null,
+    body: input.body,
+    status: input.status,
+    provider: "twilio",
+    provider_message_id: input.providerMessageId || null,
+    error_message: input.errorMessage || null,
+    related_listing_id: input.relatedListingId || null,
+    related_order_id: input.relatedOrderId || null,
+    related_conversation_id: input.relatedConversationId || null,
+    related_message_id: input.relatedMessageId || null,
+    metadata: input.metadata || {},
+  })
+
+  if (error) {
+    console.error("Failed to log unread message SMS event:", error.message)
+  }
+}
+
+async function hasRecentUnreadMessageSms({
+  recipientId,
+  conversationId,
+}: {
+  recipientId: string
+  conversationId: string
+}) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+  const { data, error } = await supabase
+    .from("notification_events")
+    .select("id")
+    .eq("user_id", recipientId)
+    .eq("channel", "sms")
+    .eq("event_type", "unread_message_reminder")
+    .eq("related_conversation_id", conversationId)
+    .eq("status", "sent")
+    .gte("created_at", since)
+    .limit(1)
+
+  if (error) {
+    console.error("Unable to check recent unread SMS:", error.message)
+    return false
+  }
+
+  return Boolean(data && data.length > 0)
+}
+
+async function sendUnreadMessageSms({
+  recipient,
+  senderName,
+  listingTitle,
+  ctaUrl,
+  conversation,
+  message,
+}: {
+  recipient: ProfileRow | null
+  senderName: string
+  listingTitle: string
+  ctaUrl: string
+  conversation: ConversationRow
+  message: MessageRow
+}) {
+  const smsBody = buildSmsBody({
+    senderName,
+    listingTitle,
+    ctaUrl,
+  })
+
+  if (!recipient?.id) {
+    return {
+      status: "skipped",
+      reason: "recipient_not_found",
+    }
+  }
+
+  const normalizedPhone = normalizePhoneForTwilio(recipient.phone)
+
+  if (!recipient.sms_opt_in || recipient.sms_opt_out_at) {
+    await logSmsNotificationEvent({
+      userId: recipient.id,
+      recipient: normalizedPhone,
+      body: smsBody,
+      status: "skipped",
+      errorMessage: "User has not opted into SMS notifications.",
+      relatedListingId: conversation.listing_id,
+      relatedOrderId: conversation.order_id,
+      relatedConversationId: conversation.id,
+      relatedMessageId: message.id,
+      metadata: {
+        senderId: message.sender_id,
+        listingTitle,
+      },
+    })
+
+    return {
+      status: "skipped",
+      reason: "not_opted_in",
+    }
+  }
+
+  if (!normalizedPhone) {
+    await logSmsNotificationEvent({
+      userId: recipient.id,
+      recipient: recipient.phone,
+      body: smsBody,
+      status: "skipped",
+      errorMessage: "Missing or invalid phone number.",
+      relatedListingId: conversation.listing_id,
+      relatedOrderId: conversation.order_id,
+      relatedConversationId: conversation.id,
+      relatedMessageId: message.id,
+      metadata: {
+        senderId: message.sender_id,
+        listingTitle,
+      },
+    })
+
+    return {
+      status: "skipped",
+      reason: "invalid_phone",
+    }
+  }
+
+  const alreadySent = await hasRecentUnreadMessageSms({
+    recipientId: recipient.id,
+    conversationId: conversation.id,
+  })
+
+  if (alreadySent) {
+    await logSmsNotificationEvent({
+      userId: recipient.id,
+      recipient: normalizedPhone,
+      body: smsBody,
+      status: "skipped",
+      errorMessage:
+        "Unread message SMS already sent for this conversation in the last 24 hours.",
+      relatedListingId: conversation.listing_id,
+      relatedOrderId: conversation.order_id,
+      relatedConversationId: conversation.id,
+      relatedMessageId: message.id,
+      metadata: {
+        senderId: message.sender_id,
+        listingTitle,
+        duplicateWindowHours: 24,
+      },
+    })
+
+    return {
+      status: "skipped",
+      reason: "recent_sms_exists",
+    }
+  }
+
+  if (
+    !TWILIO_ACCOUNT_SID ||
+    !TWILIO_AUTH_TOKEN ||
+    !TWILIO_MESSAGING_SERVICE_SID
+  ) {
+    await logSmsNotificationEvent({
+      userId: recipient.id,
+      recipient: normalizedPhone,
+      body: smsBody,
+      status: "failed",
+      errorMessage: "Missing Twilio function configuration.",
+      relatedListingId: conversation.listing_id,
+      relatedOrderId: conversation.order_id,
+      relatedConversationId: conversation.id,
+      relatedMessageId: message.id,
+      metadata: {
+        senderId: message.sender_id,
+        listingTitle,
+      },
+    })
+
+    return {
+      status: "failed",
+      reason: "missing_twilio_env",
+    }
+  }
+
+  const authHeader = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)
+  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`
+
+  const twilioResponse = await fetch(twilioUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${authHeader}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      To: normalizedPhone,
+      MessagingServiceSid: TWILIO_MESSAGING_SERVICE_SID,
+      Body: smsBody,
+    }),
+  })
+
+  const twilioPayload = await twilioResponse.json().catch(() => null)
+
+  if (!twilioResponse.ok) {
+    await logSmsNotificationEvent({
+      userId: recipient.id,
+      recipient: normalizedPhone,
+      body: smsBody,
+      status: "failed",
+      errorMessage: JSON.stringify(twilioPayload || {}),
+      relatedListingId: conversation.listing_id,
+      relatedOrderId: conversation.order_id,
+      relatedConversationId: conversation.id,
+      relatedMessageId: message.id,
+      metadata: {
+        senderId: message.sender_id,
+        listingTitle,
+        twilioStatus: twilioResponse.status,
+      },
+    })
+
+    return {
+      status: "failed",
+      reason: "twilio_error",
+      twilio: twilioPayload,
+    }
+  }
+
+  await logSmsNotificationEvent({
+    userId: recipient.id,
+    recipient: normalizedPhone,
+    body: smsBody,
+    status: "sent",
+    providerMessageId: twilioPayload?.sid || null,
+    relatedListingId: conversation.listing_id,
+    relatedOrderId: conversation.order_id,
+    relatedConversationId: conversation.id,
+    relatedMessageId: message.id,
+    metadata: {
+      senderId: message.sender_id,
+      listingTitle,
+    },
+  })
+
+  return {
+    status: "sent",
+    providerMessageId: twilioPayload?.sid || null,
+  }
 }
 
 function buildEmailHtml({
@@ -371,12 +683,16 @@ serve(async (request) => {
           await Promise.all([
             supabase
               .from("profiles")
-              .select("id, email, first_name, last_name, full_name")
+              .select(
+                "id, email, first_name, last_name, full_name, phone, sms_opt_in, sms_opt_out_at"
+              )
               .eq("id", row.recipient_id)
               .single(),
             supabase
               .from("profiles")
-              .select("id, email, first_name, last_name, full_name")
+              .select(
+                "id, email, first_name, last_name, full_name, phone, sms_opt_in, sms_opt_out_at"
+              )
               .eq("id", row.sender_id)
               .single(),
             supabase
@@ -390,32 +706,46 @@ serve(async (request) => {
         const sender = (senderData || null) as ProfileRow | null
         const listing = (listingData || null) as ListingRow | null
 
-        const recipientEmail = recipient?.email || ""
-
-        if (!recipientEmail) {
-          await markQueueRow(row.id, "skipped", {
-            error_message: "Recipient has no email.",
-          })
-
-          results.push({
-            queue_id: row.id,
-            status: "skipped",
-            reason: "Recipient has no email.",
-          })
-
-          continue
-        }
-
         const siteUrl =
           Deno.env.get("SITE_URL") ||
           Deno.env.get("NEXT_PUBLIC_SITE_URL") ||
           "https://decor-encore.com"
 
+        const recipientEmail = recipient?.email || ""
         const recipientName = getProfileName(recipient)
         const senderName = getProfileName(sender)
         const listingTitle = listing?.title || "a Decor Encore listing"
         const messagePreview = getMessagePreview(message.body)
         const ctaUrl = `${siteUrl}/messages?conversationId=${conversation.id}`
+
+        const smsResult = await sendUnreadMessageSms({
+          recipient,
+          senderName,
+          listingTitle,
+          ctaUrl,
+          conversation,
+          message,
+        })
+
+        if (!recipientEmail) {
+          const queueStatus = smsResult.status === "sent" ? "sent" : "skipped"
+
+          await markQueueRow(row.id, queueStatus, {
+            error_message:
+              smsResult.status === "sent"
+                ? null
+                : "Recipient has no email and SMS was not sent.",
+          })
+
+          results.push({
+            queue_id: row.id,
+            status: queueStatus,
+            email: "skipped_no_email",
+            sms: smsResult,
+          })
+
+          continue
+        }
 
         const html = buildEmailHtml({
           recipientName,
@@ -455,13 +785,17 @@ serve(async (request) => {
 
         if (!resendResponse.ok) {
           await markQueueRow(row.id, "failed", {
-            error_message: JSON.stringify(resendPayload || {}),
+            error_message: JSON.stringify({
+              email: resendPayload || {},
+              sms: smsResult,
+            }),
           })
 
           results.push({
             queue_id: row.id,
             status: "failed",
-            resend: resendPayload,
+            email: resendPayload,
+            sms: smsResult,
           })
 
           continue
@@ -472,7 +806,8 @@ serve(async (request) => {
         results.push({
           queue_id: row.id,
           status: "sent",
-          resend: resendPayload,
+          email: resendPayload,
+          sms: smsResult,
         })
       } catch (rowError) {
         await markQueueRow(row.id, "failed", {

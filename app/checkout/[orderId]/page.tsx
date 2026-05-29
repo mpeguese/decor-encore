@@ -128,90 +128,38 @@ function StripeCheckoutForm({
   const router = useRouter()
   const stripe = useStripe()
   const elements = useElements()
-  const supabase = useMemo(() => createClient(), [])
+  //const supabase = useMemo(() => createClient(), [])
 
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState("")
 
-  async function finalizeOrder(paymentIntentId: string) {
-    const { error: completeOrderError } = await supabase.rpc(
-      "complete_mock_order",
-      {
-        p_order_id: order.id,
-        p_payment_intent_id: paymentIntentId,
-      }
-    )
-
-    if (completeOrderError) {
-      throw new Error(completeOrderError.message)
-    }
-
-    const { data: existingConversation } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("order_id", order.id)
-      .maybeSingle()
-
-    let conversationId = existingConversation?.id || ""
-
-    if (!conversationId) {
-      const { data: listingConversation } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("listing_id", order.listing_id)
-        .eq("buyer_id", order.buyer_id)
-        .maybeSingle()
-
-      if (listingConversation?.id) {
-        conversationId = listingConversation.id
-
-        await supabase
-          .from("conversations")
-          .update({
-            order_id: order.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", conversationId)
-      }
-    }
-
-    if (!conversationId) {
-      const { data: newConversation, error: conversationError } = await supabase
-        .from("conversations")
-        .insert({
-          order_id: order.id,
-          listing_id: order.listing_id,
-          buyer_id: order.buyer_id,
-          seller_id: order.seller_id,
-        })
-        .select("id")
-        .single()
-
-      if (conversationError || !newConversation?.id) {
-        throw new Error(
-          conversationError?.message || "Unable to start order conversation."
-        )
-      }
-
-      conversationId = newConversation.id
-    }
-
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: order.buyer_id,
-      body: `Order confirmed for "${listing.title || "your item"}". 
-
-Use this thread to coordinate pickup, delivery, and any questions with the seller.`,
+    async function finalizeOrder(paymentIntentId: string) {
+    const response = await fetch(`/api/orders/${order.id}/finalize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        paymentIntentId,
+      }),
     })
 
-    await supabase
-      .from("conversations")
-      .update({
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", conversationId)
+    const payload = await response.json().catch(() => ({}))
 
-    router.push(`/orders/${order.id}/confirmation?conversationId=${conversationId}`)
+    if (!response.ok) {
+      throw new Error(
+        payload.error ||
+          "Payment succeeded, but the order could not be finalized."
+      )
+    }
+
+    const conversationId = payload.conversationId || ""
+
+    router.push(
+      conversationId
+        ? `/orders/${order.id}/confirmation?conversationId=${conversationId}`
+        : `/orders/${order.id}/confirmation`
+    )
   }
 
   async function handleStripePayment(event: FormEvent<HTMLFormElement>) {
