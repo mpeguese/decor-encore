@@ -612,12 +612,20 @@ if (
                   )}
                 </div>
 
-                <div>
+                <div className={styles.threadHeaderDetails}>
                   <strong>{getListing(selectedConversation)?.title || "Listing"}</strong>
                   <span>
                     {formatPrice(Number(getListing(selectedConversation)?.price || 0))}
                   </span>
                 </div>
+
+                <button
+                  type="button"
+                  className={styles.threadInfoButton}
+                  onClick={() => setShowMessagingGuidelines(true)}
+                >
+                  Message Rules
+                </button>
               </header>
 
               <div className={styles.messageStack}>

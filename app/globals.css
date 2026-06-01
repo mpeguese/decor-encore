@@ -1519,6 +1519,10 @@ a {
     display: none;
   }
 
+  .de-scroll-cue {
+    animation: none;
+  }
+
   .de-segment-slider,
   .mk-view-slider {
     transition: none;
@@ -1889,3 +1893,44 @@ a {
   font-weight: 700;
 }
 
+.de-scroll-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 3;
+  transform: translateX(-50%);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 8px 22px rgba(81, 45, 56, 0.42);
+  animation: de-scroll-cue-pulse 1.35s ease-in-out infinite;
+}
+
+/* .de-scroll-cue span {
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+} */
+
+.de-scroll-cue svg {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 8px 14px rgba(81, 45, 56, 0.34));
+}
+
+@keyframes de-scroll-cue-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: translate(-50%, 0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate(-50%, 8px);
+  }
+}

@@ -93,12 +93,16 @@ export default function ResetPasswordPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
+  //const searchParams = useSearchParams()
+  //const fromProfile = searchParams.get("from") === "profile"
+
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [fromProfile, setFromProfile] = useState(false)
 
   const isLargeScreen = useIsLargeScreen()
 
@@ -106,6 +110,11 @@ export default function ResetPasswordPage() {
     isLargeScreen === true
       ? "/videos/decor-hero-desktop.mp4"
       : "/videos/decor-hero.mp4"
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setFromProfile(params.get("from") === "profile")
+  }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -136,10 +145,14 @@ export default function ResetPasswordPage() {
         return
       }
 
-      setMessage("Your password has been updated. Redirecting to sign in...")
+      setMessage(
+        fromProfile
+          ? "Your password has been updated. Redirecting back to your profile..."
+          : "Your password has been updated. Redirecting to sign in..."
+      )
 
       window.setTimeout(() => {
-        router.push("/login")
+        router.push(fromProfile ? "/profile" : "/login")
         router.refresh()
       }, 1200)
     } finally {
@@ -173,8 +186,8 @@ export default function ResetPasswordPage() {
             <span>Decor Encore</span>
           </Link>
 
-          <Link href="/login" className={styles.headerLink}>
-            Back to Login
+          <Link href={fromProfile ? "/profile" : "/login"} className={styles.headerLink}>
+            {fromProfile ? "Back to Profile" : "Back to Login"}
           </Link>
         </header>
 

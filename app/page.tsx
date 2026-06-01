@@ -203,9 +203,23 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+        <a href="#how-it-works" className="de-scroll-cue" aria-label="Scroll to learn more">
+          {/* <span>More below</span> */}
+
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 9l6 6 6-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </a>
       </section>
 
-      <section className="de-story-section">
+      <section id="how-it-works" className="de-story-section">
         <p className="de-section-kicker">How it works</p>
 
         <div className="de-story-grid">
@@ -239,11 +253,12 @@ export default function HomePage() {
           </div>
         </div>
 
+        <p className="de-section-kicker" style={{ marginTop: "22px" }}>Why Use Decor Encore? </p>
+
         <div
           className="de-story-grid"
           style={{ marginTop: "22px" }}
         >
-          {/* <p className="de-section-kicker">How </p> */}
           
           <div className="de-story-card">
             <span>Protection</span>

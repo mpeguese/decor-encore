@@ -191,6 +191,37 @@
   font-weight: 900;
 }
 
+.conversationNameRow {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.conversationNameRow span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversationNameRow em {
+  flex: 0 0 auto;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #dc2626;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .threadPanel {
   min-height: 64dvh;
   display: grid;
@@ -201,7 +232,7 @@
 .threadHeader {
   padding: 10px;
   display: grid;
-  grid-template-columns: 42px 52px 1fr;
+  grid-template-columns: 42px 52px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.58);
@@ -224,6 +255,10 @@
   height: 21px;
 }
 
+.threadHeaderDetails {
+  min-width: 0;
+}
+
 .threadHeader strong {
   display: -webkit-box;
   font-size: 15px;
@@ -241,6 +276,35 @@
   color: rgba(81, 45, 56, 0.58);
   font-size: 13px;
   font-weight: 900;
+}
+
+.threadInfoButton {
+  min-height: 38px;
+  border: 1px solid rgba(81, 45, 56, 0.12);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: var(--plum);
+  background: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(81, 45, 56, 0.08);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.threadInfoButton:hover {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(81, 45, 56, 0.2);
+  transform: translateY(-1px);
+}
+
+.threadInfoButton:focus-visible {
+  outline: 3px solid rgba(81, 45, 56, 0.22);
+  outline-offset: 3px;
 }
 
 .messageStack {
@@ -368,60 +432,6 @@
   font-weight: 950;
 }
 
-@media (max-width: 759px) {
-  .hideOnMobile,
-  .hideThreadOnMobile {
-    display: none;
-  }
-
-  .threadPanel {
-    min-height: calc(100dvh - 176px);
-  }
-}
-
-@media (min-width: 760px) {
-  .messagesPage {
-    padding: 22px 22px 40px;
-  }
-
-  .messagesShell {
-    grid-template-columns: minmax(300px, 0.42fr) minmax(0, 0.58fr);
-    align-items: stretch;
-  }
-
-  .conversationPanel,
-  .threadPanel {
-    min-height: 68dvh;
-  }
-
-  .backThreadButton {
-    display: none;
-  }
-
-  .threadHeader {
-    grid-template-columns: 52px 1fr;
-  }
-}
-
-@media (max-width: 390px) {
-  .messagesPage {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-
-  .brandPill strong {
-    display: none;
-  }
-
-  .messagesHero h1 {
-    font-size: 34px;
-  }
-
-  .messageBubble {
-    max-width: 88%;
-  }
-}
-
 .toastWrap {
   position: fixed;
   left: 50%;
@@ -445,46 +455,8 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-@media (max-width: 640px) {
-  .toastWrap {
-    bottom: 190px;
-    width: min(90vw, 360px);
-  }
-}
-
-.conversationNameRow {
-  display: flex !important;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.conversationNameRow span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.conversationNameRow em {
-  flex: 0 0 auto;
-  min-height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  background: #dc2626;
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 950;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 /* =========================================================
-   Message Guideline Modal CSS
+   Message Guideline Modal
    ========================================================= */
 
 .guidelinesOverlay {
@@ -576,7 +548,47 @@
   cursor: pointer;
 }
 
+@media (max-width: 759px) {
+  .hideOnMobile,
+  .hideThreadOnMobile {
+    display: none;
+  }
+
+  .threadPanel {
+    min-height: calc(100dvh - 176px);
+  }
+}
+
+@media (min-width: 760px) {
+  .messagesPage {
+    padding: 22px 22px calc(var(--nav-height) + 72px);
+  }
+
+  .messagesShell {
+    grid-template-columns: minmax(300px, 0.42fr) minmax(0, 0.58fr);
+    align-items: stretch;
+  }
+
+  .conversationPanel,
+  .threadPanel {
+    min-height: 68dvh;
+  }
+
+  .backThreadButton {
+    display: none;
+  }
+
+  .threadHeader {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+  }
+}
+
 @media (max-width: 640px) {
+  .toastWrap {
+    bottom: 190px;
+    width: min(90vw, 360px);
+  }
+
   .guidelinesOverlay {
     align-items: flex-end;
     padding: 14px;
@@ -589,5 +601,46 @@
 
   .guidelinesGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 390px) {
+  .messagesPage {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .brandPill strong {
+    display: none;
+  }
+
+  .messagesHero h1 {
+    font-size: 34px;
+  }
+
+  .threadHeader {
+    grid-template-columns: 40px 48px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .backThreadButton {
+    width: 40px;
+    height: 40px;
+  }
+
+  .threadListingImage {
+    width: 48px;
+    height: 48px;
+    border-radius: 17px;
+  }
+
+  .threadInfoButton {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .messageBubble {
+    max-width: 88%;
   }
 }

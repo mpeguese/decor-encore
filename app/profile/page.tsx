@@ -349,7 +349,11 @@ export default function ProfilePage() {
             onChange={(event) => setCanSell(event.target.checked)}
             disabled={!isEditing || saving}
           />
+          
         </label>
+        <Link href="/auth/reset-password?from=profile" className={styles.profileHelpLink}>
+          Reset password
+        </Link>
 
         {error ? <p className={styles.errorText}>{error}</p> : null}
         {message ? <p className={styles.messageText}>{message}</p> : null}
@@ -375,6 +379,8 @@ export default function ProfilePage() {
           </div>
         ) : null}
       </form>
+
+      
 
       <AppBottomNav
         active="profile"
