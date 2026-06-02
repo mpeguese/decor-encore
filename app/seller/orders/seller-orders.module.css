@@ -1426,3 +1426,123 @@
 .payoutActions a {
   gap: 8px;
 }
+
+.payoutSupportLinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 14px;
+  color: rgba(81, 45, 56, 0.62);
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.stateCard .payoutSupportLinks a {
+  min-height: 0;
+  margin-top: 0;
+  padding: 0;
+  border-radius: 0;
+  display: inline-flex;
+  color: rgba(81, 45, 56, 0.62);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 850;
+  /* text-decoration: underline; */
+  text-underline-offset: 4px;
+}
+
+.stateCard .payoutSupportLinks a:hover,
+.stateCard .payoutSupportLinks a:focus {
+  color: var(--plum);
+}
+
+.payoutSupportLinks span {
+  opacity: 0.45;
+}
+
+.stripeGuideItem {
+  width: 100%;
+  min-height: 72px;
+  padding: 14px;
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  border-radius: 22px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  text-align: left;
+  background: rgba(255, 233, 243, 0.7);
+}
+
+.stripeGuideItem > span {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--plum);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.stripeGuideItem strong,
+.stripeGuideIssue strong {
+  display: block;
+  color: var(--plum);
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1.2;
+}
+
+.stripeGuideItem p,
+.stripeGuideIssue p {
+  margin: 6px 0 0;
+  color: rgba(81, 45, 56, 0.66);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.stripeGuideIssue {
+  width: 100%;
+  min-height: 72px;
+  padding: 14px;
+  border: 1px solid rgba(81, 45, 56, 0.08);
+  border-radius: 22px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+@media (min-width: 760px) {
+  .stageActionList .stripeGuideItem,
+  .stageActionList .stripeGuideIssue {
+    min-height: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .stripeGuideItem {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .stripeGuideItem > span {
+    width: 32px;
+    height: 32px;
+    font-size: 10px;
+  }
+
+  .stripeGuideItem strong,
+  .stripeGuideIssue strong {
+    font-size: 13px;
+  }
+
+  .stripeGuideItem p,
+  .stripeGuideIssue p {
+    font-size: 12px;
+  }
+}

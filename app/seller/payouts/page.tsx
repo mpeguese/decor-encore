@@ -27,13 +27,13 @@ function getStatusLabel(row: PayoutRow | null) {
 }
 
 function getActionLabel(row: PayoutRow | null) {
-  if (!row) return "Set up payouts"
+  if (!row) return "Set up Stripe payouts"
   if (row.charges_enabled && row.payouts_enabled) return "Manage Stripe payouts"
   if (row.onboarding_status === "restricted") return "Finish required payout steps"
   if (row.onboarding_status === "needs_more_info") return "Complete missing payout info"
   if (row.onboarding_status === "pending_review") return "Review Stripe status"
   if (row.onboarding_status === "onboarding_started") return "Continue payout setup"
-  return "Set up payouts"
+  return "Set up Stripe payouts"
 }
 
 export default function SellerPayoutsPage() {
@@ -140,41 +140,43 @@ export default function SellerPayoutsPage() {
                 : status === "Pending review"
                   ? "Stripe is reviewing your payout setup. You can keep managing listings, but purchases may stay unavailable until review is complete."
                   : status === "Action needed"
-                    ? "Stripe needs an update before your listings can be purchased. Continue setup to review the required steps securely with Stripe."
+                    ? "Stripe needs an update before your listings can be purchased. Review the instructions, then continue to Stripe to finish the required steps."
                     : status === "Needs more info" || requirements.length > 0
-                      ? "Stripe needs a little more information before buyers can purchase your listings. Continue setup to finish the required payout steps securely with Stripe."
-                      : "Set up your payout account so buyers can purchase your listings and Decor Encore can send your seller earnings through Stripe."}
+                      ? "Stripe needs a little more information before buyers can purchase your listings. Review the instructions, then continue to Stripe to complete the missing payout details."
+                      : "Review the payout setup instructions first, then continue to Stripe so buyers can purchase your listings and Decor Encore can send your seller earnings."}
             </p>
           ) : null}
 
           {!loading ? (
             <>
-                <div className={styles.payoutActions}>
-                <a
-                  href="/api/stripe/connect/onboard"
-                  aria-busy={redirectingToStripe}
-                  onClick={() => setRedirectingToStripe(true)}
-                >
-                  {redirectingToStripe ? (
-                    <>
-                      <span className={styles.buttonSpinner} aria-hidden="true" />
-                      Redirecting to Stripe...
-                    </>
-                  ) : (
-                    actionLabel
-                  )}
-                </a>
+              <div className={styles.payoutActions}>
+  <button type="button" onClick={() => setHelpOpen(true)}>
+    Quick Help
+  </button>
 
-                <button type="button" onClick={() => setHelpOpen(true)}>
-                    Setup help
-                </button>
-                </div>
+  <a
+    href="/api/stripe/connect/onboard"
+    aria-busy={redirectingToStripe}
+    onClick={() => setRedirectingToStripe(true)}
+  >
+    {redirectingToStripe ? (
+      <>
+        <span className={styles.buttonSpinner} aria-hidden="true" />
+        Redirecting to Stripe...
+      </>
+    ) : (
+      actionLabel
+    )}
+  </a>
+</div>
 
-                <Link href="/payments" className={styles.payoutPlainLink}>
-                    View full payment terms
-                </Link>
+<div className={styles.payoutSupportLinks}>
+  <Link href="/payments/stripe-101">Stripe 101</Link>
+  <span aria-hidden="true">|</span>
+  <Link href="/payments">T&amp;Cs</Link>
+</div>
             </>
-            ) : null}
+          ) : null}
         </section>
       </section>
 
@@ -184,7 +186,7 @@ export default function SellerPayoutsPage() {
             className={styles.payoutHelpModal}
             role="dialog"
             aria-modal="true"
-            aria-label="Payout setup help"
+            aria-label="Payout setup instructions"
           >
             <div className={styles.payoutHelpHeader}>
               <div>
@@ -195,7 +197,7 @@ export default function SellerPayoutsPage() {
               <button
                 type="button"
                 onClick={() => setHelpOpen(false)}
-                aria-label="Close payout help"
+                aria-label="Close payout setup instructions"
               >
                 ×
               </button>
@@ -204,71 +206,89 @@ export default function SellerPayoutsPage() {
             <div className={styles.payoutHelpList}>
               <div>
                 <span>01</span>
-                <p>Use your legal name and accurate seller details.</p>
+                <p>
+                  Enter a valid email address you can access. Stripe may use this
+                  for verification and payout updates.
+                </p>
               </div>
 
               <div>
                 <span>02</span>
                 <p>
-                  Enter a valid phone number. Stripe may require this before the
-                  account becomes connected.
+                  Enter a valid phone number. Stripe may require phone
+                  verification before your payout account becomes connected.
                 </p>
               </div>
 
               <div>
                 <span>03</span>
                 <p>
-                  For the website field, use <strong>https://decor-encore.com</strong>.
+                  Select the business type that best matches how you are selling.
+                  Most individual sellers should choose <strong>Individual</strong>.
                 </p>
               </div>
 
               <div>
                 <span>04</span>
                 <p>
-                  Enter valid bank details where you want your payments to go when
-                  prompted.
+                  Enter accurate legal and identity information. This must match
+                  your official identification and banking details.
                 </p>
               </div>
 
               <div>
                 <span>05</span>
                 <p>
-                  In test mode, you can use Stripe test bank details when
-                  prompted.
+                  For industry, select <strong>Retail</strong>, then choose{" "}
+                  <strong>Other merchandise</strong> or the closest available
+                  option.
                 </p>
               </div>
-              <Link href="/payments" style={{marginTop: 15}} className={styles.payoutHelpTerms}>
+
+              <div>
+                <span>06</span>
+                <p>
+                  For the website field, use{" "}
+                  <strong>https://decor-encore.com</strong>.
+                </p>
+              </div>
+
+              <div>
+                <span>07</span>
+                <p>
+                  Enter the bank account where you want seller payouts sent after
+                  you make a sale.
+                </p>
+              </div>
+
+              <Link href="/payments" className={styles.payoutHelpTerms}>
                 View full payment terms
               </Link>
             </div>
-
-            {/* <Link href="/payments" style={{marginTop: 20}} className={styles.payoutHelpTerms}>
-              View full payment terms
-            </Link> */}
           </section>
-          
         </div>
       ) : null}
+
       <AppBottomNav
-          active="shop"
-          items={[
-            {
-              key: "shop",
-              label: "Shop",
-              href: "/marketplace",
-            },
-            {
-              key: "sell",
-              label: "Seller",
-              href: "/seller",
-            },
-            {
-              key: "profile",
-              label: "Profile",
-              href: "/profile",
-            },
-          ]}
-        />
+        active="shop"
+        items={[
+          {
+            key: "shop",
+            label: "Shop",
+            href: "/marketplace",
+          },
+          {
+            key: "sell",
+            label: "Seller",
+            href: "/seller",
+          },
+          {
+            key: "profile",
+            label: "Profile",
+            href: "/profile",
+          },
+        ]}
+      />
     </main>
   )
 }

@@ -281,7 +281,7 @@ export default function ProfilePage() {
               className={styles.secondaryButton}
               onClick={handleEditProfile}
             >
-              Edit profile
+              Edit
             </button>
           ) : null}
         </div>

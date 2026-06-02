@@ -1,3 +1,4 @@
+// app/faq/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -130,14 +131,21 @@ const faqs: FAQItem[] = [
     category: "Payments",
     question: "How do payments work?",
     answer:
-      "Payments are completed through Decor Encore using secure checkout. This keeps the order tied to the listing, creates a clear purchase record, and helps support review the transaction if an issue comes up.",
+      "Payments are completed through Decor Encore using secure checkout. This keeps the order tied to the listing, creates a clear purchase record, and helps support review the transaction if an issue comes up. Sellers must complete Stripe payout setup before buyers can purchase their listings. For step-by-step seller payout help, visit Stripe 101 from the payout setup screen.",
   },
   {
     id: "when-do-sellers-get-paid",
     category: "Payments",
     question: "When do sellers get paid?",
     answer:
-      "Seller payouts are handled through Stripe. Timing can depend on the seller’s connected Stripe account, payout eligibility, order status, and Stripe’s processing timeline. Decor Encore is designed to keep the process as smooth as possible while maintaining a clear order record.",
+      "Seller payouts are handled through Stripe. Timing can depend on the seller’s connected Stripe account, payout eligibility, order status, and Stripe’s processing timeline. If Stripe needs more information or the payout setup is incomplete, seller payouts may be delayed until the required steps are completed. For help with common payout setup issues, visit Stripe 101 from the payout setup screen.",
+  },
+  {
+    id: "how-to-set-up-stripe-payouts",
+    category: "Payments",
+    question: "How do I set up Stripe payouts?",
+    answer:
+      "Go to Seller → Payouts, review Quick Help, then continue to Stripe. Most individual sellers should choose Individual as the business type, Retail → Other merchandise as the industry, and use https://decor-encore.com if Stripe asks for a website. For a more detailed walkthrough, open Stripe 101 from the payout setup screen.",
   },
   {
     id: "why-checkout-inside-platform",
